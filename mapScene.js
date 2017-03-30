@@ -332,13 +332,6 @@ function drawGrid() {
             var exhaustRadius = Math.min(rectangle.width / 2, rectangle.height / 2) - (1 + tileData.level) * Math.round(rectangle.width / 30);
             context.save();
             var percent = (tileData.exhausted - tileData.exhaustCounter) / tileData.exhausted;
-            /*context.globalAlpha = .4;
-            context.beginPath();
-            context.lineWidth = 3;
-            context.strokeStyle = 'black';
-            context.moveTo(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2);
-            context.lineTo(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2 - exhaustRadius);
-            context.stroke();*/
 
             context.globalAlpha = .25;
             context.fillStyle = 'black';
