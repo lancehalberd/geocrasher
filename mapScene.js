@@ -205,6 +205,7 @@ function upgradeTile(tile) {
     tile.exhausted = false;
     generateLootForTile(tile);
     checkToGenerateMonster(tile);
+    selectedTile = null;
     saveGame();
 }
 function canUpgradeTile(tile) {

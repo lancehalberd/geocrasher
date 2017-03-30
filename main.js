@@ -223,6 +223,7 @@ function setCurrentPosition(realCoords) {
             }
         }
     }
+    if (selectedTile && activeTiles.indexOf(selectedTile) < 0) selectedTile = null;
     for (var tile of oldActiveTiles) {
         if (activeTiles.indexOf(tile) < 0 )delete tile.canvas;
     }
