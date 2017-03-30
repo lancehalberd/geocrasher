@@ -19,8 +19,8 @@ function checkToGeneratePowerUp(tile) {
     if (Math.random() > chanceToSpawn) return;
     var value = Math.ceil((.1 + Math.random()) * getTilePower(tile) * Math.pow(1.5, tile.level - 1));
     var lootMethod = Random.element(
-        [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
-         makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
+        [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
+         makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeAttackLoot, makeAttackLoot, makeAttackLoot,
          makeDefenseLoot, makeDefenseLoot]);
     var loot = {'treasure': lootMethod(value), 'tile': tile,
@@ -58,9 +58,9 @@ function collectLoot() {
 function updateLootCollection() {
     for (var i = 0; i < collectingLoot.length; i++) {
         // Pull coins towards the player's position, the front of the queue quicker than the rest.
-        var factor = (2 * i + 1);
-        collectingLoot[i].tx = (currentPosition[0] * 4 + collectingLoot[i].tx * factor) / (factor + 4);
-        collectingLoot[i].ty = (currentPosition[1] * 4 + collectingLoot[i].ty * factor) / (factor + 4);
+        var factor = Math.min(10, (3 * i + 1));
+        collectingLoot[i].x = collectingLoot[i].tx = (currentPosition[0] * 2 + collectingLoot[i].tx * factor) / (factor + 2);
+        collectingLoot[i].y = collectingLoot[i].ty = (currentPosition[1] * 2 + collectingLoot[i].ty * factor) / (factor + 2);
     }
     // Collect all loot within range.
     for (var i = 0; i < collectingLoot.length; i++) {

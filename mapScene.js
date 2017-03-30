@@ -185,7 +185,7 @@ function drawUpgradeButton(canUpgrade, cost) {
     target.height = iconSize;
 
     drawSolidTintedImage(context, upArrows.image, (cost <= coins && canUpgrade) ? 'green' : 'red', upArrows, {'left': target.left, 'top': target.top, 'width': iconSize, 'height': iconSize});
-    embossText(context, text, (cost < coins) ? 'white' : 'red', 'black', target.left + iconSize, canvas.height - 10 - iconSize / 2);
+    embossText(context, text, (cost <= coins) ? 'white' : 'red', 'black', target.left + iconSize, canvas.height - 10 - iconSize / 2);
 
     context.restore();
 }
@@ -242,6 +242,7 @@ function createOrUpdateTileCanvas(tile) {
     tile.scale = actualScale;
     var padding = Math.round(rectangle.width / 30);
     for (var i = 0; i <= tile.level; i++) {
+        context.save();
         var totalPadding = padding * i;
         var color = levelColors[i];
         context.globalCompositeOperation = 'source-over';
@@ -286,6 +287,7 @@ function createOrUpdateTileCanvas(tile) {
         if (tile.neighbors['1x0'] && tile.neighbors['1x0'].level >= i) {
             context.fillRect(rectangle.width - totalPadding - padding, totalPadding, totalPadding + padding, rectangle.height - 2 * totalPadding);
         }
+        if (i === 0 ) context.globalAlpha = .75;
         context.globalCompositeOperation = 'source-in';
         if (color.image) {
             drawImage(context, color.image, color, {'left': 0, 'top': 0, 'width': rectangle.width, 'height': rectangle.height});
@@ -294,6 +296,7 @@ function createOrUpdateTileCanvas(tile) {
             context.fillRect(0, 0, rectangle.width, rectangle.height);
         }
         tileContext.drawImage(tileMask, 0, 0, rectangle.width, rectangle.height, 0, 0, rectangle.width, rectangle.height);
+        context.restore();
     }
 }
 
@@ -303,17 +306,26 @@ function drawGrid() {
     context.fillStyle = 'black';
     context.fillRect(0, 0, canvas.width, canvas.height);
     if (!currentGridCoords) return;
-    context.fillStyle = 'blue';
-    var activeRectangle = getGridRectangle([currentGridCoords[0] - 4, currentGridCoords[1] + 4]);
-    activeRectangle.width = 9 * actualScale * gridLength;
-    activeRectangle.height = 9 * actualScale * gridLength;
     var gradientLength = .3 * actualScale * gridLength;
-    var blueRectangle = {
-        'left': Math.max(-gradientLength / 2, activeRectangle.left), 'top': Math.max(-gradientLength / 2, activeRectangle.top)
+    var topLeftCorner = project([currentPosition[0] - 4 * gridLength, currentPosition[1] + 4 * gridLength]);
+    var visibleRectangle = {
+        'left': Math.max(-gradientLength / 2, topLeftCorner[0]), 'top': Math.max(-gradientLength / 2, topLeftCorner[1])
     };
-    blueRectangle.width = Math.min(canvas.width + gradientLength / 2, activeRectangle.left + activeRectangle.width) - blueRectangle.left;
-    blueRectangle.height = Math.min(canvas.height + gradientLength / 2, activeRectangle.top + activeRectangle.height) - blueRectangle.top;
-    fillRectangle(context, blueRectangle);
+    var gridSize = gridLength * actualScale;
+    visibleRectangle.width = Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - visibleRectangle.left;
+    visibleRectangle.height = Math.min(canvas.height + gradientLength / 2, topLeftCorner[1] + 8 * gridSize) - visibleRectangle.top;
+    context.save();
+    context.translate((((now() / 20)) % 1000 / 1000 - 1) * gridSize, -(((now() / 30)) % 1000 / 1000 + 1) * gridSize);
+    var topLeftGridCorner = project([(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] + 4) * gridLength]);
+    for (var top = topLeftGridCorner[1]; top <= topLeftGridCorner[1] + 9 * gridSize; top += gridSize) {
+        for (var left = topLeftGridCorner[0]; left <= topLeftGridCorner[0] + 9 * gridSize; left += gridSize) {
+            var target = {
+                'left': left, 'top': top, 'width': gridSize, 'height': gridSize
+            };
+            drawImage(context, oceanSource.image, oceanSource, target);
+        }
+    }
+    context.restore();
 
     var draws = 0;
     for (var tileData of visibleTiles) {
@@ -395,31 +407,32 @@ function drawGrid() {
                     monster.currentHealth / monster.maxHealth);
         }
     }
-    if (blueRectangle.left + gradientLength > 0) {
-        var gradient = context.createLinearGradient(blueRectangle.left, 0, blueRectangle.left + gradientLength, 0);
+    if (visibleRectangle.left + gradientLength > 0) {
+        var gradient = context.createLinearGradient(visibleRectangle.left, 0, visibleRectangle.left + gradientLength, 0);
         gradient.addColorStop(0, 'black');
         gradient.addColorStop(1, 'transparent');
         context.fillStyle = gradient;
-        context.fillRect(0, 0, blueRectangle.left + gradientLength, canvas.height);
+        context.fillRect(0, 0, visibleRectangle.left + gradientLength, canvas.height);
     }
-    if (blueRectangle.top + gradientLength > 0) {
-        var gradient = context.createLinearGradient(0, blueRectangle.top, 0, blueRectangle.top + gradientLength);
+    if (visibleRectangle.top + gradientLength > 0) {
+        var gradient = context.createLinearGradient(0, visibleRectangle.top, 0, visibleRectangle.top + gradientLength);
         gradient.addColorStop(0, 'black');
         gradient.addColorStop(1, 'transparent');
         context.fillStyle = gradient;
-        context.fillRect(0, 0, canvas.width, blueRectangle.top + gradientLength);
+        context.fillRect(0, 0, canvas.width, visibleRectangle.top + gradientLength);
     }
-    if (blueRectangle.left + blueRectangle.width - gradientLength < canvas.width) {
-        var left = blueRectangle.left + blueRectangle.width - gradientLength;
-        var gradient = context.createLinearGradient(left, 0, blueRectangle.left + blueRectangle.width, 0);
+    if (visibleRectangle.left + visibleRectangle.width - gradientLength < canvas.width) {
+        var left = visibleRectangle.left + visibleRectangle.width - gradientLength;
+        var gradient = context.createLinearGradient(left, 0, visibleRectangle.left + visibleRectangle.width, 0);
         gradient.addColorStop(0, 'transparent');
         gradient.addColorStop(1, 'black');
         context.fillStyle = gradient;
         context.fillRect(left, 0, canvas.width - left, canvas.height);
     }
-    if (blueRectangle.top + gradientLength > 0) {
-        var top = blueRectangle.top + blueRectangle.height - gradientLength;
-        var gradient = context.createLinearGradient(0, top, 0, blueRectangle.top + blueRectangle.height);
+    console.log([visibleRectangle.top, visibleRectangle.height]);
+    if (visibleRectangle.top + gradientLength > 0) {
+        var top = visibleRectangle.top + visibleRectangle.height - gradientLength;
+        var gradient = context.createLinearGradient(0, top, 0, visibleRectangle.top + visibleRectangle.height);
         gradient.addColorStop(0, 'transparent');
         gradient.addColorStop(1, 'black');
         context.fillStyle = gradient;

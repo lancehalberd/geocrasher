@@ -23,9 +23,10 @@ function requireImage(imageFile) {
 }
 var initialImagesToLoad = [];
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
-var sandSource = {'image': requireImage('gfx/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-// Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
 var shallowSource = {'image': requireImage('gfx/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+
+// Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
+var sandSource = {'image': requireImage('gfx/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
 // Modified from https://pixabay.com/en/seamless-tileable-texture-ground-1807373/
 var dirtSource = {'image': requireImage('gfx/dirt2.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
@@ -38,6 +39,8 @@ var forestSource = {'image': requireImage('gfx/forest.png'), 'top': 0, 'left': 0
 var hillSource = {'image': requireImage('gfx/hill.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 var mountainSource = {'image': requireImage('gfx/mountain.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 var peakSource = {'image': requireImage('gfx/peak.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var oceanImage = requireImage('gfx/ocean.png');
+var oceanSource = {'image': oceanImage, 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
 // Modified from https://pixabay.com/en/seamless-texture-texture-ice-cold-219909/
 var iceSource = {'image': requireImage('gfx/ice.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
