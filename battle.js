@@ -26,10 +26,6 @@ function updatePlayerStats() {
     defense = Math.round(defenseBonus * levelBonus);
 }
 
-var heartSource = {'image': requireImage('gfx/heart.png'), 'top': 0, 'left': 0, 'width': 50, 'height': 50};
-var swordSource = {'image': requireImage('gfx/sword.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
-var shieldSource = {'image': requireImage('gfx/shield.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
-var shoeSource = {'image': requireImage('gfx/shoe.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var hideStatsAt;
 function drawStatsBox(x, y, level, name, currentHealth, maxHealth, attack, defense, experience, nextLevel) {
     var localIconSize = Math.floor(iconSize / 2);

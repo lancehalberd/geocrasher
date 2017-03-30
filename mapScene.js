@@ -173,7 +173,6 @@ function drawLifeIndicator() {
     drawBar(context, 10, 10 + localIconSize + 5, localIconSize * 4, 6, 'white', 'red', currentHealth / maxHealth);
 }
 
-var upArrows = {'image': requireImage('gfx/upArrows.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
 var upgradeButton = {'target': {}};
 function drawUpgradeButton(canUpgrade, cost) {
     context.save();

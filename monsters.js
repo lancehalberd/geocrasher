@@ -1,4 +1,3 @@
-var turtleSource = {'image': requireImage('gfx/noahTurtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
 
 var activeMonsters = [];
 function makeMonster(tile) {

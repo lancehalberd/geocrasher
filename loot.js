@@ -1,4 +1,4 @@
-var coinImage = requireImage('gfx/moneyIcon.png');
+
 var coinLoot = [
     {'value': 1, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 0, 'width': 16, 'height': 16, 'scale': 1},
     {'value': 5, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 32, 'width': 20, 'height': 20, 'scale': 1},
@@ -130,7 +130,6 @@ function generateLootCoins(amount, limit) {
     return loot;
 }
 
-var chestImage = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
 var collectCoinsButton = {'target': {}};
 function drawCollectCoinsButton() {
     context.save();
@@ -147,7 +146,7 @@ function drawCollectCoinsButton() {
     target.top = canvas.height - 10 - iconSize;
     target.height = iconSize;
 
-    drawImage(context, chestImage.image, chestImage, {'left': target.left, 'top': target.top, 'width': iconSize, 'height': iconSize});
+    drawImage(context, chestSource.image, chestSource, {'left': target.left, 'top': target.top, 'width': iconSize, 'height': iconSize});
 
     embossText(context, 'x' + lootInRadius.length, 'white', 'black', target.left + iconSize - 10, canvas.height - 10 - iconSize / 2);
     context.restore();

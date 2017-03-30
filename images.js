@@ -22,6 +22,32 @@ function requireImage(imageFile) {
     });
 }
 var initialImagesToLoad = [];
+// Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
+var sandSource = {'image': requireImage('gfx/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+// Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
+var shallowSource = {'image': requireImage('gfx/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+
+// http://opengameart.org/content/treasure-chests
+var chestSource = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
+
+// Icons by Hillary originally created for Treasure Tycoon
+var coinImage = requireImage('gfx/moneyIcon.png');
+
+// From open source game prototyping images: http://www.lostgarden.com/2007/05/dancs-miraculously-flexible-game.html
+var heartSource = {'image': requireImage('gfx/heart.png'), 'top': 0, 'left': 0, 'width': 50, 'height': 50};
+
+// Icons from http://opengameart.org/content/496-pixel-art-icons-for-medievalfantasy-rpg
+var swordSource = {'image': requireImage('gfx/sword.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var shieldSource = {'image': requireImage('gfx/shield.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var shoeSource = {'image': requireImage('gfx/shoe.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+
+// Icon by Chris Brewer originally created for Treasure Tycoon
+var upArrows = {'image': requireImage('gfx/upArrows.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
+
+// Image by Noah originally created for Lazy RPG
+var turtleSource = {'image': requireImage('gfx/noahTurtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
+
+
 for (var initialImageToLoad of initialImagesToLoad) {
     requireImage(initialImageToLoad);
 }

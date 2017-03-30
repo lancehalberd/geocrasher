@@ -8,8 +8,6 @@ var testMode = window.location.search.substr(1).indexOf('test') >= 0;
 var debugMode = window.location.search.substr(1).indexOf('debug') >= 0;
 var coins = testMode ? 10 : 10;
 var gridData = {};
-var sandSource = {'image': requireImage('gfx/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-var shallowSource = {'image': requireImage('gfx/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 var levelColors = [shallowSource, sandSource, '#863', '#0F0', '#080', '#888', '#AAA', '#CCC', '#EEE'];
 var maxLevel = levelColors.length - 1;
 var levelSums = [];

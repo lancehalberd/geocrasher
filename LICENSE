@@ -1,3 +1,12 @@
+Important notice regarding images and third party libaries:
+--------------------------------------------------------------------------------
+This repository contains additional graphical assets and third party libraries
+that are subject to their own licensing restrictions. Please see comments in
+images.js and styles.css for details about the sources for images before
+attempting to use these images yourself. Third party code is included in /lib/.
+--------------------------------------------------------------------------------
+
+
 This is free and unencumbered software released into the public domain.
 
 Anyone is free to copy, modify, publish, use, compile, sell, or
