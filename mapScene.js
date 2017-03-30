@@ -155,7 +155,6 @@ function drawCoinsIndicator() {
     var top = margin;
     drawImage(context, moneySource.image, moneySource, {'left': left, 'top': margin, 'width': localIconSize, 'height': localIconSize});
     embossText(context, coinsText, 'gold', 'white', left + localIconSize + margin, margin);
-    drawBar(context, 10, 10 + localIconSize + 5, localIconSize * 4, 6, 'white', 'red', currentHealth / maxHealth);
 }
 
 function drawLifeIndicator() {
