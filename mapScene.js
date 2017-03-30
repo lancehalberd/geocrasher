@@ -329,13 +329,26 @@ function drawGrid() {
         context.drawImage(tileData.canvas, 0, 0, tileData.canvas.width, tileData.canvas.height,
             rectangle.left, rectangle.top, rectangle.width, rectangle.height);
         if (tileData.exhausted) {
+            var exhaustRadius = Math.min(rectangle.width / 2, rectangle.height / 2) - (1 + tileData.level) * Math.round(rectangle.width / 30);
             context.save();
-            context.globalAlpha = .1;
             var percent = (tileData.exhausted - tileData.exhaustCounter) / tileData.exhausted;
-            context.fillStyle = 'black';
+            /*context.globalAlpha = .4;
             context.beginPath();
+            context.lineWidth = 3;
+            context.strokeStyle = 'black';
             context.moveTo(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2);
-            context.arc(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2, Math.min(rectangle.width / 2, rectangle.height / 2) - Math.round(rectangle.width / 40), -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
+            context.lineTo(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2 - exhaustRadius);
+            context.stroke();*/
+
+            context.globalAlpha = .25;
+            context.fillStyle = 'black';
+            context.lineWidth = 3;
+            context.strokeStyle = 'white';
+            context.beginPath();
+            if (percent < 1) context.moveTo(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2);
+            context.arc(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2, exhaustRadius, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
+            if (percent < 1) context.closePath();
+            context.stroke();
             context.fill();
             context.restore();
         }

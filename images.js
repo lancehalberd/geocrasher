@@ -27,6 +27,22 @@ var sandSource = {'image': requireImage('gfx/sand.png'), 'top': 0, 'left': 0, 'w
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
 var shallowSource = {'image': requireImage('gfx/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
+// Modified from https://pixabay.com/en/seamless-tileable-texture-ground-1807373/
+var dirtSource = {'image': requireImage('gfx/dirt2.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+
+// Modified from https://pixabay.com/en/retro-flower-pattern-design-batik-1422325/
+var grassSource = {'image': requireImage('gfx/grass.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+var forestSource = {'image': requireImage('gfx/forest.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+
+// Modified from http://maxpixel.freegreatpicture.com/Background-Texture-Seamless-Stone-Rocks-1657467
+var hillSource = {'image': requireImage('gfx/hill.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var mountainSource = {'image': requireImage('gfx/mountain.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var peakSource = {'image': requireImage('gfx/peak.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+
+// Modified from https://pixabay.com/en/seamless-texture-texture-ice-cold-219909/
+var iceSource = {'image': requireImage('gfx/ice.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+
+
 // http://opengameart.org/content/treasure-chests
 var chestSource = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
 

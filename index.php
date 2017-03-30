@@ -15,7 +15,7 @@
     <script src="lib/jstorage.min.js"></script>
 </head>
 <body style="margin: 0; padding:0;">
-    <canvas width="800" height="600"></canvas>
+    <canvas width="800" height="600" style="touch-action: none;"></canvas>
     <?php addScripts(['utils.js', 'images.js', 'loot.js', 'battle.js', 'monsters.js', 'saveGame.js', 'titleScene.js', 'mapScene.js', 'drawScene.js', 'main.js']) ?>
 </body>
 </html>

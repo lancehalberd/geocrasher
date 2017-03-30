@@ -8,7 +8,7 @@ var testMode = window.location.search.substr(1).indexOf('test') >= 0;
 var debugMode = window.location.search.substr(1).indexOf('debug') >= 0;
 var coins = testMode ? 10 : 10;
 var gridData = {};
-var levelColors = [shallowSource, sandSource, '#863', '#0F0', '#080', '#888', '#AAA', '#CCC', '#EEE'];
+var levelColors = [shallowSource, sandSource, dirtSource, grassSource, forestSource, hillSource, mountainSource, peakSource, iceSource];
 var maxLevel = levelColors.length - 1;
 var levelSums = [];
 var radius = minRadius;
@@ -364,6 +364,7 @@ if (testMode) {
         origin[1] += dy / actualScale;
         lastTouchEvent = event;
         touchMoved = true;
+        if (!fightingMonster) selectedTile = null;
     });
     document.addEventListener('mouseup', function(event) {
         if (!touchMoved) {
