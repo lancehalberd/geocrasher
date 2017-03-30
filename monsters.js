@@ -6,7 +6,7 @@ function makeMonster(tile) {
     var rollB = Random.range(-2, 2);
     var rollC = -rollA - rollB;
     var rolls = [1 + .2 * rollA, 1 + .2 * rollB, 1 + .2 * rollC];
-    var health = Math.round(20 * powerFactor * Random.removeElement(rolls));
+    var health = Math.round(50 * powerFactor * Random.removeElement(rolls));
     var attack = Math.round(5 * powerFactor * Random.removeElement(rolls));
     var defense = Math.round(5 * powerFactor * Random.removeElement(rolls));
     var minMonsterRadius = gridLength * 2 / 3;
