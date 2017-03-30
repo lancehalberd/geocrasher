@@ -143,22 +143,19 @@ function drawMapScene() {
 var playerStatsRectangle;
 
 function drawCoinsIndicator() {
-    context.textAlign = 'left'
-    context.textBaseline = 'top';
-    var fontSize = Math.min(Math.ceil(canvas.width / 20), Math.ceil(canvas.height / 20));
+    var localIconSize = Math.floor(iconSize / 2);
+    var coinsText = coins.abbreviate();
+    var fontSize = Math.floor(3 * localIconSize / 4);
     context.font = fontSize + 'px sans-serif';
-    var coinsText = 'Coins: ' + coins.abbreviate();
-    var metrics = context.measureText(coinsText);
+    context.textAlign = 'left'
+    context.textBaseline = 'top';;
+    var metrics = context.measureText(coinsText)
     var margin = 10;
-    var padding = 6;
-    var left = canvas.width - metrics.width - margin - 2 * padding;
+    var left = canvas.width - margin - metrics.width - margin - localIconSize - margin;
     var top = margin;
-    context.globalAlpha = .8;
-    context.fillStyle = 'black';
-    context.fillRect(left, top, metrics.width + 2 * padding, fontSize + 2 * padding);
-    context.globalAlpha = 1;
-    context.fillStyle = 'yellow';
-    context.fillText(coinsText, left + padding, top + padding);
+    drawImage(context, moneySource.image, moneySource, {'left': left, 'top': margin, 'width': localIconSize, 'height': localIconSize});
+    embossText(context, coinsText, 'gold', 'white', left + localIconSize + margin, margin);
+    drawBar(context, 10, 10 + localIconSize + 5, localIconSize * 4, 6, 'white', 'red', currentHealth / maxHealth);
 }
 
 function drawLifeIndicator() {

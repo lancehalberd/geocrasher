@@ -48,6 +48,7 @@ var chestSource = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top'
 
 // Icons by Hillary originally created for Treasure Tycoon
 var coinImage = requireImage('gfx/moneyIcon.png');
+var moneySource = {'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'height': 24};
 
 // From open source game prototyping images: http://www.lostgarden.com/2007/05/dancs-miraculously-flexible-game.html
 var heartSource = {'image': requireImage('gfx/heart.png'), 'top': 0, 'left': 0, 'width': 50, 'height': 50};
