@@ -11,7 +11,7 @@ function updateMap() {
             loot.x = (loot.x + loot.tx) / 2;
             loot.y = (loot.y + loot.ty) / 2;
             loot.inRadius = isLootInRadius(loot);
-            loot.inMonsterRadius = isPointInMonsterRadius(loot.x, loot.y);
+            loot.inMonsterRadius = !loot.treasure.gem && isPointInMonsterRadius(loot.x, loot.y);
             if (loot.inRadius && !loot.inMonsterRadius) {
                 lootInRadius.push(loot);
             }
@@ -120,6 +120,7 @@ function drawMapScene() {
     if (!selectedTile) {
         if (collectingLoot.length === 0) drawCollectCoinsButton();
     } else if (selectedTile.monster) drawFightFleeButton();
+    drawGemIndicators();
 
     drawCoinsIndicator();
     if (now() < lootCollectedTime + 2000) {
@@ -389,8 +390,16 @@ function drawGrid() {
             'top': rectangle.top + (rectangle.height - targetHeight) / 2,
             'width': targetWidth, 'height': targetHeight
         };
+
+        var sourceImage = source.image;
+        var sourceRectangle = source;
+        if (monster.tint) {
+            prepareTintedImage();
+            sourceImage = getTintedImage(sourceImage, monster.tint, monster.tintAmount, sourceRectangle);
+            sourceRectangle = {'left': 0, 'top': 0, 'width': sourceRectangle.width, 'height': sourceRectangle.height};
+        }
         if (tileData === selectedTile) {
-            drawOutlinedImage(context, source.image, 'red', 2, source, target);
+            drawOutlinedImage(context, sourceImage, 'red', 2, sourceRectangle, target);
             context.save();
             context.globalAlpha = .15;
             context.fillStyle = 'red';
@@ -400,7 +409,7 @@ function drawGrid() {
             context.fill();
             context.restore();
         } else {
-            drawImage(context, source.image, source, target);
+            drawImage(context, sourceImage, sourceRectangle, target);
         }
         if (monster.currentHealth < monster.maxHealth || tileData === selectedTile) {
             drawBar(context, Math.round(target.left + target.width / 6), target.top - 5,

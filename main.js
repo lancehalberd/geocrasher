@@ -143,6 +143,7 @@ function updateGameState() {
             }
         }
     }
+    checkToSpawnGems();
 }
 function exhaustTile(tile) {
     tile.exhausted = tile.level * 2 + 8;
@@ -157,17 +158,6 @@ function getTilePower(tile) {
         if (tile.neighbors[cornerKey]) power += (tile.neighbors[cornerKey].level) / 20;
     }
     return power;
-}
-function generateLootForTile(tile) {
-    var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * Math.pow(4, tile.level));
-    var coinDrops = generateLootCoins(coins, 4 - tile.loot.length);
-    var realCoords = toRealCoords([tile.x, tile.y]);
-    for (var coinDrop of coinDrops) {
-        tile.loot.push({'treasure': coinDrop, 'tile': tile,
-            'x': realCoords[0] + gridLength / 2, 'y': realCoords[1] + gridLength / 2,
-            'tx': realCoords[0] + Math.random() * gridLength, 'ty': realCoords[1] + Math.random() * gridLength})
-    }
-    checkToGeneratePowerUp(tile);
 }
 var activeTiles = [];
 var visibleTiles = [];
@@ -188,7 +178,7 @@ function setCurrentPosition(realCoords) {
 
     for (var dy = -1; dy <=1; dy++) {
         for (var dx = -1; dx <=1; dx++) {
-            var tileData = getTileData([currentGridCoords[0] + dx, currentGridCoords[1] + dy]);
+            var tileData = getTileData([currentGridCoords[0] + dx, currentGridCoords[1] + dy], true);
             if (!gridData[tileData.key]) {
                 gridData[tileData.key] = tileData;
                 initializeTile(tileData);
@@ -272,9 +262,9 @@ function tileIsExplored(gridCoords) {
     var key = gridCoords[0] + 'x' + gridCoords[1];
     return !!gridData[key];
 }
-function getTileData(gridCoords) {
+function getTileData(gridCoords, returnDefault) {
     var key = gridCoords[0] + 'x' + gridCoords[1];
-    return ifdefor(gridData[key], {'level': 0, 'power': 0, 'key': key, 'x': gridCoords[0], 'y': gridCoords[1]});
+    return ifdefor(gridData[key], returnDefault ? {'level': 0, 'power': 0, 'key': key, 'x': gridCoords[0], 'y': gridCoords[1]} : null);
 }
 function isTileInRadius(tileData) {
     var centerCoords = toRealCoords([tileData.x + .5, tileData.y + .5]);
@@ -282,12 +272,6 @@ function isTileInRadius(tileData) {
     var dy = currentPosition[1] - centerCoords[1];
     return dx * dx + dy * dy < radius * radius;
 }
-function isLootInRadius(loot) {
-    var dx = currentPosition[0] - loot.x;
-    var dy = currentPosition[1] - loot.y;
-    return dx * dx + dy * dy < radius * radius;
-}
-
 
 var maxScale = 5e5;
 var minScale = 1.5e5;

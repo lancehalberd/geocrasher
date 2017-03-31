@@ -3,10 +3,6 @@ if (!saveSlots) {
     saveSlots = [newGameData(), newGameData(), newGameData()];
 }
 
-var gridLength = 4 / 10000;
-var minRadius = gridLength / 4;
-var maxRadius = gridLength * 1.5;
-var scale = 2.5e5;
 function newGameData() {
     return {
         'radius': minRadius, 'coins': 10, 'level': 1,
@@ -41,6 +37,7 @@ function loadSaveSlot(index) {
     clickedCoords = selectedTile = lastGoalPoint = null;
     hideStatsAt = now() + 2000;
     currentScene = 'map';
+    checkToSpawnGems();
 }
 
 function saveGame() {

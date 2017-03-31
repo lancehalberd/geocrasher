@@ -1,15 +1,32 @@
 
 var coinLoot = [
-    {'value': 1, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 0, 'width': 16, 'height': 16, 'scale': 1},
-    {'value': 5, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 32, 'width': 20, 'height': 20, 'scale': 1},
-    {'value': 20, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 64, 'width': 24, 'height': 24, 'scale': 1},
-    {'value': 100, 'type': 'coins', 'image': coinImage, 'left' : 32, 'top': 0, 'width': 16, 'height': 16, 'scale': 1},
-    {'value': 500, 'type': 'coins', 'image': coinImage, 'left': 32, 'top': 32, 'width': 20, 'height': 20, 'scale': 1},
-    {'value': 2000, 'type': 'coins', 'image': coinImage, 'left': 32, 'top': 64, 'width': 24, 'height': 24, 'scale': 1},
-    {'value': 10000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 0, 'width': 16, 'height': 16, 'scale': 1},
-    {'value': 50000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 32, 'width': 20, 'height': 20, 'scale': 1},
-    {'value': 200000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'height': 24, 'scale': 1}
+    {'value': 1, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 0, 'width': 16, 'height': 16, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 5, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 32, 'width': 20, 'height': 20, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 20, 'type': 'coins', 'image': coinImage, 'left': 0, 'top': 64, 'width': 24, 'height': 24, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 100, 'type': 'coins', 'image': coinImage, 'left' : 32, 'top': 0, 'width': 16, 'height': 16, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 500, 'type': 'coins', 'image': coinImage, 'left': 32, 'top': 32, 'width': 20, 'height': 20, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 2000, 'type': 'coins', 'image': coinImage, 'left': 32, 'top': 64, 'width': 24, 'height': 24, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 10000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 0, 'width': 16, 'height': 16, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 50000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 32, 'width': 20, 'height': 20, 'scale': 1, 'onObtain': onObtainCoins},
+    {'value': 200000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'height': 24, 'scale': 1, 'onObtain': onObtainCoins}
 ];
+function onObtainCoins() {
+    coins += this.value;
+    coinsCollected += this.value;
+}
+
+function generateLootForTile(tile) {
+    var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * Math.pow(4, tile.level));
+    var coinDrops = generateLootCoins(coins, 4 - tile.loot.length);
+    var realCoords = toRealCoords([tile.x, tile.y]);
+    for (var coinDrop of coinDrops) {
+        tile.loot.push({'treasure': coinDrop, 'tile': tile,
+            'x': realCoords[0] + gridLength / 2, 'y': realCoords[1] + gridLength / 2,
+            'tx': realCoords[0] + Math.random() * gridLength, 'ty': realCoords[1] + Math.random() * gridLength});
+    }
+    checkToGeneratePowerUp(tile);
+}
+
 var activePowerups = [];
 function checkToGeneratePowerUp(tile) {
     // Monsters cannot spawn in shallows.
@@ -32,15 +49,29 @@ function checkToGeneratePowerUp(tile) {
 }
 
 function makeHealthLoot(value) {
-    console.log('health: ' + 4 * value);
-    return $.extend({'value': 4 * value, 'type': 'health', 'scale': .4}, heartSource);
+    return $.extend({'value': 4 * value, 'type': 'health', 'scale': .4, 'onObtain': onObtainHealthLoot}, heartSource);
+}
+function onObtainHealthLoot() {
+    healthBonus += this.value;
+    updatePlayerStats();
+    currentHealth = Math.min(maxHealth, currentHealth + Math.round(2 * this.value * getLevelBonus()));
+    showStats();
 }
 function makeAttackLoot(value) {
-    console.log('attack: ' + 4 * value);
-    return $.extend({'value': value, 'type': 'attack', 'scale': .5}, swordSource);
+    return $.extend({'value': value, 'type': 'attack', 'scale': .5, 'onObtain': onObtainAttackLoot}, swordSource);
+}
+function onObtainAttackLoot() {
+    attackBonus += this.value;
+    updatePlayerStats();
+    showStats();
 }
 function makeDefenseLoot(value) {
-    return $.extend({'value': value, 'type': 'defense', 'scale': .5}, shieldSource);
+    return $.extend({'value': value, 'type': 'defense', 'scale': .5, 'onObtain': onObtainDefenseLoot}, shieldSource);
+}
+function onObtainDefenseLoot() {
+    defenseBonus += this.value;
+    updatePlayerStats();
+    showStats();
 }
 
 var lootInRadius = [];
@@ -54,6 +85,12 @@ function collectLoot() {
     radius = minRadius;
     for (var loot of lootInRadius) collectingLoot.push(loot);
 }
+function isLootInRadius(loot) {
+    var dx = currentPosition[0] - loot.x;
+    var dy = currentPosition[1] - loot.y;
+    return dx * dx + dy * dy < radius * radius;
+}
+
 
 function updateLootCollection() {
     for (var i = 0; i < collectingLoot.length; i++) {
@@ -85,28 +122,7 @@ function obtainloot(loot) {
     if (powerupIndex >= 0) {
         activePowerups.splice(powerupIndex, 1);
     }
-    switch (loot.treasure.type){
-        case 'coins':
-            coins += loot.treasure.value;
-            coinsCollected += loot.treasure.value;
-            break
-        case 'health':
-            healthBonus += loot.treasure.value;
-            updatePlayerStats();
-            currentHealth = Math.min(maxHealth, currentHealth + Math.round(2 * loot.treasure.value * getLevelBonus()));
-            showStats();
-            break;
-        case 'attack':
-            attackBonus += loot.treasure.value;
-            updatePlayerStats();
-            showStats();
-            break;
-        case 'defense':
-            defenseBonus += loot.treasure.value;
-            updatePlayerStats();
-            showStats();
-            break;
-    }
+    if (loot.treasure.onObtain) loot.treasure.onObtain();
     tile.loot.splice(tile.loot.indexOf(loot), 1);
     if (!tile.exhausted) exhaustTile(tile);
 }

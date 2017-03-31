@@ -56,9 +56,9 @@ var moneySource = {'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'heig
 // From open source game prototyping images: http://www.lostgarden.com/2007/05/dancs-miraculously-flexible-game.html
 var heartSource = {'image': requireImage('gfx/loot/heart.png'), 'top': 0, 'left': 0, 'width': 50, 'height': 50};
 var bugSource = {'image': requireImage('gfx/monsters/bug.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
-var orangeGemSource = {'image': requireImage('gfx/loot/orangeGem.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
-var greenGemSource = {'image': requireImage('gfx/loot/greenGem.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
-var blueGemSource = {'image': requireImage('gfx/loot/blueGem.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
+var orangeGemSource = {'image': requireImage('gfx/loot/orangeGem.png'), 'left': 0, 'top': 0, 'width': 50, 'height': 55};
+var greenGemSource = {'image': requireImage('gfx/loot/greenGem.png'), 'left': 0, 'top': 0, 'width': 50, 'height': 55};
+var blueGemSource = {'image': requireImage('gfx/loot/blueGem.png'), 'left': 0, 'top': 0, 'width': 50, 'height': 55};
 
 // Icons from http://opengameart.org/content/496-pixel-art-icons-for-medievalfantasy-rpg
 var swordSource = {'image': requireImage('gfx/loot/sword.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
