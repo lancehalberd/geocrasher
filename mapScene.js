@@ -430,7 +430,6 @@ function drawGrid() {
         context.fillStyle = gradient;
         context.fillRect(left, 0, canvas.width - left, canvas.height);
     }
-    console.log([visibleRectangle.top, visibleRectangle.height]);
     if (visibleRectangle.top + gradientLength > 0) {
         var top = visibleRectangle.top + visibleRectangle.height - gradientLength;
         var gradient = context.createLinearGradient(0, top, 0, visibleRectangle.top + visibleRectangle.height);
