@@ -11,7 +11,7 @@ function makeMonster(tile) {
     var defenseRoll = Random.removeElement(rolls);
     var name = 'Tortoise', source = turtleSource;
     if (healthRoll <= attackRoll && healthRoll <= defenseRoll) {
-        name = 'Bug';
+        name = 'Giant Bug';
         source = bugSource;
     } else if (attackRoll >= healthRoll && attackRoll >= defenseRoll) {
         name = 'Snapper';
