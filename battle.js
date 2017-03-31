@@ -114,10 +114,16 @@ function updateBattle(time) {
 }
 
 function calculateDamage(attack, defense) {
+    // Damage is 1/2 when attack = defense, then halves roughly each time defense doubles.
+    return Math.max(1, Math.ceil(attack * Math.pow(.5, Math.max(0,  Math.log((attack + defense) / attack)) / Math.log(2))));
+}
+function calculateOldDamage(attack, defense) {
     // New formula, damage halves for every power of attack defense is.
-    return Math.max(1, Math.ceil(attack * Math.pow(.5, Math.max(0, Math.log(defense) / Math.log(attack)))));
-    // Old formula, damage halves for every factor of attack defense ise
-    //return Math.max(1, Math.ceil(attack * Math.pow(.5, defense / attack)));
+    return Math.max(1, Math.ceil(attack * Math.pow(.5, Math.max(0, (Math.log(defense)) / Math.log(attack)))));
+}
+function calculateOlderDamage(attack, defense) {
+    // Old formula, damage halves for every factor of attack defense is.
+    return Math.max(1, Math.ceil(attack * Math.pow(.5, defense / attack)));
 }
 
 var fightingMonster = null;
