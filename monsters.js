@@ -1,9 +1,9 @@
 
 var activeMonsters = [];
 function makeMonster(tile) {
-    var totalPower = tile.level + 2 * (getTilePower(tile) - 1);
+    var totalPower = tile.level / 2 + 2 * (getTilePower(tile) - 1);
     var monsterLevel = Math.floor(totalPower);
-    var powerFactor = Math.pow(1.4, monsterLevel - 1) * (1 + (totalPower % 1) / 2);
+    var powerFactor = Math.pow(1.4, monsterLevel - 1) * (1 + (totalPower % 1) / 4);
     //var powerFactor = Math.pow(3, tile.level - 1) * getTilePower(tile);
     var rollA = Random.range(-2, 2);
     var rollB = Random.range(-2, 2);
