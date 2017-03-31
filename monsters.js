@@ -1,9 +1,9 @@
 
 var activeMonsters = [];
 function makeMonster(tile) {
-    var totalPower = tile.level + getTilePower(tile) - 1;
+    var totalPower = tile.level + 2 * (getTilePower(tile) - 1);
     var monsterLevel = Math.floor(totalPower);
-    var powerFactor = Math.pow(1.5, monsterLevel - 1) * (1 + (totalPower % 1) / 2);
+    var powerFactor = Math.pow(1.4, monsterLevel - 1) * (1 + (totalPower % 1) / 2);
     //var powerFactor = Math.pow(3, tile.level - 1) * getTilePower(tile);
     var rollA = Random.range(-2, 2);
     var rollB = Random.range(-2, 2);
@@ -31,7 +31,7 @@ function makeMonster(tile) {
         'currentHealth': health,
         'maxHealth': health, 'attack': attack, 'defense': defense,
         'source': source,
-        'experience': Math.round(powerFactor * 3),
+        'experience': Math.round(powerFactor * 2),
         'radius': minMonsterRadius + (maxMonsterRadius - minMonsterRadius) * Math.random()
     };
 }

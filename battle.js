@@ -12,7 +12,7 @@ function gainExperience(experienceGained) {
 }
 
 function experienceForNextLevel() {
-    return Math.round(10 * level * Math.pow(1.2, level - 1));
+    return Math.round(10 * level * Math.pow(1.3, level - 1));
 }
 
 function getLevelBonus() {

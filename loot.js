@@ -34,7 +34,7 @@ function checkToGeneratePowerUp(tile) {
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.
     var chanceToSpawn = .5 * ((5 - activePowerups.length) / 5) * ((maxLevel + 1 - tile.level) / (maxLevel));
     if (Math.random() > chanceToSpawn) return;
-    var value = Math.ceil((.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.4, tile.level - 1));
+    var value = Math.ceil((.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.3, tile.level - 1));
     var lootMethod = Random.element(
         [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
