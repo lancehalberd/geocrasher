@@ -23,49 +23,53 @@ function requireImage(imageFile) {
 }
 var initialImagesToLoad = [];
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
-var shallowSource = {'image': requireImage('gfx/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var shallowSource = {'image': requireImage('gfx/map/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
-var sandSource = {'image': requireImage('gfx/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var sandSource = {'image': requireImage('gfx/map/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
 // Modified from https://pixabay.com/en/seamless-tileable-texture-ground-1807373/
-var dirtSource = {'image': requireImage('gfx/dirt2.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+var dirtSource = {'image': requireImage('gfx/map/dirt2.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
 
 // Modified from https://pixabay.com/en/retro-flower-pattern-design-batik-1422325/
-var grassSource = {'image': requireImage('gfx/grass.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
-var forestSource = {'image': requireImage('gfx/forest.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+var grassSource = {'image': requireImage('gfx/map/grass.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+var forestSource = {'image': requireImage('gfx/map/forest.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
 
 // Modified from http://maxpixel.freegreatpicture.com/Background-Texture-Seamless-Stone-Rocks-1657467
-var hillSource = {'image': requireImage('gfx/hill.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-var mountainSource = {'image': requireImage('gfx/mountain.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-var peakSource = {'image': requireImage('gfx/peak.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-var oceanImage = requireImage('gfx/ocean.png');
+var hillSource = {'image': requireImage('gfx/map/hill.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var mountainSource = {'image': requireImage('gfx/map/mountain.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var peakSource = {'image': requireImage('gfx/map/peak.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var oceanImage = requireImage('gfx/map/ocean.png');
 var oceanSource = {'image': oceanImage, 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
 // Modified from https://pixabay.com/en/seamless-texture-texture-ice-cold-219909/
-var iceSource = {'image': requireImage('gfx/ice.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var iceSource = {'image': requireImage('gfx/map/ice.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
 
 // http://opengameart.org/content/treasure-chests
 var chestSource = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
 
 // Icons by Hillary originally created for Treasure Tycoon
-var coinImage = requireImage('gfx/moneyIcon.png');
+var coinImage = requireImage('gfx/loot/moneyIcon.png');
 var moneySource = {'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'height': 24};
 
 // From open source game prototyping images: http://www.lostgarden.com/2007/05/dancs-miraculously-flexible-game.html
-var heartSource = {'image': requireImage('gfx/heart.png'), 'top': 0, 'left': 0, 'width': 50, 'height': 50};
+var heartSource = {'image': requireImage('gfx/loot/heart.png'), 'top': 0, 'left': 0, 'width': 50, 'height': 50};
+var bugSource = {'image': requireImage('gfx/monsters/bug.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
+var orangeGemSource = {'image': requireImage('gfx/loot/orangeGem.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
+var greenGemSource = {'image': requireImage('gfx/loot/greenGem.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
+var blueGemSource = {'image': requireImage('gfx/loot/blueGem.png'), 'left': 0, 'top': 0, 'width': 100, 'height': 100};
 
 // Icons from http://opengameart.org/content/496-pixel-art-icons-for-medievalfantasy-rpg
-var swordSource = {'image': requireImage('gfx/sword.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
-var shieldSource = {'image': requireImage('gfx/shield.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var swordSource = {'image': requireImage('gfx/loot/sword.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var shieldSource = {'image': requireImage('gfx/loot/shield.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var shoeSource = {'image': requireImage('gfx/shoe.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 
 // Icon by Chris Brewer originally created for Treasure Tycoon
 var upArrows = {'image': requireImage('gfx/upArrows.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
 
 // Image by Noah originally created for Lazy RPG
-var turtleSource = {'image': requireImage('gfx/noahTurtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
+var turtleSource = {'image': requireImage('gfx/monsters/turtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
 
 
 for (var initialImageToLoad of initialImagesToLoad) {
