@@ -1,10 +1,10 @@
 
 var gemData = [
-    {'color': 'orange', 'source': orangeGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 10,
+    {'color': 'orange', 'source': orangeGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 8,
         'collectRadius': maxRadius * 1.5, 'ticks': 4, 'debuff': .95, 'tintAmount': .07, 'tickDuration': 500, 'historyDuration': 1000 * 20 * 15},
-    {'color': 'green', 'source': greenGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 15,
+    {'color': 'green', 'source': greenGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 12,
         'collectRadius': maxRadius * 2, 'ticks': 8, 'debuff': .95, 'tintAmount': .04, 'tickDuration': 300, 'historyDuration': 1000 * 40 * 15},
-    {'color': 'blue', 'source': blueGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 20,
+    {'color': 'blue', 'source': blueGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 16,
         'collectRadius': maxRadius * 3, 'ticks': 16, 'debuff': .95, 'tintAmount': .03, 'tickDuration': 200, 'historyDuration': 1000 * 60 * 15}
 ];
 function checkToSpawnGems() {
@@ -16,8 +16,8 @@ function checkToSpawnGems() {
             gem.loot = null;
         }
         var theta = Math.random() * 2 * Math.PI, bestTile = null;
-        for (var dt = 0; dt < 2 * Math.PI; dt += Math.PI / 10) {
-            var coords = [currentPosition[0] + Math.cos(theta + dt) * gem.spawnRadius, currentPosition[0] + Math.sin(theta + dt) * gem.spawnRadius];
+        for (var dt = 0; dt < 2 * Math.PI; dt += Math.PI / 20) {
+            var coords = [currentPosition[0] + Math.cos(theta + dt) * gem.spawnRadius, currentPosition[1] + Math.sin(theta + dt) * gem.spawnRadius];
             var gridCoords = toGridCoords(coords);
             var tile = getTileData(gridCoords);
             if (!tile || areCoordsInGemHistory(coords, gem)) continue;

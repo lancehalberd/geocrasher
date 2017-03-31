@@ -33,7 +33,7 @@ function handleMapClick(x, y) {
                 if (!fightingMonster) {
                     fightingMonster = selectedTile.monster;
                     monsterAttackTime = now();
-                    playerAttackTime = now() + 500;
+                    playerAttackTime = now() + getAttackTime() / 2;
                 } else {
                     fightingMonster = null;
                 }
@@ -126,18 +126,41 @@ function drawMapScene() {
     if (now() < lootCollectedTime + 2000) {
         context.save();
         context.globalAlpha = Math.min(1, 2 - (now() - lootCollectedTime) / 1000);
-        context.font = Math.floor(3 * iconSize / 4) + 'px sans-serif';
+        var fontSize = Math.floor(3 * iconSize / 4);
+        context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
-        context.fillStyle = 'black'
-        context.fillText(coinsCollected.abbreviate() + 'x' + collectionBonus.toFixed(2), canvas.width / 2 + 2, canvas.height / 2 - 2 + 2);
-        context.fillStyle = 'gold'
-        context.fillText(coinsCollected.abbreviate() + 'x' + collectionBonus.toFixed(2), canvas.width / 2, canvas.height / 2 - 2);
+        embossText(context, coinsCollected.abbreviate() + 'x' + collectionBonus.toFixed(2), 'gold', 'black', canvas.width / 2, canvas.height / 2 - 2);
         context.textBaseline = 'top';
-        context.fillStyle = 'black'
-        context.fillText('+' + Math.round(coinsCollected * collectionBonus).abbreviate(), canvas.width / 2 + 2, canvas.height / 2 + 2 + 2);
-        context.fillStyle = 'gold'
-        context.fillText('+' + Math.round(coinsCollected * collectionBonus).abbreviate(), canvas.width / 2, canvas.height / 2 + 2);
+        embossText(context, '+' + Math.round(coinsCollected * collectionBonus).abbreviate(), 'gold', 'black', canvas.width / 2, canvas.height / 2 + 2);
+        var powerUpWidth = 0;
+        var localIconSize = iconSize;
+        var healthBonusText = '+' + (maxHealth - initialMaxHealth).abbreviate();
+        var attackBonusText = '+' + (attack - initialAttack).abbreviate();
+        var defenseBonusText = '+' + (defense - initialDefense).abbreviate();
+        if (maxHealth !== initialMaxHealth) powerUpWidth += localIconSize + context.measureText(healthBonusText).width;
+        if (attack !== initialAttack) powerUpWidth += localIconSize + context.measureText(attackBonusText).width;
+        if (defense !== initialDefense) powerUpWidth += localIconSize + context.measureText(defenseBonusText).width;
+        if (powerUpWidth > 0) {
+            var left = (canvas.width - powerUpWidth) / 2;
+            context.textAlign = 'left';
+            context.textBaseline = 'bottom';
+            var bottom = canvas.height / 2 - fontSize - 4;
+            if (maxHealth !== initialMaxHealth) {
+                drawImage(context, heartSource.image, heartSource, {'left':left, 'top': bottom - localIconSize, 'width': localIconSize, 'height': localIconSize});
+                embossText(context, healthBonusText, 'white', 'black', left + localIconSize, bottom);
+                left += localIconSize + context.measureText(healthBonusText).width;
+            }
+            if (attack !== initialAttack) {
+                drawImage(context, swordSource.image, swordSource, {'left':left, 'top': bottom - localIconSize, 'width': localIconSize, 'height': localIconSize});
+                embossText(context, attackBonusText, 'white', 'black', left + localIconSize, bottom);
+                left += localIconSize + context.measureText(attackBonusText).width;
+            }
+            if (defense !== initialDefense) {
+                drawImage(context, shieldSource.image, shieldSource, {'left':left, 'top': bottom - localIconSize, 'width': localIconSize, 'height': localIconSize});
+                embossText(context, defenseBonusText, 'white', 'black', left + localIconSize, bottom);
+            }
+        }
         context.restore();
     }
 }

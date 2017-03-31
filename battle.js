@@ -67,6 +67,9 @@ function drawStatsBox(x, y, level, name, currentHealth, maxHealth, attack, defen
     context.fillText(defense, centerX + localIconSize + padding, y);
     return rectangle;
 }
+function getAttackTime() {
+    return 800 - Math.min(400, (level - 1) * 50);
+}
 
 var monsterAttackTime, playerAttackTime;
 function updateBattle(time) {
@@ -79,7 +82,7 @@ function updateBattle(time) {
     if (time > monsterAttackTime) {
         var damage = calculateDamage(fightingMonster.attack, defense);
         currentHealth = Math.max(0, currentHealth - damage);
-        monsterAttackTime += 1000;
+        monsterAttackTime += getAttackTime();
         if (currentHealth <= 0) {
             fightingMonster = null;
             selectedTile = null;
@@ -88,7 +91,7 @@ function updateBattle(time) {
     if (time > playerAttackTime) {
         var damage = calculateDamage(attack, fightingMonster.defense);
         fightingMonster.currentHealth = Math.max(0, fightingMonster.currentHealth - damage);
-        playerAttackTime += 1000;
+        playerAttackTime += getAttackTime();
         if (fightingMonster.currentHealth <= 0) {
             updateGameState();
             fightingMonster.tile.monster = null;
@@ -100,8 +103,7 @@ function updateBattle(time) {
             fightingMonster = null;
             selectedTile = null;
             updateMap();
-            collectionBonus = .9;
-            coinsCollected = 0;
+            resetLootTotals();
             for (var loot of currentLootInMonsterRadius) {
                 if (lootInMonsterRadius.indexOf(loot) < 0) {
                     collectingLoot.push(loot);
@@ -112,7 +114,10 @@ function updateBattle(time) {
 }
 
 function calculateDamage(attack, defense) {
-    return Math.max(1, Math.ceil(attack * Math.pow(.5, defense / attack)));
+    // New formula, damage halves for every power of attack defense is.
+    return Math.max(1, Math.ceil(attack * Math.pow(.5, Math.max(0, Math.log(defense) / Math.log(attack)))));
+    // Old formula, damage halves for every factor of attack defense ise
+    //return Math.max(1, Math.ceil(attack * Math.pow(.5, defense / attack)));
 }
 
 var fightingMonster = null;

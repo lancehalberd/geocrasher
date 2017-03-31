@@ -1,7 +1,10 @@
 
 var activeMonsters = [];
 function makeMonster(tile) {
-    var powerFactor = Math.pow(3, tile.level - 1) * getTilePower(tile);
+    var totalPower = tile.level + getTilePower(tile) - 1;
+    var monsterLevel = Math.floor(totalPower);
+    var powerFactor = Math.pow(1.5, monsterLevel - 1) * (1 + (totalPower % 1) / 2);
+    //var powerFactor = Math.pow(3, tile.level - 1) * getTilePower(tile);
     var rollA = Random.range(-2, 2);
     var rollB = Random.range(-2, 2);
     var rollC = -rollA - rollB;
@@ -18,17 +21,17 @@ function makeMonster(tile) {
     } else if (defenseRoll > attackRoll && defenseRoll > defenseRoll) {
         name = 'Iron Shell';
     }
-    var health = Math.round(50 * powerFactor * healthRoll);
+    var health = Math.round(30 * powerFactor * healthRoll);
     var attack = Math.round(5 * powerFactor * attackRoll);
     var defense = Math.round(5 * powerFactor * defenseRoll);
     var minMonsterRadius = gridLength * 2 / 3;
     var maxMonsterRadius = gridLength * 4 / 3;
     return {
-        'level': tile.level, 'name': name,
+        'level': monsterLevel, 'name': name,
         'currentHealth': health,
         'maxHealth': health, 'attack': attack, 'defense': defense,
         'source': source,
-        'experience': Math.round(powerFactor * 2),
+        'experience': Math.round(powerFactor * 3),
         'radius': minMonsterRadius + (maxMonsterRadius - minMonsterRadius) * Math.random()
     };
 }

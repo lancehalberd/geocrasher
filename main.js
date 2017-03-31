@@ -150,12 +150,12 @@ function exhaustTile(tile) {
     tile.exhaustCounter = 0;
 }
 function getTilePower(tile) {
-    var power = 1 + ifdefor(levelSums[1], 0) / 100;
+    var power = 1 + ifdefor(levelSums[1], 0) / 30 + tile.level / 5;
     for (var sideKey of ['-1x0', '1x0', '0x-1', '0x1']) {
-        if (tile.neighbors[sideKey]) power += (tile.neighbors[sideKey].level) / 10;
+        if (tile.neighbors[sideKey]) power += (tile.neighbors[sideKey].level) / 5;
     }
     for (var cornerKey of ['-1x-1', '-1x1', '1x-1', '1x1']) {
-        if (tile.neighbors[cornerKey]) power += (tile.neighbors[cornerKey].level) / 20;
+        if (tile.neighbors[cornerKey]) power += (tile.neighbors[cornerKey].level) / 10;
     }
     return power;
 }

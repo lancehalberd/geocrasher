@@ -34,7 +34,7 @@ function checkToGeneratePowerUp(tile) {
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.
     var chanceToSpawn = .5 * ((5 - activePowerups.length) / 5) * ((maxLevel + 1 - tile.level) / (maxLevel));
     if (Math.random() > chanceToSpawn) return;
-    var value = Math.ceil((.1 + Math.random()) * getTilePower(tile) * Math.pow(1.5, tile.level - 1));
+    var value = Math.ceil((.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.4, tile.level - 1));
     var lootMethod = Random.element(
         [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
@@ -73,15 +73,21 @@ function onObtainDefenseLoot() {
     updatePlayerStats();
     showStats();
 }
-
 var lootInRadius = [];
 var collectingLoot = [];
-var coinsCollected, collectionBonus;
+var coinsCollected, collectionBonus, initialMaxHealth, initialAttack, initialDefense;
 var lootCollectedTime = 0;
-function collectLoot() {
-    if (collectingLoot.length) return;
+function resetLootTotals() {
     collectionBonus = .9;
     coinsCollected = 0;
+    initialMaxHealth = maxHealth;
+    initialAttack = attack;
+    initialDefense = defense;
+}
+
+function collectLoot() {
+    if (collectingLoot.length) return;
+    resetLootTotals()
     radius = minRadius;
     for (var loot of lootInRadius) collectingLoot.push(loot);
 }

@@ -7,8 +7,8 @@ function newGameData() {
     return {
         'radius': minRadius, 'coins': 10, 'level': 1,
         'experience': 0,
-        'currentHealth': 50,
-        'healthBonus': 50,
+        'currentHealth': 100,
+        'healthBonus': 100,
         'attackBonus': 5,
         'defenseBonus': 5,
         'tileData': []
