@@ -9,8 +9,8 @@ function newGameData() {
         'experience': 0,
         'currentHealth': 100,
         'healthBonus': 100,
-        'attackBonus': 5,
-        'defenseBonus': 5,
+        'attackBonus': 8,
+        'defenseBonus': 6,
         'tileData': []
     };
 }

@@ -102,25 +102,25 @@ function drawGemIndicators() {
         var normal = [dx / distance, -dy / distance];
         context.beginPath();
         context.moveTo(indicatorScreenCoords[0], indicatorScreenCoords[1]);
-        context.lineTo(indicatorScreenCoords[0] - 18 * normal[0] + 30 * normal[1], indicatorScreenCoords[1] - 20 * normal[1] - 30 * normal[0]);
-        context.lineTo(indicatorScreenCoords[0] - 18 * normal[0] - 30 * normal[1], indicatorScreenCoords[1] - 20 * normal[1] + 30 * normal[0]);
+        context.lineTo(indicatorScreenCoords[0] - 8 * normal[0] + 20 * normal[1], indicatorScreenCoords[1] - 8 * normal[1] - 20 * normal[0]);
+        context.lineTo(indicatorScreenCoords[0] - 8 * normal[0] - 20 * normal[1], indicatorScreenCoords[1] - 8 * normal[1] + 20 * normal[0]);
         context.closePath();
         context.fill();
         context.stroke();
         if (distance >= 10 * gridLength) {
             context.beginPath();
-            context.moveTo(indicatorScreenCoords[0] - 25 * normal[0] , indicatorScreenCoords[1] - 25 * normal[1]);
-            context.lineTo(indicatorScreenCoords[0] - 37 * normal[0] + 20 * normal[1], indicatorScreenCoords[1] - 37 * normal[1] - 20 * normal[0]);
-            context.lineTo(indicatorScreenCoords[0] - 37 * normal[0] - 20 * normal[1], indicatorScreenCoords[1] - 37 * normal[1] + 20 * normal[0]);
+            context.moveTo(indicatorScreenCoords[0] - 15 * normal[0] , indicatorScreenCoords[1] - 15 * normal[1]);
+            context.lineTo(indicatorScreenCoords[0] - 20 * normal[0] + 18 * normal[1], indicatorScreenCoords[1] - 20 * normal[1] - 18 * normal[0]);
+            context.lineTo(indicatorScreenCoords[0] - 20 * normal[0] - 18 * normal[1], indicatorScreenCoords[1] - 20 * normal[1] + 18 * normal[0]);
             context.closePath();
             context.fill();
             context.stroke();
         }
         if (distance >= 15 * gridLength) {
             context.beginPath();
-            context.moveTo(indicatorScreenCoords[0] - 44 * normal[0] , indicatorScreenCoords[1] - 44 * normal[1]);
-            context.lineTo(indicatorScreenCoords[0] - 50 * normal[0] + 10 * normal[1], indicatorScreenCoords[1] - 50 * normal[1] - 10 * normal[0]);
-            context.lineTo(indicatorScreenCoords[0] - 50 * normal[0] - 10 * normal[1], indicatorScreenCoords[1] - 50 * normal[1] + 10 * normal[0]);
+            context.moveTo(indicatorScreenCoords[0] - 27 * normal[0] , indicatorScreenCoords[1] - 27 * normal[1]);
+            context.lineTo(indicatorScreenCoords[0] - 30 * normal[0] + 15 * normal[1], indicatorScreenCoords[1] - 30 * normal[1] - 15 * normal[0]);
+            context.lineTo(indicatorScreenCoords[0] - 30 * normal[0] - 15 * normal[1], indicatorScreenCoords[1] - 30 * normal[1] + 15 * normal[0]);
             context.closePath();
             context.fill();
             context.stroke();
