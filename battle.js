@@ -15,12 +15,12 @@ function experienceForNextLevel() {
     return Math.round(10 * level * Math.pow(1.3, level - 1));
 }
 
-function getLevelBonus() {
+function getLevelBonus(level) {
     return Math.pow(1.1, level - 1);
 }
 
 function updatePlayerStats() {
-    var levelBonus = getLevelBonus();
+    var levelBonus = getLevelBonus(level);
     maxHealth = Math.round(healthBonus * levelBonus);
     attack = Math.round(attackBonus * levelBonus);
     defense = Math.round(defenseBonus * levelBonus);

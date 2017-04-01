@@ -70,6 +70,9 @@ var shoeSource = {'image': requireImage('gfx/shoe.png'), 'top': 0, 'left': 0, 'w
 // Icon by Chris Brewer originally created for Treasure Tycoon
 var upArrows = {'image': requireImage('gfx/upArrows.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
 
+// Trash icon from: https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Trash_font_awesome.svg/480px-Trash_font_awesome.svg.png
+var trashSource = {'image': requireImage('gfx/trash.png'), 'left': 0, 'top': 0, 'width': 480, 'height': 480};
+
 // Image by Noah originally created for Lazy RPG
 var turtleSource = {'image': requireImage('gfx/monsters/turtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
 

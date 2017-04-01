@@ -5,7 +5,9 @@ if (!saveSlots) {
 
 function newGameData() {
     return {
-        'radius': minRadius, 'coins': 10, 'level': 1,
+        'radius': minRadius,
+        'coins': 10,
+        'level': 1,
         'experience': 0,
         'currentHealth': 100,
         'healthBonus': 100,

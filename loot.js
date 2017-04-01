@@ -55,7 +55,7 @@ function makeHealthLoot(value) {
 function onObtainHealthLoot() {
     healthBonus += this.value;
     updatePlayerStats();
-    currentHealth = Math.min(maxHealth, currentHealth + Math.round(2 * this.value * getLevelBonus()));
+    currentHealth = Math.min(maxHealth, currentHealth + Math.round(2 * this.value * getLevelBonus(level)));
     showStats();
 }
 function makeAttackLoot(value) {
