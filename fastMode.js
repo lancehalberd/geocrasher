@@ -1,7 +1,7 @@
 var fastMode = false, startingFastMode = false, endFastModeTime = 0, minThreshold = 100, maxThreshold = 5000;
 
 function updateFastMode(millisecondsBetweenUpdates) {
-    if (currentScene !== 'map') return;
+    if (currentScene !== 'map' || testMode) return;
     if (!startingFastMode && !fastMode) {
         if (millisecondsBetweenUpdates <= maxThreshold) startingFastMode = true;
         return;

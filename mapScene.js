@@ -427,8 +427,11 @@ function drawGrid() {
         draws++;
         var rectangle = tileData.rectangle;
         var source = tileData.monster.source;
-        var targetWidth = Math.min(rectangle.width * 2 / 3, 128);
-        var targetHeight = Math.min(rectangle.height * 2 / 3, 128);
+        var monsterScale = .8;
+        if (monster.maxHealth < maxHealth / 2 && monster.attack < attack && monster.defense < defense) monsterScale =  .6;
+        else if (monster.maxHealth > maxHealth / 2 && monster.attack > attack && monster.defense > defense) monsterScale = 1;
+        var targetWidth = Math.round(Math.min(rectangle.width * .9, 128) * monsterScale);
+        var targetHeight = Math.round(Math.min(rectangle.height * .9, 128) * monsterScale);
         var target = {
             'left': rectangle.left + (rectangle.width - targetWidth) / 2,
             'top': rectangle.top + (rectangle.height - targetHeight) / 2,
