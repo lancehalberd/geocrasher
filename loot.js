@@ -29,6 +29,7 @@ function generateLootForTile(tile) {
 
 var activePowerups = [];
 function checkToGeneratePowerUp(tile) {
+    if (fastMode) return;
     // Monsters cannot spawn in shallows.
     if (tile.level < 1) return;
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.
@@ -101,13 +102,13 @@ function isLootInRadius(loot) {
 function updateLootCollection() {
     for (var i = 0; i < collectingLoot.length; i++) {
         // Pull coins towards the player's position, the front of the queue quicker than the rest.
-        var factor = Math.min(10, (3 * i + 1));
+        var factor = Math.min(10, fastMode ? 2 : (3 * i + 1));
         collectingLoot[i].x = collectingLoot[i].tx = (currentPosition[0] * 2 + collectingLoot[i].tx * factor) / (factor + 2);
         collectingLoot[i].y = collectingLoot[i].ty = (currentPosition[1] * 2 + collectingLoot[i].ty * factor) / (factor + 2);
     }
     // Collect all loot within range.
     for (var i = 0; i < collectingLoot.length; i++) {
-        if (getDistance(currentPosition, [collectingLoot[i].x, collectingLoot[i].y]) < gridLength / 20) {
+        if (getDistance(currentPosition, [collectingLoot[i].x, collectingLoot[i].y]) < (fastMode ? gridLength / 10 : gridLength / 20)) {
             obtainloot(collectingLoot[i]);
             collectingLoot.splice(i--, 1);
         }
@@ -121,7 +122,9 @@ function updateLootCollection() {
 
 function obtainloot(loot) {
     lootCollectedTime = now();
-    if (collectionBonus < 2) collectionBonus += .1;
+    if (fastMode) {
+        collectionBonus = 1;
+    } else if (collectionBonus < 2) collectionBonus += .1;
     else collectionBonus += .05;
     var tile = loot.tile;
     var powerupIndex = activePowerups.indexOf(loot);

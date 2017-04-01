@@ -8,6 +8,7 @@ var gemData = [
         'collectRadius': maxRadius * 3, 'ticks': 16, 'debuff': .95, 'tintAmount': .03, 'tickDuration': 200, 'historyDuration': 1000 * 60 * 15}
 ];
 function checkToSpawnGems() {
+    if (fastMode) return;
     for (var gem of gemData) {
         if (gem.loot) {
             if (getDistance([gem.loot.x, gem.loot.y], currentPosition) < gem.spawnRadius + gridLength * 5) continue;
@@ -28,6 +29,14 @@ function checkToSpawnGems() {
         gem.loot =  {'treasure': $.extend({'gem': gem, 'scale': gem.scale, 'onObtain': onObtainGem}, gem.source),
             'tile': bestTile, 'x': x, 'y': y, 'tx': x, 'ty': y};
         bestTile.loot.push(gem.loot);
+    }
+}
+function clearAllGems() {
+    for (var gem of gemData) {
+        if (!gem.loot) continue;
+        var tile = gem.loot.tile;
+        tile.loot.splice(tile.loot.indexOf(gem.loot), 1);
+        gem.loot = null;
     }
 }
 

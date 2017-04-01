@@ -45,6 +45,8 @@ var oceanSource = {'image': oceanImage, 'top': 0, 'left': 0, 'width': 64, 'heigh
 // Modified from https://pixabay.com/en/seamless-texture-texture-ice-cold-219909/
 var iceSource = {'image': requireImage('gfx/map/ice.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
 
+// Might use this for a new round of tiles: http://alucus.deviantart.com/art/Pallet-town-tiles-157214973
+
 
 // http://opengameart.org/content/treasure-chests
 var chestSource = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};

@@ -1,4 +1,4 @@
-var currentPosition, currentGridCoords, clickedCoords, lastGoalPoint, selectedTile = null;
+var currentPosition, currentGridCoords, clickedCoords, lastGoalPoint, lastGoalTime, selectedTile = null;
 var canvas = $('canvas')[0];
 var context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
@@ -30,8 +30,11 @@ function mainLoop() {
             }
             if (!origin) origin = currentPosition;
             var target = [origin[0], origin[1]];
-            if (selectedTile) target = [selectedTile.centerX, selectedTile.centerY];
-            else {
+            if (fastMode) {
+                target = currentPosition;
+            } else if (selectedTile) {
+                target = [selectedTile.centerX, selectedTile.centerY];
+            } else {
                 screenCoords = project(currentPosition);
                 if (screenCoords[0] < 120) target[0] = currentPosition[0] + (canvas.width / 2 - 120) / actualScale;
                 if (screenCoords[0] > canvas.width - 120) target[0] = currentPosition[0] - (canvas.width / 2 - 120) / actualScale;
@@ -163,10 +166,18 @@ var activeTiles = [];
 var visibleTiles = [];
 function setCurrentPosition(realCoords) {
     currentPosition = realCoords;
-    if (!lastGoalPoint) lastGoalPoint = currentPosition;
-    else if (getDistance(currentPosition, lastGoalPoint) > gridLength / 2) {
+    if (!lastGoalPoint) {
         lastGoalPoint = currentPosition;
+        lastGoalTime = now();
+    } else if (getDistance(currentPosition, lastGoalPoint) > gridLength / 2) {
+        lastGoalPoint = currentPosition;
+        updateFastMode(now() - lastGoalTime);
+        lastGoalTime = now();
         updateGameState();
+    }
+    if (fastMode && now() > endFastModeTime) {
+        fastMode = startingFastMode = false;
+        checkToSpawnGems();
     }
     // Only apply updates for moving if we are displaying the map scene.
     if (currentScene !== 'map') return;

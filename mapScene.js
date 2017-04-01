@@ -7,12 +7,20 @@ function updateMap() {
         updateLootCollection();
     }
     for (var tileData of activeTiles) {
-        for (var loot of tileData.loot) {
+        for (var i = 0; i < tileData.loot.length; i++) {
+            var loot = tileData.loot[i];
+            // Remove all non coin loot during fastMode.
+            if (fastMode && loot.treasure.type !== 'coins') {
+                tileData.loot.splice(i--, 1);
+                continue;
+            }
             loot.x = (loot.x + loot.tx) / 2;
             loot.y = (loot.y + loot.ty) / 2;
             loot.inRadius = isLootInRadius(loot);
-            loot.inMonsterRadius = !loot.treasure.gem && isPointInMonsterRadius(loot.x, loot.y);
-            if (loot.inRadius && !loot.inMonsterRadius) {
+            loot.inMonsterRadius = !fastMode && !loot.treasure.gem && isPointInMonsterRadius(loot.x, loot.y);
+            if (fastMode && loot.inRadius) {
+                if (collectingLoot.indexOf(loot) < 0) collectingLoot.push(loot);
+            } else if (loot.inRadius && !loot.inMonsterRadius) {
                 lootInRadius.push(loot);
             }
             if (loot.inMonsterRadius) {
@@ -23,6 +31,7 @@ function updateMap() {
     if (fightingMonster) updateBattle(now());
 }
 function handleMapClick(x, y) {
+    if (fastMode) return;
     if (!selectedTile && lootInRadius.length && collectingLoot.length === 0 && isPointInRectObject(x, y, collectCoinsButton.target)) {
         collectLoot();
         return;
@@ -67,7 +76,7 @@ function drawMapScene() {
         context.beginPath();
         context.arc(point[0], point[1], 8, 0, 2 * Math.PI);
         context.fill();
-        if (collectingLoot.length === 0) {
+        if (fastMode || collectingLoot.length === 0) {
             context.save();
             context.globalAlpha = .3;
             context.strokeStyle = 'gold';
@@ -94,7 +103,7 @@ function drawMapScene() {
         drawUpgradeButton(canUpgrade, costToUpgrade(selectedTile));
     }
     var hideStatsIn = hideStatsAt - now();
-    if (hideStatsIn > 0 || !playerStatsRectangle) {
+    if (!fastMode && (hideStatsIn > 0 || !playerStatsRectangle)) {
         context.save();
         context.globalAlpha = Math.max(0, Math.min(1, hideStatsIn / 1000));
         playerStatsRectangle = drawStatsBox(5, 5, level, 'Hero', currentHealth, maxHealth, attack, defense, experience, experienceForNextLevel());
@@ -117,13 +126,25 @@ function drawMapScene() {
         drawStatsBox(x, y, monster.level, monster.name, monster.currentHealth, monster.maxHealth, monster.attack, monster.defense);
     }
     // collect coins button is replaced by 'Fight!' button when a monster is selected.
-    if (!selectedTile) {
-        if (collectingLoot.length === 0) drawCollectCoinsButton();
-    } else if (selectedTile.monster) drawFightFleeButton();
-    drawGemIndicators();
+    if (!fastMode) {
+        if (!selectedTile) {
+            if (collectingLoot.length === 0) drawCollectCoinsButton();
+        } else if (selectedTile.monster) drawFightFleeButton();
+        drawGemIndicators();
+    } else {
+        var fontSize = Math.floor(3 * localIconSize / 4);
+        context.font = fontSize + 'px sans-serif';
+        context.textAlign = 'center';
+        context.textBaseline = 'bottom';
+        var text = 'Fast Mode';
+        for (var i = 0; i < (endFastModeTime - now()) / 2000; i++) {
+            text = '-' + text + '-';
+        }
+        embossText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
+    }
 
     drawCoinsIndicator();
-    if (now() < lootCollectedTime + 2000) {
+    if (now() < lootCollectedTime + 2000 || (fastMode && coinsCollected > 0)) {
         context.save();
         context.globalAlpha = Math.min(1, 2 - (now() - lootCollectedTime) / 1000);
         var fontSize = Math.floor(3 * iconSize / 4);
