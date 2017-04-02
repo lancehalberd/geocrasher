@@ -15,25 +15,27 @@ function onObtainCoins() {
     coinsCollected += this.value;
 }
 
-function generateLootForTile(tile) {
-    var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * Math.pow(4, tile.level));
-    var coinDrops = generateLootCoins(coins, 4 - tile.loot.length);
-    var realCoords = toRealCoords([tile.x, tile.y]);
-    for (var coinDrop of coinDrops) {
-        tile.loot.push({'treasure': coinDrop, 'tile': tile,
-            'x': realCoords[0] + gridLength / 2, 'y': realCoords[1] + gridLength / 2,
-            'tx': realCoords[0] + Math.random() * gridLength, 'ty': realCoords[1] + Math.random() * gridLength});
+function checkToGenerateLootForTile(tile) {
+    if (tile.loot.length < 3) {
+        var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * Math.pow(4, tile.level) / 3);
+        var coinDrops = generateLootCoins(coins, 1);
+        var realCoords = toRealCoords([tile.x, tile.y]);
+        for (var coinDrop of coinDrops) {
+            tile.loot.push({'treasure': coinDrop, 'tile': tile,
+                'x': realCoords[0] + gridLength / 2, 'y': realCoords[1] + gridLength / 2,
+                'tx': realCoords[0] + Math.random() * gridLength, 'ty': realCoords[1] + Math.random() * gridLength});
+        }
     }
     checkToGeneratePowerUp(tile);
 }
 
 var activePowerups = [];
 function checkToGeneratePowerUp(tile) {
-    if (fastMode) return;
+    if (fastMode || tile.powerup) return;
     // Monsters cannot spawn in shallows.
     if (tile.level < 1) return;
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.
-    var chanceToSpawn = .5 * ((5 - activePowerups.length) / 5) * ((maxLevel + 1 - tile.level) / (maxLevel));
+    var chanceToSpawn = .1 * ((4 - activePowerups.length) / 4) * ((maxLevel + 1 - tile.level) / (maxLevel));
     if (Math.random() > chanceToSpawn) return;
     var value = Math.ceil((.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.3, tile.level - 1));
     var lootMethod = Random.element(
@@ -46,6 +48,7 @@ function checkToGeneratePowerUp(tile) {
         'tx': tile.centerX + (Math.random() - 0.5) * gridLength,
         'ty': tile.centerY + (Math.random() - 0.5) * gridLength};
     tile.loot.push(loot);
+    tile.powerup = loot;
     activePowerups.push(loot);
 }
 
@@ -127,6 +130,9 @@ function obtainloot(loot) {
     } else if (collectionBonus < 2) collectionBonus += .1;
     else collectionBonus += .05;
     var tile = loot.tile;
+    if (tile.powerup === loot) {
+        tile.powerup = null;
+    }
     var powerupIndex = activePowerups.indexOf(loot);
     if (powerupIndex >= 0) {
         activePowerups.splice(powerupIndex, 1);

@@ -248,7 +248,7 @@ function upgradeTile(tile) {
         levelSums[i] = ifdefor(levelSums[i], 0) + 1;
     }
     tile.exhausted = false;
-    generateLootForTile(tile);
+    checkToGenerateLootForTile(tile);
     checkToGenerateMonster(tile);
     selectedTile = null;
     saveGame();
@@ -377,7 +377,8 @@ function drawGrid() {
     for (var tileData of visibleTiles) {
         var rectangle = getGridRectangle([tileData.x, tileData.y]);
         tileData.rectangle = rectangle;
-        if (!rectanglesOverlap(rectangle, canvasRectangle)) continue;
+        tileData.visible = rectanglesOverlap(rectangle, canvasRectangle);
+        if (!tileData.visible) continue;
         draws++;
         if (!tileData.canvas || tileData.scale !== actualScale) createOrUpdateTileCanvas(tileData);
         context.drawImage(tileData.canvas, 0, 0, tileData.canvas.width, tileData.canvas.height,
@@ -401,29 +402,21 @@ function drawGrid() {
         }
     }
     for (var tileData of activeTiles) {
-        if (!rectanglesOverlap(tileData.rectangle, canvasRectangle)) continue;
+        if (!tileData.visible) continue;
         for (var loot of tileData.loot) {
             draws++;
-            var center = project([loot.x, loot.y]);
-            var targetWidth = loot.treasure.width * loot.treasure.scale * coinScale;
-            var targetHeight = loot.treasure.height * loot.treasure.scale * coinScale;
-            var target = {
-                'left': Math.round(center[0] - targetWidth / 2),
-                'top': Math.round(center[1] - targetHeight / 2),
-                'width': targetWidth, 'height': targetHeight
-            };
-            if (loot.inMonsterRadius || loot.inRadius) {
-                var tintColor = loot.inMonsterRadius ? 'red' : 'gold';
-                drawTintedImage(context, loot.treasure.image, tintColor, .25 + Math.cos(now() / 200) * .25, loot.treasure, target);
-            } else {
-                drawImage(context, loot.treasure.image, loot.treasure, target);
-            }
+            if (loot !== tileData.powerup && loot !== tileData.gem) drawLoot(loot);
         }
+    }
+    for (var tileData of activeTiles) {
+        if (!tileData.visible) continue;
+        if (tileData.powerup) drawLoot(tileData.powerup);
+        if (tileData.gem) drawLoot(tileData.gem);
     }
     for (var tileData of activeTiles) {
         var monster = tileData.monster;
         if (!monster) continue;
-        if (!rectanglesOverlap(tileData.rectangle, canvasRectangle)) continue;
+        if (!tileData.visible) continue;
         draws++;
         var rectangle = tileData.rectangle;
         var source = tileData.monster.source;
@@ -499,6 +492,22 @@ function drawGrid() {
         context.textAlign = 'center';
         context.testBaseline = 'top';
         embossText(context, draws, 'white', 'black', canvas.width / 2, 5);
+    }
+}
+function drawLoot(loot) {
+    var center = project([loot.x, loot.y]);
+    var targetWidth = loot.treasure.width * loot.treasure.scale * coinScale;
+    var targetHeight = loot.treasure.height * loot.treasure.scale * coinScale;
+    var target = {
+        'left': Math.round(center[0] - targetWidth / 2),
+        'top': Math.round(center[1] - targetHeight / 2),
+        'width': targetWidth, 'height': targetHeight
+    };
+    if (loot.inMonsterRadius || loot.inRadius) {
+        var tintColor = loot.inMonsterRadius ? 'red' : 'gold';
+        drawTintedImage(context, loot.treasure.image, tintColor, .25 + Math.cos(now() / 200) * .25, loot.treasure, target);
+    } else {
+        drawImage(context, loot.treasure.image, loot.treasure, target);
     }
 }
 

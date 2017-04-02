@@ -142,9 +142,11 @@ function updateGameState() {
             tile.exhaustCounter++;
             if (tile.exhaustCounter >= tile.exhausted) {
                 tile.exhausted = false;
-                generateLootForTile(tile);
                 checkToGenerateMonster(tile);
             }
+        }
+        if (!tile.exhausted) {
+            checkToGenerateLootForTile(tile);
         }
     }
     checkToSpawnGems();
@@ -194,7 +196,7 @@ function setCurrentPosition(realCoords) {
             if (!gridData[tileData.key]) {
                 gridData[tileData.key] = tileData;
                 initializeTile(tileData);
-                generateLootForTile(tileData);
+                checkToGenerateLootForTile(tileData);
                 saveGame();
             }
         }
@@ -220,7 +222,7 @@ function setCurrentPosition(realCoords) {
                 // If a tile becomes active with no loot and isn't exhausted, make it spawn loot.
                 if (tileData.exhausted) continue;
                 if (tileData.loot.length) continue;
-                generateLootForTile(tileData);
+                checkToGenerateLootForTile(tileData);
                 checkToGenerateMonster(tileData);
             }
         }
