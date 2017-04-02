@@ -83,12 +83,10 @@ function watchError() {
     $('body').append('<div>There was an error getting position!</div>');
 }
 var iconSize = 32;
-var coinScale = 1;
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     iconSize = 16 * Math.floor(Math.min(canvas.width / 6, canvas.height / 6) / 16);
-    coinScale = iconSize / 32;
     drawScene();
 }
 $( window ).resize(resizeCanvas);
@@ -166,7 +164,7 @@ function getTilePower(tile) {
     return power;
 }
 var activeTiles = [];
-var visibleTiles = [];
+var selectableTiles = [];
 function setCurrentPosition(realCoords) {
     currentPosition = realCoords;
     if (!lastGoalPoint) {
@@ -203,7 +201,7 @@ function setCurrentPosition(realCoords) {
     }
     var oldActiveTiles = activeTiles;
     activeTiles = [];
-    visibleTiles = [];
+    selectableTiles = [];
     activeMonsters = [];
     activePowerups = [];
     for (var y = currentGridCoords[1] - 4; y <= currentGridCoords[1] + 4; y++) {
@@ -211,6 +209,10 @@ function setCurrentPosition(realCoords) {
             var key = x + 'x' + y;
             if (gridData[key]) {
                 var tileData = gridData[key];
+                if (x >= currentGridCoords[0] - 3 && x <= currentGridCoords[0] + 3
+                    && y >= currentGridCoords[1] - 3 && y <= currentGridCoords[1] + 3) {
+                    selectableTiles.push(tileData);
+                }
                 activeTiles.push(tileData);
                 if (tileData.monster) activeMonsters.push(tileData.monster);
                 for (var loot of tileData.loot) {
@@ -218,7 +220,6 @@ function setCurrentPosition(realCoords) {
                         activePowerups.push(loot);
                     }
                 }
-                visibleTiles.push(tileData);
                 // If a tile becomes active with no loot and isn't exhausted, make it spawn loot.
                 if (tileData.exhausted) continue;
                 if (tileData.loot.length) continue;
@@ -227,9 +228,9 @@ function setCurrentPosition(realCoords) {
             }
         }
     }
-    if (selectedTile && activeTiles.indexOf(selectedTile) < 0) selectedTile = null;
+    if (selectedTile && selectableTiles.indexOf(selectedTile) < 0) selectedTile = null;
     for (var tile of oldActiveTiles) {
-        if (activeTiles.indexOf(tile) < 0 )delete tile.canvas;
+        if (activeTiles.indexOf(tile) < 0 ) delete tile.canvas;
     }
 }
 function initializeTile(tileData) {

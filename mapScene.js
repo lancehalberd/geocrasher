@@ -58,7 +58,7 @@ function handleMapClick(x, y) {
     if (tileIsExplored(clickedGridCoords) && !fightingMonster) {
         if (!selectedTile || selectedTile.x !== clickedGridCoords[0] || selectedTile.y !== clickedGridCoords[1]){
             var clickedTile = getTileData(clickedGridCoords);
-            if (activeTiles.indexOf(clickedTile) >= 0) selectedTile = clickedTile;
+            if (selectableTiles.indexOf(clickedTile) >= 0) selectedTile = clickedTile;
         } else {
             selectedTile = null;
         }
@@ -374,7 +374,7 @@ function drawGrid() {
     context.restore();
 
     var draws = 0;
-    for (var tileData of visibleTiles) {
+    for (var tileData of activeTiles) {
         var rectangle = getGridRectangle([tileData.x, tileData.y]);
         tileData.rectangle = rectangle;
         tileData.visible = rectanglesOverlap(rectangle, canvasRectangle);
@@ -496,8 +496,9 @@ function drawGrid() {
 }
 function drawLoot(loot) {
     var center = project([loot.x, loot.y]);
-    var targetWidth = loot.treasure.width * loot.treasure.scale * coinScale;
-    var targetHeight = loot.treasure.height * loot.treasure.scale * coinScale;
+    var lootScale = gridLength * actualScale / 64;
+    var targetWidth = loot.treasure.width * loot.treasure.scale * lootScale;
+    var targetHeight = loot.treasure.height * loot.treasure.scale * lootScale;
     var target = {
         'left': Math.round(center[0] - targetWidth / 2),
         'top': Math.round(center[1] - targetHeight / 2),

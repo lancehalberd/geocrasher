@@ -80,8 +80,7 @@ function drawTitleScene() {
         context.textAlign = 'left';
         context.textBaseline = 'middle';
         context.fillStyle = 'black';
-        var defaults = newGameData();
-        var level = fixNumber(saveSlot.level, defaults.level).abbreviate();
+        var level = saveSlot.level.abbreviate();
         var levelBonus = getLevelBonus(level);
         // Level
         var levelText = 'Lv ' + level;
@@ -90,21 +89,21 @@ function drawTitleScene() {
         var middleLeft = statsLeft + Math.ceil(statsWidth / 2);
         drawImage(context, heartSource.image, heartSource, {'left': middleLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
         context.fillStyle = 'red';
-        context.fillText(Math.round(fixNumber(saveSlot.healthBonus, defaults.healthBonus) * levelBonus), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
+        context.fillText(Math.round(saveSlot.healthBonus* levelBonus), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
         statsTop += localIconSize + statsPadding;
 
         context.fillStyle = 'black';
         // Attack
         drawImage(context, swordSource.image, swordSource, {'left': statsLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
-        context.fillText(Math.round(fixNumber(saveSlot.attackBonus, defaults.attackBonus) * levelBonus), statsLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
+        context.fillText(Math.round(saveSlot.attackBonus * levelBonus), statsLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
         // Defense
         drawImage(context, shieldSource.image, shieldSource, {'left': middleLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
-        context.fillText(Math.round(fixNumber(saveSlot.defenseBonus, defaults.defenseBonus) * levelBonus), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2) );
+        context.fillText(Math.round(saveSlot.defenseBonus * levelBonus), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2) );
         statsTop += localIconSize + statsPadding;
 
         // Coins
         context.fillStyle = 'gold';
-        var coinsText = fixNumber(saveSlot.coins).abbreviate();
+        var coinsText = saveSlot.coins.abbreviate();
         var totalCoinsWidth = localIconSize + context.measureText(coinsText).width;
         var coinsLeft = statsLeft + Math.ceil(statsWidth / 4); //Math.floor(statsLeft + (statsWidth - totalCoinsWidth) / 2);
         drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': coinsLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});

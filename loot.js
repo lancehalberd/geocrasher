@@ -53,7 +53,7 @@ function checkToGeneratePowerUp(tile) {
 }
 
 function makeHealthLoot(value) {
-    return $.extend({'value': 4 * value, 'type': 'health', 'scale': .4, 'onObtain': onObtainHealthLoot}, heartSource);
+    return $.extend({'value': 4 * value, 'type': 'health', 'scale': .5, 'onObtain': onObtainHealthLoot}, heartSource);
 }
 function onObtainHealthLoot() {
     healthBonus += this.value;
@@ -62,7 +62,7 @@ function onObtainHealthLoot() {
     showStats();
 }
 function makeAttackLoot(value) {
-    return $.extend({'value': value, 'type': 'attack', 'scale': .5, 'onObtain': onObtainAttackLoot}, swordSource);
+    return $.extend({'value': value, 'type': 'attack', 'scale': .75, 'onObtain': onObtainAttackLoot}, swordSource);
 }
 function onObtainAttackLoot() {
     attackBonus += this.value;
@@ -70,7 +70,7 @@ function onObtainAttackLoot() {
     showStats();
 }
 function makeDefenseLoot(value) {
-    return $.extend({'value': value, 'type': 'defense', 'scale': .5, 'onObtain': onObtainDefenseLoot}, shieldSource);
+    return $.extend({'value': value, 'type': 'defense', 'scale': .75, 'onObtain': onObtainDefenseLoot}, shieldSource);
 }
 function onObtainDefenseLoot() {
     defenseBonus += this.value;

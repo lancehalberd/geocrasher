@@ -40,12 +40,11 @@ function checkToGenerateMonster(tile) {
     // Monsters cannot spawn in shallows.
     if (tile.level < 1) return;
     // Prevent monster from spawning within 2 tiles of another monster
-    for (var otherTile of activeTiles) {
-        if (!otherTile.monster) continue;
-        if (getDistance([tile.x, tile.y], [otherTile.x, otherTile.y]) <= 2) return;
+    for (var otherMonster of activeMonsters) {
+        if (getDistance([tile.x, tile.y], [otherMonster.tile.x, otherMonster.tile.y]) <= 2) return;
     }
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.
-    var chanceToSpawn = .5 * ((10 - activeMonsters.length) / 10) * ((maxLevel + 1 - tile.level) / (maxLevel));
+    var chanceToSpawn = .5 * ((8 - activeMonsters.length) / 8) * ((maxLevel + 1 - tile.level) / (maxLevel));
     if (Math.random() > chanceToSpawn) return;
     tile.monster = makeMonster(tile);
     tile.monster.tile = tile;
