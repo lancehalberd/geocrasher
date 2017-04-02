@@ -29,6 +29,7 @@ function checkToSpawnGems() {
         gem.loot =  {'treasure': $.extend({'gem': gem, 'scale': gem.scale, 'onObtain': onObtainGem}, gem.source),
             'tile': bestTile, 'x': x, 'y': y, 'tx': x, 'ty': y};
         bestTile.loot.push(gem.loot);
+        bestTile.gem = gem.loot;
     }
 }
 function clearAllGems() {

@@ -130,9 +130,8 @@ function obtainloot(loot) {
     } else if (collectionBonus < 2) collectionBonus += .1;
     else collectionBonus += .05;
     var tile = loot.tile;
-    if (tile.powerup === loot) {
-        tile.powerup = null;
-    }
+    if (tile.powerup === loot) tile.powerup = null;
+    if (tile.gem === loot) tile.gem = null;
     var powerupIndex = activePowerups.indexOf(loot);
     if (powerupIndex >= 0) {
         activePowerups.splice(powerupIndex, 1);
