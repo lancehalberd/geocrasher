@@ -146,7 +146,7 @@ function drawMapScene() {
     drawCoinsIndicator();
     if (now() < lootCollectedTime + 2000 || (fastMode && coinsCollected > 0)) {
         context.save();
-        context.globalAlpha = Math.min(1, 2 - (now() - lootCollectedTime) / 1000);
+        context.globalAlpha = fastMode ? 1 : Math.min(1, 2 - (now() - lootCollectedTime) / 1000);
         var fontSize = Math.floor(3 * iconSize / 4);
         context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';

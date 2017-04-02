@@ -26,7 +26,7 @@ function mainLoop() {
                 setCurrentPosition(targetPosition);
             } else {
                 // GPS provided position can jump around a bit, so ease towards the new location once we have a current position.
-                setCurrentPosition([(currentPosition[0] * 9 + targetPosition[0]) / 10, (currentPosition[1] * 9 + targetPosition[1]) / 10])
+                setCurrentPosition([(currentPosition[0] + targetPosition[0]) / 2, (currentPosition[1] + targetPosition[1]) / 2])
             }
             if (!origin) origin = currentPosition;
             var target = [origin[0], origin[1]];
