@@ -107,7 +107,7 @@ function drawTitleScene() {
         var coinsText = fixNumber(saveSlot.coins).abbreviate();
         var totalCoinsWidth = localIconSize + context.measureText(coinsText).width;
         var coinsLeft = statsLeft + Math.ceil(statsWidth / 4); //Math.floor(statsLeft + (statsWidth - totalCoinsWidth) / 2);
-        drawImage(context, moneySource.image, moneySource, {'left': coinsLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
+        drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': coinsLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
         context.fillText(coinsText, coinsLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
 
         // Trash

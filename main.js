@@ -55,6 +55,7 @@ function mainLoop() {
                     clearTimeout(mainLoopId);
                 }*/
                 if(numberOfImagesLeftToLoad === 0) {
+                    createOutlinedMoneyImage();
                     currentScene = 'title';
                 }
                 break;

@@ -190,16 +190,16 @@ var playerStatsRectangle;
 function drawCoinsIndicator() {
     var localIconSize = Math.floor(iconSize / 2);
     var coinsText = coins.abbreviate();
-    var fontSize = Math.floor(3 * localIconSize / 4);
+    var fontSize = Math.floor( localIconSize * .9);
     context.font = fontSize + 'px sans-serif';
     context.textAlign = 'left'
-    context.textBaseline = 'top';;
+    context.textBaseline = 'middle';
     var metrics = context.measureText(coinsText)
     var margin = 10;
     var left = canvas.width - margin - metrics.width - margin - localIconSize - margin;
     var top = margin;
-    drawImage(context, moneySource.image, moneySource, {'left': left, 'top': margin, 'width': localIconSize, 'height': localIconSize});
-    embossText(context, coinsText, 'gold', 'white', left + localIconSize + margin, margin);
+    drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': left, 'top': margin, 'width': localIconSize, 'height': localIconSize});
+    embossText(context, coinsText, 'gold', 'white', left + localIconSize, margin + Math.round(localIconSize / 2));
 }
 
 function drawLifeIndicator() {

@@ -54,6 +54,14 @@ var chestSource = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top'
 // Icons by Hillary originally created for Treasure Tycoon
 var coinImage = requireImage('gfx/loot/moneyIcon.png');
 var moneySource = {'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'height': 24};
+var outlinedMoneyImage = createCanvas(moneySource.width + 2, moneySource.height + 2);
+var outlinedMoneySource = {'image': outlinedMoneyImage, 'left': 0, 'top': 0, 'width': 26, 'height': 26};
+
+function createOutlinedMoneyImage() {
+    var context = outlinedMoneyImage.getContext('2d')
+    context.globalAlpha = .7;
+    drawOutlinedImage(context, moneySource.image, 'white', 1, moneySource, {'left': 1, 'top': 1, 'width': moneySource.width, 'height': moneySource.height});
+}
 
 // From open source game prototyping images: http://www.lostgarden.com/2007/05/dancs-miraculously-flexible-game.html
 var heartSource = {'image': requireImage('gfx/loot/heart.png'), 'top': 0, 'left': 0, 'width': 50, 'height': 50};
