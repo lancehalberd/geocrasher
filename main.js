@@ -295,11 +295,13 @@ var lastTouchEvent = null, firstTouchEvent = null;
 var lastClick = [0,0];
 var touchMoved = false;
 document.addEventListener('touchstart', function(event) {
+    event.preventDefault();
     lastTouchEvent = event;
     firstTouchEvent = event;
     touchMoved = false;
 });
 document.addEventListener('touchmove', function (event) {
+    event.preventDefault();
     touchMoved = true;
     if (currentScene !== 'map') return;
     if (!lastTouchEvent) return;
@@ -324,6 +326,7 @@ document.addEventListener('touchmove', function (event) {
     }
 });
 document.addEventListener('touchend', function(event) {
+    event.preventDefault();
     /*if (debugMode) {
         alert('end');
         alert(touchMoved);
