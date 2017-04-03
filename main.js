@@ -318,7 +318,7 @@ document.addEventListener('touchmove', function (event) {
     if (lastTouchEvent.touches.length === 2 && event.touches.length === 2) {
         var touchScale = getTouchEventDistance(event) / getTouchEventDistance(lastTouchEvent);
         if (debugMode) alert([getTouchEventDistance(event), getTouchEventDistance(lastTouchEvent)]);
-        touchScale = isNaN(touchScale) ? 1 : touchScale;
+        touchScale = Math.max(.8, Math.min(1.2, isNaN(touchScale) ? 1 : touchScale));
         scale = Math.min(maxScale, Math.max(minScale, scale * touchScale));
         actualScale = Math.round(gridLength * scale) / gridLength;
         lastTouchEvent = event;
