@@ -29,6 +29,7 @@ function updateMap() {
         }
     }
     if (fightingMonster) updateBattle(now());
+    if (damageIndicators.length) updateDamageIndicators();
 }
 function handleMapClick(x, y) {
     if (fastMode) return;
@@ -68,6 +69,7 @@ function handleMapClick(x, y) {
 function drawMapScene() {
     context.clearRect(0,0, canvas.width, canvas.height);
     drawGrid();
+    if (damageIndicators.length) drawDamageIndicators();
 
     if (currentPosition) {
         // draw current location

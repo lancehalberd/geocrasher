@@ -81,6 +81,7 @@ function updateBattle(time) {
     }
     if (time > monsterAttackTime) {
         var damage = calculateDamage(fightingMonster.attack, defense);
+        createDamageIndicator(currentPosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], damage);
         currentHealth = Math.max(0, currentHealth - damage);
         monsterAttackTime += getAttackTime();
         if (currentHealth <= 0) {
@@ -90,6 +91,7 @@ function updateBattle(time) {
     }
     if (time > playerAttackTime) {
         var damage = calculateDamage(attack, fightingMonster.defense);
+        createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentPosition, damage);
         fightingMonster.currentHealth = Math.max(0, fightingMonster.currentHealth - damage);
         playerAttackTime += getAttackTime();
         if (fightingMonster.currentHealth <= 0) {
@@ -114,8 +116,11 @@ function updateBattle(time) {
 }
 
 function calculateDamage(attack, defense) {
+    var attackRoll = Math.round((.9 + Math.random() * .2) * attack);
+    var defenseRoll = Math.round((.9 + Math.random() * .2) * defense);
+    var mitigationFactor = Math.pow(.5, Math.max(0,  Math.log((attackRoll + defenseRoll) / attackRoll)) / Math.log(2));
     // Damage is 1/2 when attack = defense, then halves roughly each time defense doubles.
-    return Math.max(1, Math.ceil(attack * Math.pow(.5, Math.max(0,  Math.log((attack + defense) / attack)) / Math.log(2))));
+    return Math.max(1, Math.ceil(attackRoll * mitigationFactor));
 }
 function calculateOldDamage(attack, defense) {
     // New formula, damage halves for every power of attack defense is.
@@ -162,4 +167,44 @@ function embossText(context, text, colorA, colorB, left, top) {
     context.fillText(text, left + 1, top + 1);
     context.fillStyle = colorA;
     context.fillText(text, left, top);
+}
+
+var damageIndicators = [];
+
+function createDamageIndicator(targetPosition, sourcePosition, value) {
+    var dx = targetPosition[0] - sourcePosition[0] + (Math.random() - .5) * gridLength / 5;
+    var dy = targetPosition[1] - sourcePosition[1] + (Math.random() - .5) * gridLength / 5;
+    if (dx == 0 && dy == 0) {
+        dx = Math.random() - .5;
+        dy = Math.random() - .5;
+    }
+    var mag = Math.sqrt(dx * dx + dy * dy);
+    damageIndicators.push({
+        'value': value.abbreviate(),
+        'x': targetPosition[0], 'y': targetPosition[1], 'z': gridLength / 10,
+        'vx': dx / mag * gridLength / 20, 'vy': dy / mag * gridLength / 20, 'vz': gridLength / 12
+    })
+}
+
+function updateDamageIndicators() {
+    for (var i = 0; i < damageIndicators.length; i++) {
+        var damage = damageIndicators[i];
+        damage.x += damage.vx;
+        damage.y += damage.vy;
+        damage.z += damage.vz;
+        damage.vz -= gridLength / 150;
+        if (damage.z <= 0) {
+            damageIndicators.splice(i--, 1);
+        }
+    }
+}
+
+function drawDamageIndicators() {
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    for (var damage of damageIndicators) {
+        context.font = Math.round(iconSize / 8 * (1 + 4 * damage.z / gridLength)) + 'px sans-serif';
+        var coords = project([damage.x, damage.y + damage.z]);
+        embossText(context, damage.value, 'red', 'white', coords[0], coords[1]);
+    }
 }
