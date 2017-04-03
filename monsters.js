@@ -12,15 +12,27 @@ function makeMonster(tile) {
     var healthRoll = Random.removeElement(rolls);
     var attackRoll = Random.removeElement(rolls);
     var defenseRoll = Random.removeElement(rolls);
-    var name = 'Tortoise', source = turtleSource;
-    if (healthRoll <= attackRoll && healthRoll <= defenseRoll) {
+    var name = 'Giant Bug', source = bugSource;
+    if (healthRoll > attackRoll && healthRoll > defenseRoll) {
+        name = 'Shroomie';
+        source = fungusSource;
+    } else if (attackRoll > healthRoll && attackRoll > defenseRoll) {
+        name = 'Pincher';
+        source = crabSource;
+    } else if (defenseRoll > attackRoll && defenseRoll > healthRoll) {
+        name = 'Iron Shell';
+        source = turtleSource;
+    } else if (defenseRoll === attackRoll) {
         name = 'Giant Bug';
         source = bugSource;
+    } else if (defenseRoll >= healthRoll && defenseRoll >= defenseRoll) {
+        name = 'Guard Snail';
+        source = snailSource;
     } else if (attackRoll >= healthRoll && attackRoll >= defenseRoll) {
-        name = 'Snapper';
-    } else if (defenseRoll > attackRoll && defenseRoll > defenseRoll) {
-        name = 'Iron Shell';
+        name = 'Stinger';
+        source = waspSource;
     }
+    // console.log([healthRoll, attackRoll, defenseRoll, name]);
     var health = Math.round(30 * powerFactor * healthRoll);
     var attack = Math.round(5 * powerFactor * attackRoll);
     var defense = Math.round(5 * powerFactor * defenseRoll);

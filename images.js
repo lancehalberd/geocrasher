@@ -85,6 +85,14 @@ var trashSource = {'image': requireImage('gfx/trash.png'), 'left': 0, 'top': 0, 
 var turtleSource = {'image': requireImage('gfx/monsters/turtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
 
 
+// Requires Attribution (http://creativecommons.org/licenses/by/3.0/)
+// http://opengameart.org/content/monsterboy-in-wonder-world-mockup-assets
+var waspSource = {'image': requireImage('gfx/monsters/wasp.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
+var fungusSource = {'image': requireImage('gfx/monsters/fungus.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
+var crabSource = {'image': requireImage('gfx/monsters/crab.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
+var snailSource = {'image': requireImage('gfx/monsters/snail.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
+
+
 for (var initialImageToLoad of initialImagesToLoad) {
     requireImage(initialImageToLoad);
 }

@@ -309,6 +309,7 @@ document.addEventListener('touchmove', function (event) {
         origin[0] -= dx / actualScale;
         origin[1] += dy / actualScale;
         lastTouchEvent = event;
+        if (!fightingMonster) selectedTile = null
         return;
     }
     if (debugMode) alert([lastTouchEvent.touches.length,event.touches.length]);
@@ -364,7 +365,6 @@ if (testMode) {
         origin[1] += dy / actualScale;
         lastTouchEvent = event;
         touchMoved = true;
-        if (!fightingMonster) selectedTile = null;
     });
     document.addEventListener('mouseup', function(event) {
         if (!touchMoved) {
