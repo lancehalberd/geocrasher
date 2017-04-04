@@ -31,7 +31,7 @@ function checkToGenerateLootForTile(tile) {
 
 var activePowerups = [];
 function checkToGeneratePowerUp(tile) {
-    if (fastMode || tile.powerup) return;
+    if (fastMode || fixingGPS || tile.powerup) return;
     // Monsters cannot spawn in shallows.
     if (tile.level < 1) return;
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.

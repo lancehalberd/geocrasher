@@ -54,6 +54,8 @@ var chestSource = {'image': requireImage('gfx/chest-open.png'), 'left': 0, 'top'
 // Icons by Hillary originally created for Treasure Tycoon
 var coinImage = requireImage('gfx/loot/moneyIcon.png');
 var moneySource = {'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'height': 24};
+// Original images by Hillary created for Geo Crasher
+var personSource = {'image': requireImage('gfx/person.png'), 'left': 0, 'top': 0, 'width': 48, 'height': 48};
 var outlinedMoneyImage = createCanvas(moneySource.width + 2, moneySource.height + 2);
 var outlinedMoneySource = {'image': outlinedMoneyImage, 'left': 0, 'top': 0, 'width': 26, 'height': 26};
 

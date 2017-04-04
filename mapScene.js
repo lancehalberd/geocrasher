@@ -10,7 +10,13 @@ function updateMap() {
         for (var i = 0; i < tileData.loot.length; i++) {
             var loot = tileData.loot[i];
             // Remove all non coin loot during fastMode.
-            if (fastMode && loot.treasure.type !== 'coins') {
+            if (fastMode && loot === tileData.powerup) {
+                tileData.powerup = null;
+                tileData.loot.splice(i--, 1);
+                continue;
+            }
+            if (fastMode && loot === tileData.gem) {
+                tileData.gem = null;
                 tileData.loot.splice(i--, 1);
                 continue;
             }
@@ -32,7 +38,7 @@ function updateMap() {
     if (damageIndicators.length) updateDamageIndicators();
 }
 function handleMapClick(x, y) {
-    if (fastMode) return;
+    if (fastMode || fixingGPS) return;
     if (!selectedTile && lootInRadius.length && collectingLoot.length === 0 && isPointInRectObject(x, y, collectCoinsButton.target)) {
         collectLoot();
         return;
@@ -66,6 +72,14 @@ function handleMapClick(x, y) {
     }
 }
 
+var direction = 'right';
+var directionOffsets = {
+    'down': 0,
+    'left': 48,
+    'up': 96,
+    'right': 144
+};
+var walkOffsets = [0, 48, 0, 96], walkTime = 0;
 function drawMapScene() {
     context.clearRect(0,0, canvas.width, canvas.height);
     drawGrid();
@@ -74,10 +88,24 @@ function drawMapScene() {
     if (currentPosition) {
         // draw current location
         var point = project(currentPosition);
-        context.fillStyle = '#0C0';
+       /* context.fillStyle = '#0C0';
         context.beginPath();
         context.arc(point[0], point[1], 8, 0, 2 * Math.PI);
-        context.fill();
+        context.fill();*/
+        var targetSize = Math.round(Math.min(gridLength * actualScale * .7, 64));
+        var frame = Math.floor(walkTime / 250) % walkOffsets.length;
+        var source = {
+            'left': walkOffsets[frame],
+            'top': directionOffsets[direction],
+            'width': personSource.width, 'height': personSource.height
+        }
+        var target = {
+            'left': point[0] - Math.round(targetSize / 2),
+            'top': point[1] - targetSize,
+            'width': targetSize, 'height': targetSize
+        };
+        //drawImage(context, personSource.image, source, target);
+        drawOutlinedImage(context, personSource.image, 'white', 1, source, target);
         if (fastMode || collectingLoot.length === 0) {
             context.save();
             context.globalAlpha = .3;
@@ -105,7 +133,7 @@ function drawMapScene() {
         drawUpgradeButton(canUpgrade, costToUpgrade(selectedTile));
     }
     var hideStatsIn = hideStatsAt - now();
-    if (!fastMode && (hideStatsIn > 0 || !playerStatsRectangle)) {
+    if (!fastMode && !fixingGPS && (hideStatsIn > 0 || !playerStatsRectangle)) {
         context.save();
         context.globalAlpha = Math.max(0, Math.min(1, hideStatsIn / 1000));
         playerStatsRectangle = drawStatsBox(5, 5, level, 'Hero', currentHealth, maxHealth, attack, defense, experience, experienceForNextLevel());
@@ -128,13 +156,18 @@ function drawMapScene() {
         drawStatsBox(x, y, monster.level, monster.name, monster.currentHealth, monster.maxHealth, monster.attack, monster.defense);
     }
     // collect coins button is replaced by 'Fight!' button when a monster is selected.
-    if (!fastMode) {
-        if (!selectedTile) {
-            if (collectingLoot.length === 0) drawCollectCoinsButton();
-        } else if (selectedTile.monster) drawFightFleeButton();
-        drawGemIndicators();
-    } else {
-        var fontSize = Math.floor(3 * localIconSize / 4);
+    if (fixingGPS) {
+        var fontSize = Math.floor(3 * iconSize / 4);
+        context.font = fontSize + 'px sans-serif';
+        context.textAlign = 'center';
+        context.textBaseline = 'bottom';
+        var text = 'Updating';
+        for (var i = 0; i < (endFixingGPSTime - now()) / 1000; i++) {
+            text = '-' + text + '-';
+        }
+        embossText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
+    } else if (fastMode) {
+        var fontSize = Math.floor(3 * iconSize / 4);
         context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
@@ -143,6 +176,11 @@ function drawMapScene() {
             text = '-' + text + '-';
         }
         embossText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
+    } else {
+        if (!selectedTile) {
+            if (collectingLoot.length === 0) drawCollectCoinsButton();
+        } else if (selectedTile.monster) drawFightFleeButton();
+        drawGemIndicators();
     }
 
     drawCoinsIndicator();

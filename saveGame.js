@@ -41,9 +41,11 @@ function loadSaveSlot(index) {
         initializeTile(gridData[key]);
     }
     updatePlayerStats();
+    currentGridCoords = null;
     clickedCoords = selectedTile = lastGoalPoint = null;
     hideStatsAt = now() + 2000;
-    currentScene = 'map';
+    pushScene('map');
+    clearAllGems();
     checkToSpawnGems();
 }
 

@@ -13,6 +13,7 @@ var maxLevel = levelColors.length - 1;
 var levelSums = [];
 var radius = minRadius;
 var currentScene = 'loading';
+var sceneStack = [];
 var mainLoopId, updatedScene = false;
 setTimeout(function () {
     mainLoopId = setInterval(mainLoop, 40);
@@ -26,11 +27,28 @@ function mainLoop() {
                 setCurrentPosition(targetPosition);
             } else {
                 // GPS provided position can jump around a bit, so ease towards the new location once we have a current position.
-                setCurrentPosition([(currentPosition[0] + targetPosition[0]) / 2, (currentPosition[1] + targetPosition[1]) / 2])
+                setCurrentPosition([(currentPosition[0] * 9 + targetPosition[0]) / 10, (currentPosition[1] * 9 + targetPosition[1]) / 10]);
+                var lastDirection = direction;
+                var dx = targetPosition[0] - currentPosition[0];
+                var dy = targetPosition[1] - currentPosition[1];
+                if (Math.abs(dx) >= Math.abs(dy)) {
+                    if (dx > 0) direction = 'right';
+                    else if (dx < 0) direction = 'left';
+                } else {
+                    if (dy > 0) direction = 'up';
+                    else if (dy < 0) direction = 'down';
+                }
+                if (Math.abs(dx) < gridLength / 200 && Math.abs(dy) < gridLength / 200 && Math.floor(walkTime / 250) % walkOffsets.length === 0) {
+                    walkTime = 0;
+                } else if (direction !== lastDirection) {
+                    walkTime = 250;
+                } else {
+                    walkTime += 40;
+                }
             }
             if (!origin) origin = currentPosition;
             var target = [origin[0], origin[1]];
-            if (fastMode) {
+            if (fastMode || fixingGPS) {
                 target = currentPosition;
             } else if (selectedTile) {
                 target = [selectedTile.centerX, selectedTile.centerY];
@@ -92,6 +110,13 @@ function resizeCanvas() {
 $( window ).resize(resizeCanvas);
 var lastPositionData;
 function updatePosition(position) {
+    if (lastPositionData) {
+        var oldCoords = [lastPositionData.coords.longitude, lastPositionData.coords.latitude];
+        var newCoords = [position.coords.longitude, position.coords.latitude];
+        if (getDistance(oldCoords, newCoords) > gridLength) {
+            setFixingGPS();
+        }
+    }
     lastPositionData = position;
     //console.log([position.coords.longitude, position.coords.latitude]);
     //console.log((Math.round((position.coords.longitude + 360) * 1e10)));
@@ -106,6 +131,13 @@ function updatePosition(position) {
         heading = [Math.sin(radians), -Math.cos(radians)];
     }*/
     //drawScene();
+}
+function setFixingGPS() {
+    fixingGPS = true;
+    fastMode = false;
+    startingFastMode = false;
+    endFixingGPSTime = now() + 2000;
+    clearAllGems();
 }
 function getGridRectangle(coords) {
     var topLeft = project([coords[0] * gridLength, (coords[1] + 1) * gridLength]);
@@ -180,6 +212,13 @@ function setCurrentPosition(realCoords) {
         fastMode = startingFastMode = false;
         checkToSpawnGems();
     }
+    if (fixingGPS && now() > endFixingGPSTime) {
+        fixingGPS = false;
+        if (currentScene === 'map' && currentGridCoords) {
+            exploreSurroundingTiles();
+        }
+        checkToSpawnGems();
+    }
     // Only apply updates for moving if we are displaying the map scene.
     if (currentScene !== 'map') return;
     var newGridCoords = toGridCoords(realCoords);
@@ -188,6 +227,11 @@ function setCurrentPosition(realCoords) {
     }
     currentGridCoords = newGridCoords;
 
+    if (!fixingGPS) exploreSurroundingTiles();
+    refreshActiveTiles();
+}
+function exploreSurroundingTiles() {
+    var newTileFound = false;
     for (var dy = -1; dy <=1; dy++) {
         for (var dx = -1; dx <=1; dx++) {
             var tileData = getTileData([currentGridCoords[0] + dx, currentGridCoords[1] + dy], true);
@@ -195,10 +239,16 @@ function setCurrentPosition(realCoords) {
                 gridData[tileData.key] = tileData;
                 initializeTile(tileData);
                 checkToGenerateLootForTile(tileData);
-                saveGame();
+                newTileFound = true;
             }
         }
     }
+    if (newTileFound) {
+        saveGame();
+        refreshActiveTiles();
+    }
+}
+function refreshActiveTiles() {
     var oldActiveTiles = activeTiles;
     activeTiles = [];
     selectableTiles = [];
@@ -267,6 +317,7 @@ if (testMode) {
         if (event.which === 39) lastPositionData.coords.longitude += stepSize;
         if (event.which === 38) lastPositionData.coords.latitude += stepSize;
         if (event.which === 40) lastPositionData.coords.latitude -= stepSize;
+        // setFixingGPS();
     });
 } else if (navigator.geolocation) {
     navigator.geolocation.watchPosition(updatePosition, watchError, { enableHighAccuracy: true, maximumAge: 100, timeout: 50000 });
@@ -314,10 +365,10 @@ document.addEventListener('touchmove', function (event) {
         if (!fightingMonster) selectedTile = null
         return;
     }
-    if (debugMode) alert([lastTouchEvent.touches.length,event.touches.length]);
+    //if (debugMode) alert([lastTouchEvent.touches.length,event.touches.length]);
     if (lastTouchEvent.touches.length === 2 && event.touches.length === 2) {
         var touchScale = getTouchEventDistance(event) / getTouchEventDistance(lastTouchEvent);
-        if (debugMode) alert([getTouchEventDistance(event), getTouchEventDistance(lastTouchEvent)]);
+        //if (debugMode) alert([getTouchEventDistance(event), getTouchEventDistance(lastTouchEvent)]);
         touchScale = Math.max(.8, Math.min(1.2, isNaN(touchScale) ? 1 : touchScale));
         scale = Math.min(maxScale, Math.max(minScale, scale * touchScale));
         actualScale = Math.round(gridLength * scale) / gridLength;
@@ -387,6 +438,19 @@ if (testMode) {
         firstTouchEvent = null;
         touchMoved = false;
     });
+}
+function pushScene(newScene) {
+    history.pushState({}, '');
+    sceneStack.push(currentScene);
+    currentScene = newScene;
+}
+function popScene() {
+    history.back();
+}
+window.onpopstate = function () {
+    if (sceneStack.length) {
+        currentScene = sceneStack.pop();
+    }
 }
 function getTouchEventDistance(touchEvent) {
     var dx = touchEvent.touches[0].pageX - touchEvent.touches[1].pageX;

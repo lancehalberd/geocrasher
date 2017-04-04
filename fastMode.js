@@ -1,17 +1,15 @@
-var fastMode = false, startingFastMode = false, endFastModeTime = 0, minThreshold = 200, maxThreshold = 5000;
+var fastMode = false, startingFastMode = false, endFastModeTime = 0, maxThreshold = 5000;
+var fixingGPS = false, endFixingGPSTime = 0;
 
 function updateFastMode(millisecondsBetweenUpdates) {
-    if (currentScene !== 'map' || testMode) return;
+    if (fixingGPS || testMode) return;
+    if (currentScene !== 'map') return;
     if (!startingFastMode && !fastMode) {
-        if (millisecondsBetweenUpdates <= maxThreshold && millisecondsBetweenUpdates > minThreshold) startingFastMode = true;
+        if (millisecondsBetweenUpdates <= maxThreshold) startingFastMode = true;
         return;
     }
     if (startingFastMode && !fastMode) {
-        // We apply a min threshold here because starting and stopping fastmode could be annoying if
-        // a player doesn't mean to. Sometimes when the GPS is wrong, it corrects itself and very rapidly
-        // updates the GPS position. This minimum threshold is designed to prevent fastMode from starting
-        // when GPS is updating too quickly.
-        if (millisecondsBetweenUpdates <= minThreshold || millisecondsBetweenUpdates > maxThreshold) {
+        if (millisecondsBetweenUpdates > maxThreshold) {
             startingFastMode = false;
             return;
         }
@@ -24,7 +22,7 @@ function updateFastMode(millisecondsBetweenUpdates) {
         endFastModeTime = now() + 10000;
         return;
     }
-    if (millisecondsBetweenUpdates > minThreshold && millisecondsBetweenUpdates <= maxThreshold) {
+    if (millisecondsBetweenUpdates <= maxThreshold) {
         endFastModeTime = now() + 10000;
     }
 }

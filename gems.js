@@ -8,7 +8,7 @@ var gemData = [
         'collectRadius': maxRadius * 3, 'ticks': 16, 'debuff': .95, 'tintAmount': .03, 'tickDuration': 200, 'historyDuration': 1000 * 60 * 15}
 ];
 function checkToSpawnGems() {
-    if (fastMode) return;
+    if (fastMode || fixingGPS) return;
     for (var gem of gemData) {
         if (gem.loot) {
             if (getDistance([gem.loot.x, gem.loot.y], currentPosition) < gem.spawnRadius + gridLength * 5) continue;
@@ -38,6 +38,7 @@ function clearAllGems() {
         var tile = gem.loot.tile;
         tile.loot.splice(tile.loot.indexOf(gem.loot), 1);
         gem.loot = null;
+        tile.gem = null;
     }
 }
 
