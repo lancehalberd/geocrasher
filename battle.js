@@ -21,9 +21,9 @@ function getLevelBonus(level) {
 
 function updatePlayerStats() {
     var levelBonus = getLevelBonus(level);
-    maxHealth = Math.round(healthBonus * levelBonus);
-    attack = Math.round(attackBonus * levelBonus + getSkillValue(skillTree.health.offense) * currentHealth / 100);
-    defense = Math.round(defenseBonus * levelBonus + getSkillValue(skillTree.health.defense) * (maxHealth - currentHealth) / 100);
+    maxHealth = Math.round(healthBonus * levelBonus * (1 + treeBonuses.health / 50));
+    attack = Math.round(attackBonus * levelBonus * (1 + treeBonuses.attack / 50) + getSkillValue(skillTree.health.offense) * currentHealth / 100);
+    defense = Math.round(defenseBonus * levelBonus * (1 + treeBonuses.defense / 50) + getSkillValue(skillTree.health.defense) * (maxHealth - currentHealth) / 100);
 }
 
 var hideStatsAt;

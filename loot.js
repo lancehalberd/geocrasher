@@ -17,7 +17,7 @@ function onObtainCoins() {
 
 function checkToGenerateLootForTile(tile) {
     if (tile.loot.length < 3) {
-        var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * Math.pow(4, tile.level) / 3);
+        var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * (1 + treeBonuses.money / 50) * Math.pow(4, tile.level) / 3);
         var coinDrops = generateLootCoins(coins, 1);
         var realCoords = toRealCoords([tile.x, tile.y]);
         for (var coinDrop of coinDrops) {

@@ -1,4 +1,5 @@
 var bonusSkillPoints = 0, usedSkillPoints = 0;
+var treeBonuses = {'health': 0, 'attack': 0, 'defense': 0, 'money':  0};
 var skillTree = {
     'health': {
         'regeneration': {'value': 0.01, 'type': '+', 'x': 0, 'y': -1, 'source': clockSource, 'secondSource': heartSource, 'level': 0, 'name': 'Regeneration', 'description': '% of max health regenerated per tick.'},
@@ -79,8 +80,28 @@ function drawSkillsScene() {
     var padding = 5;
     var border = 3;
     var skillSize = Math.round(Math.min((canvas.width - 8 * padding) / 7, (canvas.height - iconSize - 8 * padding) / 7) / 2) * 2;
+    var skillSpacing = skillSize + padding;
     var centerX = Math.round(canvas.width / 2);
     var centerY = Math.round((canvas.height - iconSize) / 2);
+    drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': centerX - skillSpacing, 'top': centerY + skillSpacing * 3 - skillSize / 2, 'width': skillSize, 'height': skillSize});
+
+    context.font =  Math.floor(skillSize / 2) + 'px sans-serif';
+    context.textBaseline = 'middle';
+    context.textAlign = 'left';
+    embossText(context, '+' + (treeBonuses.money / 50).percent(), '#0f0', 'white', centerX, centerY + skillSpacing * 3);
+
+    drawImage(context, heartSource.image, heartSource, {'left': centerX - skillSpacing, 'top': centerY - skillSpacing * 3 - skillSize / 2, 'width': skillSize, 'height': skillSize});
+    embossText(context, '+' + (treeBonuses.health / 50).percent(), '#0f0', 'white', centerX, centerY - skillSpacing * 3);
+
+    drawImage(context, swordSource.image, swordSource, {'left': centerX - 3 * skillSpacing - skillSize / 2, 'top': centerY - skillSpacing, 'width': skillSize, 'height': skillSize});
+    context.textBaseline = 'top';
+    embossText(context, '+' + (treeBonuses.attack / 50).percent(), '#0f0', 'white', centerX - skillSpacing * 3 - skillSize / 2, centerY);
+
+    drawImage(context, shieldSource.image, shieldSource, {'left': centerX + 3 * skillSpacing - skillSize / 2, 'top': centerY - skillSpacing, 'width': skillSize, 'height': skillSize});
+    context.textAlign = 'right';
+    embossText(context, '+' + (treeBonuses.defense / 50).percent(), '#0f0', 'white', centerX + skillSpacing * 3 + skillSize / 2, centerY);
+
+
     context.textBaseline = 'middle';
     context.textAlign = 'center';
     context.font = 'bold ' + Math.floor(skillSize / 2) + 'px sans-serif';
@@ -98,7 +119,6 @@ function drawSkillsScene() {
         context.restore();
     }
     outlineText(context, netPoints, color, 'white', 1, centerX, centerY);
-    var skillSpacing = skillSize + padding;
     for (var treeKey in skillTree) {
         for (var skillKey in skillTree[treeKey]) {
             var skill = skillTree[treeKey][skillKey];
@@ -243,6 +263,7 @@ function handleSkillsClick(x, y) {
     if (handleSkillButtonClick(x, y)) return;
     if (selectedSkill && canLearnSkill(selectedSkill) && canAffordSkill(selectedSkill) && isPointInRectObject(x, y, upgradeSkillButton.target)) {
         usedSkillPoints += getSkillCost(selectedSkill);
+        treeBonuses[selectedSkill.treeKey] += getSkillCost(selectedSkill);
         selectedSkill.level++;
         selectedSkill = null;
         updatePlayerStats();

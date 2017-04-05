@@ -49,9 +49,12 @@ function loadSaveSlot(index) {
     usedSkillPoints = 0;
     for (var treeKey in skillTree) {
         var treeData = ifdefor(saveSlot.skillData[treeKey], {});
+        treeBonuses[treeKey] = 0;
         for (var skillKey in skillTree[treeKey]) {
             skillTree[treeKey][skillKey].level = ifdefor(treeData[skillKey], 0);
-            usedSkillPoints += (skillTree[treeKey][skillKey].level * (skillTree[treeKey][skillKey].level + 1)) / 2;
+            var pointsUsed = (skillTree[treeKey][skillKey].level * (skillTree[treeKey][skillKey].level + 1)) / 2;
+            usedSkillPoints += pointsUsed;
+            treeBonuses[treeKey] += pointsUsed;
         }
     }
     updatePlayerStats();
