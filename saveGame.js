@@ -110,6 +110,6 @@ function fixSaveSlot(saveSlot) {
 }
 
 function fixNumber(value, defaultValue) {
-    value = parseInt(value);
+    value = parseFloat(value);
     return isNaN(value) ? ifdefor(defaultValue, 0) : value;
 }
