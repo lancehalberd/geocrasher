@@ -85,7 +85,7 @@ function drawSkillsScene() {
     var centerY = Math.round((canvas.height - iconSize) / 2);
     drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': centerX - skillSpacing, 'top': centerY + skillSpacing * 3 - skillSize / 2, 'width': skillSize, 'height': skillSize});
 
-    context.font =  Math.floor(skillSize / 2) + 'px sans-serif';
+    context.font =  Math.floor(skillSize / 3) + 'px sans-serif';
     context.textBaseline = 'middle';
     context.textAlign = 'left';
     embossText(context, '+' + (treeBonuses.money / 50).percent(), '#0f0', 'white', centerX, centerY + skillSpacing * 3);
@@ -95,11 +95,12 @@ function drawSkillsScene() {
 
     drawImage(context, swordSource.image, swordSource, {'left': centerX - 3 * skillSpacing - skillSize / 2, 'top': centerY - skillSpacing, 'width': skillSize, 'height': skillSize});
     context.textBaseline = 'top';
-    embossText(context, '+' + (treeBonuses.attack / 50).percent(), '#0f0', 'white', centerX - skillSpacing * 3 - skillSize / 2, centerY);
+    context.textAlign = 'right';
+    embossText(context, '+' + (treeBonuses.attack / 50).percent(), '#0f0', 'white', centerX - skillSpacing * 3 + skillSize / 2, centerY);
 
     drawImage(context, shieldSource.image, shieldSource, {'left': centerX + 3 * skillSpacing - skillSize / 2, 'top': centerY - skillSpacing, 'width': skillSize, 'height': skillSize});
-    context.textAlign = 'right';
-    embossText(context, '+' + (treeBonuses.defense / 50).percent(), '#0f0', 'white', centerX + skillSpacing * 3 + skillSize / 2, centerY);
+    context.textAlign = 'left';
+    embossText(context, '+' + (treeBonuses.defense / 50).percent(), '#0f0', 'white', centerX + skillSpacing * 3 - skillSize / 2, centerY);
 
 
     context.textBaseline = 'middle';

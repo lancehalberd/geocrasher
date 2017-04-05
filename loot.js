@@ -84,6 +84,7 @@ var lootCollectedTime = 0;
 function resetLootTotals() {
     collectionBonus = .9;
     coinsCollected = 0;
+    updatePlayerStats();
     initialMaxHealth = maxHealth;
     initialAttack = attack;
     initialDefense = defense;
