@@ -3,7 +3,7 @@ var fixingGPS = false, endFixingGPSTime = 0;
 
 function updateFastMode(millisecondsBetweenUpdates) {
     if (fixingGPS || testMode) return;
-    if (currentScene !== 'map') return;
+    if (currentScene === 'loading' || currentScene === 'title') return;
     if (!startingFastMode && !fastMode) {
         if (millisecondsBetweenUpdates <= maxThreshold) startingFastMode = true;
         return;

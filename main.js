@@ -23,7 +23,7 @@ function mainLoop() {
         updatedScene = true;
         if (lastPositionData) {
             var targetPosition = [lastPositionData.coords.longitude + 360, lastPositionData.coords.latitude + 360];
-            if (!currentPosition) {
+            if (!currentPosition || fixingGPS) {
                 setCurrentPosition(targetPosition);
             } else {
                 // GPS provided position can jump around a bit, so ease towards the new location once we have a current position.
@@ -65,6 +65,9 @@ function mainLoop() {
                 origin[0] = (origin[0] * 10 + target[0]) / 11;
                 origin[1] = (origin[1] * 10 + target[1]) / 11;
             }
+        }
+        if (currentScene !== 'loading' && currentScene !== 'title') {
+            updatePlayerStats();
         }
         switch (currentScene) {
             case 'loading':
@@ -165,7 +168,7 @@ function toRealCoords(gridCoords) {
 function updateGameState() {
     radius = (radius * 2 + maxRadius) / 3;
     if (currentHealth < maxHealth && !fightingMonster) {
-        currentHealth = Math.min(maxHealth, currentHealth + Math.ceil(maxHealth / 20));
+        currentHealth = Math.min(maxHealth, currentHealth + Math.ceil(maxHealth / 20 + maxHealth * getSkillValue(skillTree.health.regeneration)));
     }
     for (var tile of activeTiles) {
         if (tile.exhausted) {
@@ -199,7 +202,7 @@ var activeTiles = [];
 var selectableTiles = [];
 function setCurrentPosition(realCoords) {
     currentPosition = realCoords;
-    if (!lastGoalPoint) {
+    if (!lastGoalPoint || fixingGPS) {
         lastGoalPoint = currentPosition;
         lastGoalTime = now();
     } else if (getDistance(currentPosition, lastGoalPoint) > gridLength / 2) {
@@ -214,13 +217,13 @@ function setCurrentPosition(realCoords) {
     }
     if (fixingGPS && now() > endFixingGPSTime) {
         fixingGPS = false;
-        if (currentScene === 'map' && currentGridCoords) {
+         if ((currentScene !== 'loading' && currentScene !== 'title') && currentGridCoords) {
             exploreSurroundingTiles();
         }
         checkToSpawnGems();
     }
     // Only apply updates for moving if we are displaying the map scene.
-    if (currentScene !== 'map') return;
+    if (currentScene === 'loading' || currentScene === 'title') return;
     var newGridCoords = toGridCoords(realCoords);
     if (currentGridCoords && currentGridCoords[0] === newGridCoords[0] && currentGridCoords[1] === newGridCoords[1]) {
         return;
@@ -332,12 +335,6 @@ function getTileData(gridCoords, returnDefault) {
     var key = gridCoords[0] + 'x' + gridCoords[1];
     return ifdefor(gridData[key], returnDefault ? {'level': 0, 'power': 0, 'key': key, 'x': gridCoords[0], 'y': gridCoords[1]} : null);
 }
-function isTileInRadius(tileData) {
-    var centerCoords = toRealCoords([tileData.x + .5, tileData.y + .5]);
-    var dx = currentPosition[0] - centerCoords[0];
-    var dy = currentPosition[1] - centerCoords[1];
-    return dx * dx + dy * dy < radius * radius;
-}
 
 var maxScale = 5e5;
 var minScale = 1.5e5;
@@ -398,6 +395,9 @@ document.addEventListener('touchend', function(event) {
             case 'map':
                 handleMapClick(x, y);
                 break;
+            case 'skills':
+                handleSkillsClick(x, y);
+                break;
         }
     }
     lastTouchEvent = null;
@@ -431,6 +431,9 @@ if (testMode) {
                     break;
                 case 'map':
                     handleMapClick(x, y);
+                    break;
+                case 'skills':
+                    handleSkillsClick(x, y);
                     break;
             }
         }

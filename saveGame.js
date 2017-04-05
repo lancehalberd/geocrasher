@@ -15,7 +15,9 @@ function newGameData() {
         'attackBonus': 8,
         'defenseBonus': 6,
         'tileData': [],
-        'gemData': [{'history': []}, {'history': []}, {'history': []}]
+        'gemData': [{'history': []}, {'history': []}, {'history': []}],
+        'bonusSkillPoints': 0,
+        'skillData': {}
     };
 }
 function loadSaveSlot(index) {
@@ -34,11 +36,23 @@ function loadSaveSlot(index) {
         gemData[i].history = ifdefor(saveSlot.gemData[i].history, []);
     }
 
+    levelSums = [];
     gridData = {};
     for (var tileData of saveSlot.tileData) {
         var key = tileData.x + 'x' + tileData.y;
         gridData[key] = {'level': tileData.level, 'key': key, 'x': tileData.x, 'y': tileData.y, 'exhausted': tileData.exhausted, 'exhaustCounter': fixNumber(tileData.exhaustCounter)};
         initializeTile(gridData[key]);
+    }
+
+    bonusSkillPoints = saveSlot.bonusSkillPoints;
+
+    usedSkillPoints = 0;
+    for (var treeKey in skillTree) {
+        var treeData = ifdefor(saveSlot.skillData[treeKey], {});
+        for (var skillKey in skillTree[treeKey]) {
+            skillTree[treeKey][skillKey].level = ifdefor(treeData[skillKey], 0);
+            usedSkillPoints += (skillTree[treeKey][skillKey].level * (skillTree[treeKey][skillKey].level + 1)) / 2;
+        }
     }
     updatePlayerStats();
     currentGridCoords = null;
@@ -65,6 +79,16 @@ function exportSaveSlot() {
     data.healthBonus = healthBonus;
     data.attackBonus = attackBonus;
     data.defenseBonus = defenseBonus;
+    data.bonusSkillPoints = bonusSkillPoints;
+    data.skillData = {};
+    for (var treeKey in skillTree) {
+        data.skillData[treeKey] = {};
+        for (var skillKey in skillTree[treeKey]) {
+            if (skillTree[treeKey][skillKey].level > 0) {
+                data.skillData[treeKey][skillKey] = skillTree[treeKey][skillKey].level;
+            }
+        }
+    }
     for (var tileKey in gridData) {
         var tileData = gridData[tileKey];
         data.tileData.push({
@@ -100,6 +124,8 @@ function fixSaveSlot(saveSlot) {
     saveSlot.defenseBonus = fixNumber(saveSlot.defenseBonus, defaults.defenseBonus);
     saveSlot.tileData = ifdefor(saveSlot.tileData, defaults.tileData);
     saveSlot.gemData = ifdefor(saveSlot.gemData, defaults.gemData);
+    saveSlot.bonusSkillPoints = ifdefor(saveSlot.bonusSkillPoints, defaults.bonusSkillPoints);
+    saveSlot.skillData = ifdefor(saveSlot.skillData, defaults.skillData);
     for (var i = 0; i < defaults.gemData.length; i++) {
         if (!saveSlot.gemData[i]) saveSlot.gemData[i] = defaults.gemData[i];
         for (var key in defaults.gemData[i]) {

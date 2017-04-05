@@ -1,4 +1,5 @@
 function drawScene() {
+    context.clearRect(0,0, canvas.width, canvas.height);
     switch (currentScene) {
         case 'loading':
             drawLoadingScene();
@@ -8,6 +9,9 @@ function drawScene() {
             break;
         case 'map':
             drawMapScene();
+            break;
+        case 'skills':
+            drawSkillsScene();
             break;
     }
     // context.fillStyle = '#0F0';

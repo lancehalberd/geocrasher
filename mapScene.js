@@ -43,13 +43,15 @@ function handleMapClick(x, y) {
         collectLoot();
         return;
     }
+    if (handleSkillButtonClick(x, y)) return;
     if (selectedTile) {
         if (selectedTile.monster) {
             if (currentHealth > 0 && isPointInRectObject(x, y, fightFleeButton.target)) {
                 if (!fightingMonster) {
                     fightingMonster = selectedTile.monster;
-                    monsterAttackTime = now();
-                    playerAttackTime = now() + getAttackTime() / 2;
+                    // Monster always attacks first.
+                    monsterAttackTime = now() + 300;
+                    playerAttackTime = now() + 300 + getPlayerAttackTime() / 2;
                 } else {
                     fightingMonster = null;
                 }
@@ -81,9 +83,7 @@ var directionOffsets = {
 };
 var walkOffsets = [0, 48, 0, 96], walkTime = 0;
 function drawMapScene() {
-    context.clearRect(0,0, canvas.width, canvas.height);
     drawGrid();
-    if (damageIndicators.length) drawDamageIndicators();
 
     if (currentPosition) {
         // draw current location
@@ -112,11 +112,12 @@ function drawMapScene() {
             context.strokeStyle = 'gold';
             context.lineWidth = 4;
             context.beginPath();
-            context.arc(point[0], point[1], radius * actualScale, 0 , 2 * Math.PI);
+            context.arc(point[0], point[1], getCollectionRadius() * actualScale, 0 , 2 * Math.PI);
             context.stroke();
             context.restore();
         }
     }
+    if (damageIndicators.length) drawDamageIndicators();
 
     if (selectedTile && !selectedTile.monster) {
         var rectangle = getGridRectangle([selectedTile.x, selectedTile.y]);
@@ -181,6 +182,7 @@ function drawMapScene() {
             if (collectingLoot.length === 0) drawCollectCoinsButton();
         } else if (selectedTile.monster) drawFightFleeButton();
         drawGemIndicators();
+        drawSkillButton();
     }
 
     drawCoinsIndicator();
@@ -246,7 +248,7 @@ function drawLifeIndicator() {
     var localIconSize = Math.floor(iconSize / 2);
     var fontSize = Math.floor(3 * localIconSize / 4);
     context.font = fontSize + 'px sans-serif';
-    context.textAlign = 'left'
+    context.textAlign = 'left';
     context.textBaseline = 'top';
 
     drawImage(context, heartSource.image, heartSource, {'left': 10, 'top': 10, 'width': localIconSize, 'height': localIconSize});
@@ -309,7 +311,7 @@ function costToUpgrade(data) {
     for (var i = 1; i <= data.level + 1; i++) {
         cost += 2 * (ifdefor(levelSums[i], 0) + 1) * Math.pow(10, i - 1);
     }
-    return cost;
+    return Math.floor(cost * (1 - getSkillValue(skillTree.money.explorer)));
 }
 
 var tileMask = createCanvas(200, 200);

@@ -2,7 +2,7 @@
 var level, experience, currentHealth, healthBonus, attackBonus, defenseBonus;
 var maxHealth, attack, defense;
 function gainExperience(experienceGained) {
-    experience += experienceGained;
+    experience += experienceGained * (1 + getSkillValue(skillTree.money.powerups));
     var forNextLevel = experienceForNextLevel();
     if (experience >= forNextLevel) {
         experience -= forNextLevel;
@@ -22,8 +22,8 @@ function getLevelBonus(level) {
 function updatePlayerStats() {
     var levelBonus = getLevelBonus(level);
     maxHealth = Math.round(healthBonus * levelBonus);
-    attack = Math.round(attackBonus * levelBonus);
-    defense = Math.round(defenseBonus * levelBonus);
+    attack = Math.round(attackBonus * levelBonus + getSkillValue(skillTree.health.offense) * currentHealth / 100);
+    defense = Math.round(defenseBonus * levelBonus + getSkillValue(skillTree.health.defense) * (maxHealth - currentHealth) / 100);
 }
 
 var hideStatsAt;
@@ -70,6 +70,9 @@ function drawStatsBox(x, y, level, name, currentHealth, maxHealth, attack, defen
 function getAttackTime() {
     return 800 - Math.min(400, (level - 1) * 50);
 }
+function getPlayerAttackTime() {
+    return getAttackTime() / (1 + getSkillValue(skillTree.attack.attackSpeed));
+}
 
 var monsterAttackTime, playerAttackTime;
 function updateBattle(time) {
@@ -80,43 +83,63 @@ function updateBattle(time) {
         return;
     }
     if (time > monsterAttackTime) {
-        var damage = calculateDamage(fightingMonster.attack, defense);
-        createDamageIndicator(currentPosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], damage);
-        currentHealth = Math.max(0, currentHealth - damage);
-        monsterAttackTime += getAttackTime();
-        if (currentHealth <= 0) {
-            fightingMonster = null;
-            selectedTile = null;
+        var dodgeChance = getSkillValue(skillTree.defense.dodge);
+        if (Math.random() < dodgeChance) {
+            createDamageIndicator(currentPosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], 'Dodge', 'blue');
+        } else {
+
+            var attackRoll = getAttackRoll(fightingMonster.attack);
+            var damage = calculateDamage(attackRoll, defense);
+            createDamageIndicator(currentPosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], damage.abbreviate());
+            currentHealth = Math.max(0, currentHealth - damage);
+
+            // Blocked damage is difference between the attackRoll and actual damage. Reflected damage is a percentage of this value.
+            var reflectedDamage = Math.ceil((attackRoll - damage) * getSkillValue(skillTree.defense.offense));
+            if (reflectedDamage) {
+                createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentPosition, reflectedDamage.abbreviate(), 'orange');
+                fightingMonster.currentHealth = Math.max(0, fightingMonster.currentHealth - reflectedDamage);
+            }
+            fightingMonster.attack = Math.max(1, fightingMonster.attack - Math.ceil(defense * getSkillValue(skillTree.defense.defense)));
         }
+        monsterAttackTime += getAttackTime();
     }
     if (time > playerAttackTime) {
-        var damage = calculateDamage(attack, fightingMonster.defense);
-        createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentPosition, damage);
+        var damage = calculateDamage(getAttackRoll(attack), fightingMonster.defense);
+        createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentPosition, damage.abbreviate());
         fightingMonster.currentHealth = Math.max(0, fightingMonster.currentHealth - damage);
-        playerAttackTime += getAttackTime();
-        if (fightingMonster.currentHealth <= 0) {
-            updateGameState();
-            fightingMonster.tile.monster = null;
-            exhaustTile(fightingMonster.tile);
-            fightingMonster.tile = null;
-            activeMonsters.splice(activeMonsters.indexOf(fightingMonster), 1);
-            var currentLootInMonsterRadius = lootInMonsterRadius;
-            gainExperience(fightingMonster.experience);
-            fightingMonster = null;
-            selectedTile = null;
-            updateMap();
-            resetLootTotals();
-            for (var loot of currentLootInMonsterRadius) {
-                if (lootInMonsterRadius.indexOf(loot) < 0) {
-                    collectingLoot.push(loot);
-                }
+        fightingMonster.defense = Math.max(0, fightingMonster.defense - Math.ceil(attack * getSkillValue(skillTree.attack.offense)));
+        currentHealth = Math.min(maxHealth, currentHealth + Math.ceil(damage * getSkillValue(skillTree.attack.defense)));
+        playerAttackTime += getPlayerAttackTime();
+    }
+    if (fightingMonster.currentHealth <= 0) {
+        updateGameState();
+        fightingMonster.tile.monster = null;
+        exhaustTile(fightingMonster.tile);
+        fightingMonster.tile = null;
+        activeMonsters.splice(activeMonsters.indexOf(fightingMonster), 1);
+        var currentLootInMonsterRadius = lootInMonsterRadius;
+        gainExperience(fightingMonster.experience);
+        fightingMonster = null;
+        selectedTile = null;
+        updateMap();
+        resetLootTotals();
+        for (var loot of currentLootInMonsterRadius) {
+            if (lootInMonsterRadius.indexOf(loot) < 0) {
+                collectingLoot.push(loot);
             }
         }
     }
+    if (currentHealth <= 0) {
+        fightingMonster = null;
+        selectedTile = null;
+    }
 }
 
-function calculateDamage(attack, defense) {
-    var attackRoll = Math.round((.9 + Math.random() * .2) * attack);
+function getAttackRoll(attack) {
+    return Math.round((.9 + Math.random() * .2) * attack);
+}
+
+function calculateDamage(attackRoll, defense) {
     var defenseRoll = Math.round((.9 + Math.random() * .2) * defense);
     var mitigationFactor = Math.pow(.5, Math.max(0,  Math.log((attackRoll + defenseRoll) / attackRoll)) / Math.log(2));
     // Damage is 1/2 when attack = defense, then halves roughly each time defense doubles.
@@ -171,7 +194,7 @@ function embossText(context, text, colorA, colorB, left, top) {
 
 var damageIndicators = [];
 
-function createDamageIndicator(targetPosition, sourcePosition, value) {
+function createDamageIndicator(targetPosition, sourcePosition, value, color) {
     var dx = targetPosition[0] - sourcePosition[0] + (Math.random() - .5) * gridLength / 5;
     var dy = targetPosition[1] - sourcePosition[1] + (Math.random() - .5) * gridLength / 5;
     if (dx == 0 && dy == 0) {
@@ -180,7 +203,8 @@ function createDamageIndicator(targetPosition, sourcePosition, value) {
     }
     var mag = Math.sqrt(dx * dx + dy * dy);
     damageIndicators.push({
-        'value': value.abbreviate(),
+        'value': value,
+        'color': ifdefor(color, 'red'),
         'x': targetPosition[0], 'y': targetPosition[1], 'z': gridLength / 10,
         'vx': dx / mag * gridLength / 20, 'vy': dy / mag * gridLength / 20, 'vz': gridLength / 12
     })
@@ -205,6 +229,6 @@ function drawDamageIndicators() {
     for (var damage of damageIndicators) {
         context.font = Math.round(iconSize / 8 * (1 + 4 * damage.z / gridLength)) + 'px sans-serif';
         var coords = project([damage.x, damage.y + damage.z]);
-        embossText(context, damage.value, 'red', 'white', coords[0], coords[1]);
+        embossText(context, damage.value, damage.color, 'white', coords[0], coords[1]);
     }
 }

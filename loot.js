@@ -37,7 +37,7 @@ function checkToGeneratePowerUp(tile) {
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.
     var chanceToSpawn = .1 * ((4 - activePowerups.length) / 4) * ((maxLevel + 1 - tile.level) / (maxLevel));
     if (Math.random() > chanceToSpawn) return;
-    var value = Math.ceil((.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.3, tile.level - 1));
+    var value = (.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.3, tile.level - 1);
     var lootMethod = Random.element(
         [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
@@ -53,7 +53,7 @@ function checkToGeneratePowerUp(tile) {
 }
 
 function makeHealthLoot(value) {
-    return $.extend({'value': 4 * value, 'type': 'health', 'scale': .5, 'onObtain': onObtainHealthLoot}, heartSource);
+    return $.extend({'value': Math.ceil(4 * value * (1 + getSkillValue(skillTree.health.powerups))), 'type': 'health', 'scale': .5, 'onObtain': onObtainHealthLoot}, heartSource);
 }
 function onObtainHealthLoot() {
     healthBonus += this.value;
@@ -62,7 +62,7 @@ function onObtainHealthLoot() {
     showStats();
 }
 function makeAttackLoot(value) {
-    return $.extend({'value': value, 'type': 'attack', 'scale': .75, 'onObtain': onObtainAttackLoot}, swordSource);
+    return $.extend({'value': Math.ceil(value * (1 + getSkillValue(skillTree.attack.powerups))), 'type': 'attack', 'scale': .75, 'onObtain': onObtainAttackLoot}, swordSource);
 }
 function onObtainAttackLoot() {
     attackBonus += this.value;
@@ -70,7 +70,7 @@ function onObtainAttackLoot() {
     showStats();
 }
 function makeDefenseLoot(value) {
-    return $.extend({'value': value, 'type': 'defense', 'scale': .75, 'onObtain': onObtainDefenseLoot}, shieldSource);
+    return $.extend({'value': Math.ceil(value * (1 + getSkillValue(skillTree.defense.powerups))), 'type': 'defense', 'scale': .75, 'onObtain': onObtainDefenseLoot}, shieldSource);
 }
 function onObtainDefenseLoot() {
     defenseBonus += this.value;
@@ -96,9 +96,14 @@ function collectLoot() {
     for (var loot of lootInRadius) collectingLoot.push(loot);
 }
 function isLootInRadius(loot) {
+    var actualRadius = getCollectionRadius();
     var dx = currentPosition[0] - loot.x;
     var dy = currentPosition[1] - loot.y;
-    return dx * dx + dy * dy < radius * radius;
+    return dx * dx + dy * dy < actualRadius * actualRadius;
+}
+
+function getCollectionRadius() {
+    return Math.sqrt((1 + getSkillValue(skillTree.money.radius)) * radius * radius);
 }
 
 

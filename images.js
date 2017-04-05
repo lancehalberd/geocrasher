@@ -76,6 +76,8 @@ var blueGemSource = {'image': requireImage('gfx/loot/blueGem.png'), 'left': 0, '
 var swordSource = {'image': requireImage('gfx/loot/sword.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var shieldSource = {'image': requireImage('gfx/loot/shield.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var shoeSource = {'image': requireImage('gfx/shoe.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var clockSource = {'image': requireImage('gfx/loot/clock.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var scrollSource = {'image': requireImage('gfx/loot/scroll.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 
 // Icon by Chris Brewer originally created for Treasure Tycoon
 var upArrows = {'image': requireImage('gfx/upArrows.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
@@ -85,6 +87,9 @@ var trashSource = {'image': requireImage('gfx/trash.png'), 'left': 0, 'top': 0, 
 
 // Image by Noah originally created for Lazy RPG
 var turtleSource = {'image': requireImage('gfx/monsters/turtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
+
+// Modified version of https://www.toptal.com/designers/subtlepatterns/rocky-wall/
+var darkStoneImage = requireImage('gfx/darkStone.png')
 
 
 // Requires Attribution (http://creativecommons.org/licenses/by/3.0/)

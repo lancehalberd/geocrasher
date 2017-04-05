@@ -33,9 +33,10 @@ function makeMonster(tile) {
         source = waspSource;
     }
     // console.log([healthRoll, attackRoll, defenseRoll, name]);
-    var health = Math.round(30 * powerFactor * healthRoll);
-    var attack = Math.round(5 * powerFactor * attackRoll);
-    var defense = Math.round(5 * powerFactor * defenseRoll);
+    var statReduction = 1 - getSkillValue(skillTree.money.conquerer);
+    var health = Math.round(30 * powerFactor * healthRoll * statReduction);
+    var attack = Math.round(5 * powerFactor * attackRoll * statReduction);
+    var defense = Math.round(5 * powerFactor * defenseRoll * statReduction);
     var minMonsterRadius = gridLength * 2 / 3;
     var maxMonsterRadius = gridLength * 4 / 3;
     return {
