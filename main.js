@@ -21,6 +21,9 @@ setTimeout(function () {
 function mainLoop() {
     try {
         updatedScene = true;
+        if (now() > restartWatchPositionTime) {
+            if (navigator.geolocation && !testMode) watchPosition();
+        }
         if (lastPositionData) {
             var targetPosition = [lastPositionData.coords.longitude + 360, lastPositionData.coords.latitude + 360];
             if (!currentPosition || fixingGPS) {
@@ -113,6 +116,7 @@ function resizeCanvas() {
 $( window ).resize(resizeCanvas);
 var lastPositionData;
 function updatePosition(position) {
+    restartWatchPositionTime = now() + 2000;
     if (lastPositionData) {
         var oldCoords = [lastPositionData.coords.longitude, lastPositionData.coords.latitude];
         var newCoords = [position.coords.longitude, position.coords.latitude];
@@ -308,6 +312,7 @@ function initializeTile(tileData) {
     }
 }
 var origin;
+var watchPositionId, restartWatchPositionTime = 0;
 function getOrigin() {
     return origin;
 }
@@ -323,9 +328,15 @@ if (testMode) {
         // setFixingGPS();
     });
 } else if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(updatePosition, watchError, { enableHighAccuracy: true, maximumAge: 100, timeout: 50000 });
+    watchPosition();
 } else {
     $('body').html("Geolocation is not supported by this browser.");
+}
+function watchPosition() {
+    restartWatchPositionTime = now() + 5000;
+    // Clear previous listener, if any.
+    if (watchPositionId) navigator.geolocation.clearWatch(watchPositionId);
+    watchPositionId = navigator.geolocation.watchPosition(updatePosition, watchError, { enableHighAccuracy: true, maximumAge: 100, timeout: 50000 });
 }
 function tileIsExplored(gridCoords) {
     var key = gridCoords[0] + 'x' + gridCoords[1];
