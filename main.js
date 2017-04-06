@@ -474,15 +474,28 @@ if (testMode) {
     });
 }
 function pushScene(newScene) {
-    history.pushState({}, '');
+    history.pushState({'scene': newScene}, '');
     sceneStack.push(currentScene);
     currentScene = newScene;
 }
 function popScene() {
     history.back();
 }
-window.onpopstate = function () {
+var ignoreNextPop = false;
+window.onpopstate = function (event) {
+    if (ignoreNextPop) {
+        ignoreNextPop = false;
+        return;
+    }
     if (sceneStack.length) {
+        /*
+         * This code prevents the forward button from acting like the back button, but
+         * it isn't clear it works in all cases.
+        if (history.state && history.state.scene !== sceneStack[sceneStack.length - 1]) {
+            ignoreNextPop = true;
+            history.back();
+            return;
+        }*/
         if (currentScene === 'skills') {
             currentScene = sceneStack.pop();
         } else if (currentScene === 'map') {
