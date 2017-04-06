@@ -52,7 +52,7 @@ function getWeightedPowerup(value) {
         [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeAttackLoot, makeAttackLoot, makeAttackLoot,
-         makeDefenseLoot, makeDefenseLoot]);
+         makeDefenseLoot, makeDefenseLoot, makeDefenseLoot]);
     return lootMethod(value);
 }
 
