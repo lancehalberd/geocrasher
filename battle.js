@@ -7,7 +7,7 @@ function gainExperience(experienceGained) {
     if (experience >= forNextLevel) {
         experience -= forNextLevel;
         // Show the loot total to display level up + stats gained.
-        lootCollectedTime = now() + 3000;
+        lootCollectedTime = now() + 5000;
         resetLootTotals();
         level++;
         updatePlayerStats();
