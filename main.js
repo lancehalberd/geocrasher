@@ -186,11 +186,12 @@ function updateGameState() {
             tile.exhaustCounter++;
             if (tile.exhaustCounter >= tile.exhausted) {
                 tile.exhausted = false;
-                checkToGenerateMonster(tile);
+                checkToGenerateMonster(tile, .5);
             }
         }
         if (!tile.exhausted) {
             checkToGenerateLootForTile(tile);
+            checkToGenerateMonster(tile, .05);
         }
     }
     checkToSpawnGems();
@@ -289,7 +290,7 @@ function refreshActiveTiles() {
                 if (tileData.exhausted) continue;
                 if (tileData.loot.length) continue;
                 checkToGenerateLootForTile(tileData);
-                checkToGenerateMonster(tileData);
+                checkToGenerateMonster(tileData, .25);
             }
         }
     }
