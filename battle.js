@@ -104,7 +104,7 @@ function updateBattle(time) {
         } else {
 
             var attackRoll = getAttackRoll(fightingMonster.attack);
-            var damage = calculateDamage(attackRoll, defense);
+            var damage = calculateDamage(attackRoll, getDefenseRoll(defense));
             createDamageIndicator(currentBattlePosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], damage.abbreviate());
             currentHealth = Math.max(0, currentHealth - damage);
 
@@ -119,7 +119,7 @@ function updateBattle(time) {
         monsterAttackTime += getAttackTime();
     }
     if (time > playerAttackTime) {
-        var damage = calculateDamage(getAttackRoll(attack), fightingMonster.defense);
+        var damage = calculateDamage(getAttackRoll(attack), getDefenseRoll(fightingMonster.defense));
         createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentBattlePosition, damage.abbreviate());
         fightingMonster.currentHealth = Math.max(0, fightingMonster.currentHealth - damage);
         fightingMonster.defense = Math.max(0, fightingMonster.defense - Math.ceil(attack * getSkillValue(skillTree.attack.offense)));
@@ -183,10 +183,12 @@ function updateBattle(time) {
 function getAttackRoll(attack) {
     return Math.round((.9 + Math.random() * .2) * attack);
 }
+function getDefenseRoll(defense) {
+    return Math.round((.9 + Math.random() * .2) * defense);
+}
 
-function calculateDamage(attackRoll, defense) {
-    var defenseRoll = Math.round((.9 + Math.random() * .2) * defense);
-    var mitigationFactor = Math.pow(.5, Math.max(0,  Math.log((attackRoll + defenseRoll) / attackRoll)) / Math.log(2));
+function calculateDamage(attackRoll, defenseRoll) {
+    var mitigationFactor = Math.pow(.5, Math.max(0,  Math.log((attackRoll / 2 + defenseRoll) / (attackRoll / 2))) / Math.log(2));
     // Damage is 1/2 when attack = defense, then halves roughly each time defense doubles.
     return Math.max(1, Math.ceil(attackRoll * mitigationFactor));
 }
