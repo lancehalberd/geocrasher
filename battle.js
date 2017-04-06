@@ -6,8 +6,12 @@ function gainExperience(experienceGained) {
     var forNextLevel = experienceForNextLevel();
     if (experience >= forNextLevel) {
         experience -= forNextLevel;
+        // Show the loot total to display level up + stats gained.
+        lootCollectedTime = now() + 3000;
+        resetLootTotals();
         level++;
         updatePlayerStats();
+        currentHealth = maxHealth;
     }
 }
 
@@ -24,6 +28,13 @@ function updatePlayerStats() {
     maxHealth = Math.round(healthBonus * levelBonus * (1 + treeBonuses.health / 50));
     attack = Math.round(attackBonus * levelBonus * (1 + treeBonuses.attack / 50) + getSkillValue(skillTree.health.offense) * currentHealth / 100);
     defense = Math.round(defenseBonus * levelBonus * (1 + treeBonuses.defense / 50) + getSkillValue(skillTree.health.defense) * (maxHealth - currentHealth) / 100);
+}
+
+function getAttackWithoutHealthBonuses() {
+    return Math.round(attackBonus * getLevelBonus(level) * (1 + treeBonuses.attack / 50));
+}
+function getDefenseWithoutHealthBonuses() {
+    return Math.round(defenseBonus * getLevelBonus(level) * (1 + treeBonuses.defense / 50));
 }
 
 var hideStatsAt;
@@ -74,29 +85,33 @@ function getPlayerAttackTime() {
     return getAttackTime() / (1 + getSkillValue(skillTree.attack.attackSpeed));
 }
 
+function getCurrentPosition() {
+    return currentScene === 'dungeon' ? [(dungeonPosition[0] + .5) * gridLength, (dungeonPosition[1] + .1) * gridLength] : currentPosition;
+}
+
 var monsterAttackTime, playerAttackTime;
 function updateBattle(time) {
     // End battle if the player is too far from the monster.
     if (activeMonsters.indexOf(fightingMonster) < 0) {
         fightingMonster = null;
-        selectedTile = null;
         return;
     }
+    var currentBattlePosition = getCurrentPosition();
     if (time > monsterAttackTime) {
         var dodgeChance = getSkillValue(skillTree.defense.dodge);
         if (Math.random() < dodgeChance) {
-            createDamageIndicator(currentPosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], 'Dodge', 'blue');
+            createDamageIndicator(currentBattlePosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], 'Dodge', 'blue');
         } else {
 
             var attackRoll = getAttackRoll(fightingMonster.attack);
             var damage = calculateDamage(attackRoll, defense);
-            createDamageIndicator(currentPosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], damage.abbreviate());
+            createDamageIndicator(currentBattlePosition, [fightingMonster.tile.centerX, fightingMonster.tile.centerY], damage.abbreviate());
             currentHealth = Math.max(0, currentHealth - damage);
 
             // Blocked damage is difference between the attackRoll and actual damage. Reflected damage is a percentage of this value.
             var reflectedDamage = Math.ceil((attackRoll - damage) * getSkillValue(skillTree.defense.offense));
             if (reflectedDamage) {
-                createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentPosition, reflectedDamage.abbreviate(), 'orange');
+                createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentBattlePosition, reflectedDamage.abbreviate(), 'orange');
                 fightingMonster.currentHealth = Math.max(0, fightingMonster.currentHealth - reflectedDamage);
             }
             fightingMonster.attack = Math.max(1, fightingMonster.attack - Math.ceil(defense * getSkillValue(skillTree.defense.defense)));
@@ -105,29 +120,59 @@ function updateBattle(time) {
     }
     if (time > playerAttackTime) {
         var damage = calculateDamage(getAttackRoll(attack), fightingMonster.defense);
-        createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentPosition, damage.abbreviate());
+        createDamageIndicator([fightingMonster.tile.centerX, fightingMonster.tile.centerY], currentBattlePosition, damage.abbreviate());
         fightingMonster.currentHealth = Math.max(0, fightingMonster.currentHealth - damage);
         fightingMonster.defense = Math.max(0, fightingMonster.defense - Math.ceil(attack * getSkillValue(skillTree.attack.offense)));
         currentHealth = Math.min(maxHealth, currentHealth + Math.ceil(damage * getSkillValue(skillTree.attack.defense)));
         playerAttackTime += getPlayerAttackTime();
     }
     if (fightingMonster.currentHealth <= 0) {
-        updateGameState();
+        var defeatedMonster = fightingMonster;
+        if (currentScene !== 'dungeon') {
+            updateGameState();
+            exhaustTile(fightingMonster.tile);
+        }
         fightingMonster.tile.monster = null;
-        exhaustTile(fightingMonster.tile);
+
+        if (Math.random() < 0.05 && currentScene !== 'dungeon') {
+            var dungeonLevel = Math.max(1, Random.range(fightingMonster.level - 1, fightingMonster.level + 1));
+            addDungeonToTile(fightingMonster.tile, dungeonLevel);
+        }
+        var monsterTile = fightingMonster.tile;
         fightingMonster.tile = null;
         activeMonsters.splice(activeMonsters.indexOf(fightingMonster), 1);
         var currentLootInMonsterRadius = lootInMonsterRadius;
-        gainExperience(fightingMonster.experience);
         fightingMonster = null;
         selectedTile = null;
-        updateMap();
-        resetLootTotals();
-        for (var loot of currentLootInMonsterRadius) {
-            if (lootInMonsterRadius.indexOf(loot) < 0) {
-                collectingLoot.push(loot);
+        // Outside of dungeons, you get nearby treasure for fighting monsters.
+        if (currentScene !== 'dungeon') {
+            updateMap();
+            resetLootTotals();
+            for (var loot of currentLootInMonsterRadius) {
+                if (lootInMonsterRadius.indexOf(loot) < 0) {
+                    collectingLoot.push(loot);
+                }
+            }
+        } else {
+            for (var neighbor of getAllNeighbors(monsterTile)) {
+                neighbor.guards--;
+            }
+            if (defeatedMonster.isBoss) {
+                var loot;
+                if (currentDungeon.isQuestDungeon) {
+                    loot = {'treasure': makeMagicStoneLoot(), 'type': 'loot'};
+                } else {
+                    var coins = Math.ceil((.9 + Math.random() * .2) * (1 + treeBonuses.money / 50) * Math.pow(1.1, defeatedMonster.level) * defeatedMonster.level * 100);
+                    loot = {'treasure': $.extend({'value': coins, 'type': 'coins', 'scale': 1, 'onObtain': onObtainCoins}, chestSource), 'type': 'loot'};
+                }
+                var realCoords = toRealCoords([monsterTile.x, monsterTile.y]);
+                loot.tx = loot.x = realCoords[0] + gridLength / 2;
+                loot.ty = loot.y = realCoords[1] + gridLength / 2;
+                loot.tile = monsterTile;
+                monsterTile.loot = [loot];
             }
         }
+        gainExperience(defeatedMonster.experience);
     }
     if (currentHealth <= 0) {
         fightingMonster = null;
@@ -156,6 +201,19 @@ function calculateOlderDamage(attack, defense) {
 
 var fightingMonster = null;
 var fightFleeButton = {'target': {}};
+function handleFightFleeButtonClick(x, y) {
+    if (!selectedTile || !selectedTile.monster) return false;
+    if (currentHealth <= 0 || !isPointInRectObject(x, y, fightFleeButton.target)) return false;
+    if (!fightingMonster) {
+        fightingMonster = selectedTile.monster;
+        // Monster always attacks first.
+        monsterAttackTime = now() + 300;
+        playerAttackTime = now() + 300 + getPlayerAttackTime() / 2;
+    } else {
+        fightingMonster = null;
+    }
+    return true;
+}
 function drawFightFleeButton() {
     context.textBaseline = 'middle';
     context.textAlign = 'left';

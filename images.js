@@ -78,6 +78,10 @@ var shieldSource = {'image': requireImage('gfx/loot/shield.png'), 'top': 0, 'lef
 var shoeSource = {'image': requireImage('gfx/shoe.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var clockSource = {'image': requireImage('gfx/loot/clock.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var scrollSource = {'image': requireImage('gfx/loot/scroll.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var portalSource = {'image': requireImage('gfx/map/portal.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var shellSource = {'image': requireImage('gfx/map/shell.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var exitSource = {'image': requireImage('gfx/map/exit.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var magicStoneSource = {'image': requireImage('gfx/loot/magicStone.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 
 // Icon by Chris Brewer originally created for Treasure Tycoon
 var upArrows = {'image': requireImage('gfx/upArrows.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};

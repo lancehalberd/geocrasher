@@ -13,6 +13,9 @@ function drawScene() {
         case 'skills':
             drawSkillsScene();
             break;
+        case 'dungeon':
+            drawDungeonScene();
+            break;
     }
     // context.fillStyle = '#0F0';
     // context.fillRect(lastClick[0] - 5, lastClick[1] - 5, 10, 10);

@@ -57,6 +57,7 @@ function areCoordsInGemHistory(coords, gem) {
 }
 
 function drawGemIndicators() {
+    var scaleToUse = getActualScale();
     var playerScreenCoords = project(currentPosition);
     for (var gem of gemData) {
         if (gem.counter) {
@@ -67,7 +68,7 @@ function drawGemIndicators() {
                 context.fillStyle = gem.color;
                 context.beginPath();
                 if (percent < 1) context.moveTo(playerScreenCoords[0], playerScreenCoords[1]);
-                context.arc(playerScreenCoords[0], playerScreenCoords[1], gem.collectRadius * actualScale, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
+                context.arc(playerScreenCoords[0], playerScreenCoords[1], gem.collectRadius * scaleToUse, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
                 if (percent < 1) context.closePath();
                 context.fill();
                 context.restore();
@@ -91,21 +92,21 @@ function drawGemIndicators() {
         if (!gem.loot || collectingLoot.indexOf(gem.loot) >= 0) continue;
         var screenCoords = project([gem.loot.x, gem.loot.y]);
         var distance = getDistance([gem.loot.x, gem.loot.y], currentPosition);
-        var pixelDistance = distance * actualScale;
+        var pixelDistance = distance * scaleToUse;
         var indicatorScreenCoords;
         var distanceFactor = (pixelDistance - 40) / pixelDistance;
         var dx = (gem.loot.x - currentPosition[0]);
         var dy = (gem.loot.y - currentPosition[1]);
         //console.log(distanceFactor);
-        if (currentPosition[0] < gem.loot.x) distanceFactor = Math.min(distanceFactor, (canvas.width - playerScreenCoords[0] - 20) / (dx * actualScale));
-        if (currentPosition[0] > gem.loot.x) distanceFactor = Math.min(distanceFactor, (playerScreenCoords[0] - 20) / (-dx * actualScale));
-        if (currentPosition[1] < gem.loot.y) distanceFactor = Math.min(distanceFactor, (playerScreenCoords[1] - 20) / (dy * actualScale));
-        if (currentPosition[1] > gem.loot.y) distanceFactor = Math.min(distanceFactor, (canvas.height - playerScreenCoords[1] - 20) / (-dy * actualScale));
+        if (currentPosition[0] < gem.loot.x) distanceFactor = Math.min(distanceFactor, (canvas.width - playerScreenCoords[0] - 20) / (dx * scaleToUse));
+        if (currentPosition[0] > gem.loot.x) distanceFactor = Math.min(distanceFactor, (playerScreenCoords[0] - 20) / (-dx * scaleToUse));
+        if (currentPosition[1] < gem.loot.y) distanceFactor = Math.min(distanceFactor, (playerScreenCoords[1] - 20) / (dy * scaleToUse));
+        if (currentPosition[1] > gem.loot.y) distanceFactor = Math.min(distanceFactor, (canvas.height - playerScreenCoords[1] - 20) / (-dy * scaleToUse));
 
         //console.log([pixelDistance, distanceFactor]);
         indicatorScreenCoords = [
-            distanceFactor * dx * actualScale + playerScreenCoords[0],
-            distanceFactor * -dy * actualScale + playerScreenCoords[1]
+            distanceFactor * dx * scaleToUse + playerScreenCoords[0],
+            distanceFactor * -dy * scaleToUse + playerScreenCoords[1]
         ];
         context.lineWidth = 1;
         context.fillStyle = gem.color;

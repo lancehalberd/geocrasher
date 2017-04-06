@@ -16,7 +16,7 @@ function newGameData() {
         'defenseBonus': 6,
         'tileData': [],
         'gemData': [{'history': []}, {'history': []}, {'history': []}],
-        'bonusSkillPoints': 0,
+        'dungeonLevelCap': 2,
         'skillData': {}
     };
 }
@@ -44,7 +44,7 @@ function loadSaveSlot(index) {
         initializeTile(gridData[key]);
     }
 
-    bonusSkillPoints = saveSlot.bonusSkillPoints;
+    dungeonLevelCap = saveSlot.dungeonLevelCap;
 
     usedSkillPoints = 0;
     for (var treeKey in skillTree) {
@@ -82,7 +82,7 @@ function exportSaveSlot() {
     data.healthBonus = healthBonus;
     data.attackBonus = attackBonus;
     data.defenseBonus = defenseBonus;
-    data.bonusSkillPoints = bonusSkillPoints;
+    data.dungeonLevelCap = dungeonLevelCap;
     data.skillData = {};
     for (var treeKey in skillTree) {
         data.skillData[treeKey] = {};
@@ -127,7 +127,7 @@ function fixSaveSlot(saveSlot) {
     saveSlot.defenseBonus = fixNumber(saveSlot.defenseBonus, defaults.defenseBonus);
     saveSlot.tileData = ifdefor(saveSlot.tileData, defaults.tileData);
     saveSlot.gemData = ifdefor(saveSlot.gemData, defaults.gemData);
-    saveSlot.bonusSkillPoints = ifdefor(saveSlot.bonusSkillPoints, defaults.bonusSkillPoints);
+    saveSlot.dungeonLevelCap = ifdefor(saveSlot.dungeonLevelCap, defaults.dungeonLevelCap);
     saveSlot.skillData = ifdefor(saveSlot.skillData, defaults.skillData);
     for (var i = 0; i < defaults.gemData.length; i++) {
         if (!saveSlot.gemData[i]) saveSlot.gemData[i] = defaults.gemData[i];

@@ -1,4 +1,4 @@
-var bonusSkillPoints = 0, usedSkillPoints = 0;
+var usedSkillPoints = 0;
 var treeBonuses = {'health': 0, 'attack': 0, 'defense': 0, 'money':  0};
 var skillTree = {
     'health': {
@@ -33,10 +33,10 @@ for (var treeKey in skillTree) {
     }
 }
 function isSkillButtonVisible() {
-    return (level > 1 || bonusSkillPoints > 0) && !fastMode && !fixingGPS;
+    return getTotalSkillPoints() > 0 && !fastMode && !fixingGPS;
 }
 function getTotalSkillPoints() {
-    return (level - 1) + bonusSkillPoints;
+    return (level - 1) + (dungeonLevelCap / 2 - 1);
 }
 function getAvailableSkillPoints() {
     return getTotalSkillPoints() - usedSkillPoints;

@@ -38,7 +38,7 @@ function drawTitleScene() {
     var mainButtonWidth = Math.ceil(narrow ? Math.min(300, canvas.width / 2) : canvas.width / 5);
     var buttonHeight = Math.ceil( mainButtonWidth / 2);
     var deleteButtonWidth = Math.floor(buttonHeight / 3);
-    mainButtonWidth = Math.round(mainButtonWidth * 5 / 4);
+    mainButtonWidth = Math.round(mainButtonWidth * 4 / 3);
     var totalButtonWidth = mainButtonWidth + deleteButtonWidth;
     var padding = 10;
     var top, left;
@@ -89,16 +89,16 @@ function drawTitleScene() {
         var middleLeft = statsLeft + Math.ceil(statsWidth / 2);
         drawImage(context, heartSource.image, heartSource, {'left': middleLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
         context.fillStyle = 'red';
-        context.fillText(Math.round(saveSlot.healthBonus* levelBonus), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
+        context.fillText(Math.round(saveSlot.healthBonus * levelBonus).abbreviate(), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
         statsTop += localIconSize + statsPadding;
 
         context.fillStyle = 'black';
         // Attack
         drawImage(context, swordSource.image, swordSource, {'left': statsLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
-        context.fillText(Math.round(saveSlot.attackBonus * levelBonus), statsLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
+        context.fillText(Math.round(saveSlot.attackBonus * levelBonus).abbreviate(), statsLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
         // Defense
         drawImage(context, shieldSource.image, shieldSource, {'left': middleLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
-        context.fillText(Math.round(saveSlot.defenseBonus * levelBonus), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2) );
+        context.fillText(Math.round(saveSlot.defenseBonus * levelBonus).abbreviate(), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2) );
         statsTop += localIconSize + statsPadding;
 
         // Coins
