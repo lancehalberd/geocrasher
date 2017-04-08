@@ -14,6 +14,7 @@ function checkToSpawnGems() {
             if (getDistance([gem.loot.x, gem.loot.y], currentPosition) < gem.spawnRadius + gridLength * 5) continue;
             var tile = gem.loot.tile;
             tile.loot.splice(tile.loot.indexOf(gem.loot), 1);
+            tile.gem = null;
             gem.loot = null;
         }
         var theta = Math.random() * 2 * Math.PI, bestTile = null;
