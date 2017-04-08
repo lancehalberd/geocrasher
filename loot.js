@@ -236,42 +236,44 @@ function drawLootTotals(fadeTime) {
         embossText(context, totalCoinsText, 'gold', 'black', left + localIconSize, top + localIconSize / 2);
         drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left':left, 'top': top, 'width': localIconSize, 'height': localIconSize});
     }
+    var powerUpFontSize = Math.floor(iconSize / 2);
     var powerUpWidth = 0;
     var currentAttack = getAttackWithoutHealthBonuses();
     var currentDefense = getDefenseWithoutHealthBonuses();
     var healthBonusText = '+' + (maxHealth - initialMaxHealth).abbreviate();
     var attackBonusText = '+' + (currentAttack - initialAttack).abbreviate();
     var defenseBonusText = '+' + (currentDefense - initialDefense).abbreviate();
-    if (maxHealth !== initialMaxHealth) powerUpWidth += localIconSize + context.measureText(healthBonusText).width;
-    if (currentAttack !== initialAttack) powerUpWidth += localIconSize + context.measureText(attackBonusText).width;
-    if (currentDefense !== initialDefense) powerUpWidth += localIconSize + context.measureText(defenseBonusText).width;
+    context.font = powerUpFontSize + 'px sans-serif';
+    if (maxHealth !== initialMaxHealth) powerUpWidth += powerUpFontSize + context.measureText(healthBonusText).width;
+    if (currentAttack !== initialAttack) powerUpWidth += powerUpFontSize + context.measureText(attackBonusText).width;
+    if (currentDefense !== initialDefense) powerUpWidth += powerUpFontSize + context.measureText(defenseBonusText).width;
     if (level !== initialLevel) {
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
-        embossText(context, 'LEVEL UP', 'gold', 'black', canvas.width / 2, canvas.height / 2 - 2 * fontSize - 8);
+        embossText(context, 'LEVEL UP', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
     } else if (getTotalSkillPoints() !== initialSkillPoints) {
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
-        embossText(context, '+1 Skill Point', 'gold', 'black', canvas.width / 2, canvas.height / 2 - 2 * fontSize - 8);
+        embossText(context, '+1 Skill Point', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
     }
     if (powerUpWidth > 0) {
         var left = (canvas.width - powerUpWidth) / 2;
         context.textAlign = 'left';
-        context.textBaseline = 'bottom';
+        context.textBaseline = 'middle';
         var bottom = canvas.height / 2 - fontSize - 4;
         if (maxHealth !== initialMaxHealth) {
-            drawImage(context, heartSource.image, heartSource, {'left':left, 'top': bottom - localIconSize, 'width': localIconSize, 'height': localIconSize});
-            embossText(context, healthBonusText, 'white', 'black', left + localIconSize, bottom);
-            left += localIconSize + context.measureText(healthBonusText).width;
+            drawImage(context, heartSource.image, heartSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            embossText(context, healthBonusText, 'white', 'black', left + powerUpFontSize, bottom - powerUpFontSize / 2);
+            left += powerUpFontSize + context.measureText(healthBonusText).width;
         }
         if (currentAttack !== initialAttack) {
-            drawImage(context, swordSource.image, swordSource, {'left':left, 'top': bottom - localIconSize, 'width': localIconSize, 'height': localIconSize});
-            embossText(context, attackBonusText, 'white', 'black', left + localIconSize, bottom);
-            left += localIconSize + context.measureText(attackBonusText).width;
+            drawImage(context, swordSource.image, swordSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            embossText(context, attackBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
+            left += powerUpFontSize + context.measureText(attackBonusText).width;
         }
         if (currentDefense !== initialDefense) {
-            drawImage(context, shieldSource.image, shieldSource, {'left':left, 'top': bottom - localIconSize, 'width': localIconSize, 'height': localIconSize});
-            embossText(context, defenseBonusText, 'white', 'black', left + localIconSize, bottom);
+            drawImage(context, shieldSource.image, shieldSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            embossText(context, defenseBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
         }
     }
     context.restore();
