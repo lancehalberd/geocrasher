@@ -72,10 +72,10 @@ function drawStatsBox(x, y, level, name, currentHealth, maxHealth, attack, defen
 
     y += localIconSize + padding;
     drawImage(context, swordSource.image, swordSource, {'left': x + padding, 'top': y, 'width': localIconSize, 'height': localIconSize});
-    context.fillText(attack, x + localIconSize + 2 * padding, y);
+    context.fillText(attack.abbreviate(), x + localIconSize + 2 * padding, y);
     var centerX = Math.floor(x + width / 2);
     drawImage(context, shieldSource.image, shieldSource, {'left': centerX + padding, 'top': y, 'width': localIconSize, 'height': localIconSize});
-    context.fillText(defense, centerX + localIconSize + padding, y);
+    context.fillText(defense.abbreviate(), centerX + localIconSize + padding, y);
     return rectangle;
 }
 function getAttackTime() {
