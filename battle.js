@@ -40,7 +40,7 @@ function getDefenseWithoutHealthBonuses() {
 var hideStatsAt;
 function drawStatsBox(x, y, level, name, currentHealth, maxHealth, attack, defense, experience, nextLevel) {
     var localIconSize = Math.floor(iconSize / 2);
-    var width = localIconSize * 7;
+    var width = localIconSize * 8;
     var height = localIconSize * 4;
     var padding = Math.floor(localIconSize / 4);
     var rectangle = {'left': x, 'top': y, 'width': width, 'height':  height};
