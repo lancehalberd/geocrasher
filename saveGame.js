@@ -24,6 +24,10 @@ function loadSaveSlot(index) {
     saveSlotIndex = index;
     var defaults = newGameData();
     var saveSlot = saveSlots[saveSlotIndex];
+    // We run fixSaveSlot once on load, but if something gets corrupted after that, we will
+    // need to run it again on load to fix it. This wasn't a problem before when we could
+    // not return to the title scene.
+    saveSlot = fixSaveSlot(saveSlot);
     radius = saveSlot.radius;
     coins = saveSlot.coins;
     level = saveSlot.level;

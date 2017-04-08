@@ -6,7 +6,7 @@ function addDungeonToTile(tile, level) {
         'level': level,
         'isQuestDungeon': isQuestDungeon,
         'name': isQuestDungeon ? 'Portal' : 'Hollow Shell',
-        'numberOfFloors': Math.floor(Math.sqrt(level) / 2),
+        'numberOfFloors': Math.max(1, Math.floor(Math.sqrt(level) / 2)),
         'tile': tile,
         'source': isQuestDungeon ? portalSource : shellSource,
         'x': tile.x,
