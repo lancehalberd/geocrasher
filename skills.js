@@ -83,42 +83,81 @@ function drawSkillsScene() {
     var skillSpacing = skillSize + padding;
     var centerX = Math.round(canvas.width / 2);
     var centerY = Math.round((canvas.height - iconSize) / 2);
+    var netPoints = getAvailableSkillPoints();
+    var color = '#0c0';
+    var selectedSkillType, selectedSkillCost;
+    if (selectedSkill) {
+        var skillIsAvailable = canLearnSkill(selectedSkill);
+        selectedSkillType = selectedSkill.treeKey;
+        selectedSkillCost = getSkillCost(selectedSkill);
+        netPoints = skillIsAvailable ? netPoints - selectedSkillCost : '- -';
+        var reqiurementsSatisfied = skillIsAvailable && (netPoints >= 0);
+        color = reqiurementsSatisfied ? 'green' : 'red';
+        context.save();
+        if (!reqiurementsSatisfied) context.globalAlpha = .5;
+        drawUpgradeSkillButton(skillIsAvailable ? selectedSkillCost : '---', reqiurementsSatisfied ? 'green' : 'red', reqiurementsSatisfied ? 'white' : 'red');
+        context.restore();
+    }
     drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': centerX - skillSpacing, 'top': centerY + skillSpacing * 3 - skillSize / 2, 'width': skillSize, 'height': skillSize});
 
     context.font =  Math.floor(skillSize / 3) + 'px sans-serif';
     context.textBaseline = 'middle';
     context.textAlign = 'left';
-    embossText(context, '+' + (treeBonuses.money / 50).percent(), '#0f0', 'white', centerX, centerY + skillSpacing * 3);
+    var bonus = getMoneySkillBonus() - 1;
+    var color = 'green';
+    if (selectedSkillType === 'health') {
+        bonus -= selectedSkillCost / 100;
+        color = 'red'
+    } else if (selectedSkillType === 'money') {
+        bonus += selectedSkillCost / 100;
+        color = '#0F0';
+    }
+    embossText(context, (bonus >= 0 ? '+' : '') + bonus.percent(), color, 'white', centerX, centerY + skillSpacing * 3);
 
+
+    bonus = getHealthSkillBonus() - 1;
+    color = 'green';
+    if (selectedSkillType === 'money') {
+        bonus -= selectedSkillCost / 100;
+        color = 'red'
+    } else if (selectedSkillType === 'health') {
+        bonus += selectedSkillCost / 100;
+        color = '#0F0';
+    }
     drawImage(context, heartSource.image, heartSource, {'left': centerX - skillSpacing, 'top': centerY - skillSpacing * 3 - skillSize / 2, 'width': skillSize, 'height': skillSize});
-    embossText(context, '+' + (treeBonuses.health / 50).percent(), '#0f0', 'white', centerX, centerY - skillSpacing * 3);
+    embossText(context, (bonus >= 0 ? '+' : '') + bonus.percent(), color, 'white', centerX, centerY - skillSpacing * 3);
 
+    bonus = getAttackSkillBonus() - 1;
+    color = 'green';
+    if (selectedSkillType === 'defense') {
+        bonus -= selectedSkillCost / 100;
+        color = 'red'
+    } else if (selectedSkillType === 'attack') {
+        bonus += selectedSkillCost / 100;
+        color = '#0F0';
+    }
     drawImage(context, swordSource.image, swordSource, {'left': centerX - 3 * skillSpacing - skillSize / 2, 'top': centerY - skillSpacing, 'width': skillSize, 'height': skillSize});
     context.textBaseline = 'top';
     context.textAlign = 'right';
-    embossText(context, '+' + (treeBonuses.attack / 50).percent(), '#0f0', 'white', centerX - skillSpacing * 3 + skillSize / 2, centerY);
+    embossText(context, (bonus >= 0 ? '+' : '') + bonus.percent(), color, 'white', centerX - skillSpacing * 3 + skillSize / 2, centerY);
 
+    bonus = getDefenseSkillBonus() - 1;
+    color = 'green';
+    if (selectedSkillType === 'attack') {
+        bonus -= selectedSkillCost / 100;
+        color = 'red'
+    } else if (selectedSkillType === 'defense') {
+        bonus += selectedSkillCost / 100;
+        color = '#0F0';
+    }
     drawImage(context, shieldSource.image, shieldSource, {'left': centerX + 3 * skillSpacing - skillSize / 2, 'top': centerY - skillSpacing, 'width': skillSize, 'height': skillSize});
     context.textAlign = 'left';
-    embossText(context, '+' + (treeBonuses.defense / 50).percent(), '#0f0', 'white', centerX + skillSpacing * 3 - skillSize / 2, centerY);
+    embossText(context, (bonus >= 0 ? '+' : '') + bonus.percent(), color, 'white', centerX + skillSpacing * 3 - skillSize / 2, centerY);
 
 
     context.textBaseline = 'middle';
     context.textAlign = 'center';
     context.font = 'bold ' + Math.floor(skillSize / 2) + 'px sans-serif';
-    var netPoints = getAvailableSkillPoints();
-    var color = '#0c0';
-    if (selectedSkill) {
-        var skillIsAvailable = canLearnSkill(selectedSkill);
-        var cost = getSkillCost(selectedSkill);
-        netPoints = skillIsAvailable ? netPoints - cost : '- -';
-        var reqiurementsSatisfied = skillIsAvailable && (netPoints >= 0);
-        color = reqiurementsSatisfied ? 'green' : 'red';
-        context.save();
-        if (!reqiurementsSatisfied) context.globalAlpha = .5;
-        drawUpgradeSkillButton(skillIsAvailable ? cost : '---', reqiurementsSatisfied ? 'green' : 'red', reqiurementsSatisfied ? 'white' : 'red');
-        context.restore();
-    }
     outlineText(context, netPoints, color, 'white', 1, centerX, centerY);
     for (var treeKey in skillTree) {
         for (var skillKey in skillTree[treeKey]) {

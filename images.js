@@ -207,7 +207,6 @@ function drawSourceAsSolidTint(context, source, tint, target) {
     globalTintContext.restore();
 }
 function drawOutlinedImage(context, image, color, thickness, source, target) {
-    context.save();
     var smallTarget = $.extend({}, target);
     for (var dy = -1; dy < 2; dy++) {
         for (var dx = -1; dx < 2; dx++) {

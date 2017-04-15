@@ -1,41 +1,4 @@
 
-var level, experience, currentHealth, healthBonus, attackBonus, defenseBonus;
-var maxHealth, attack, defense;
-function gainExperience(experienceGained) {
-    experience += experienceGained * (1 + getSkillValue(skillTree.money.powerups));
-    var forNextLevel = experienceForNextLevel();
-    if (experience >= forNextLevel) {
-        experience -= forNextLevel;
-        // Show the loot total to display level up + stats gained.
-        lootCollectedTime = now() + 5000;
-        resetLootTotals();
-        level++;
-        updatePlayerStats();
-        currentHealth = maxHealth;
-    }
-}
-
-function experienceForNextLevel() {
-    return Math.round(10 * level * Math.pow(1.3, level - 1));
-}
-
-function getLevelBonus(level) {
-    return Math.pow(1.1, level - 1);
-}
-
-function updatePlayerStats() {
-    var levelBonus = getLevelBonus(level);
-    maxHealth = Math.round(healthBonus * levelBonus * (1 + treeBonuses.health / 50));
-    attack = Math.round(attackBonus * levelBonus * (1 + treeBonuses.attack / 50) + getSkillValue(skillTree.health.offense) * currentHealth / 100);
-    defense = Math.round(defenseBonus * levelBonus * (1 + treeBonuses.defense / 50) + getSkillValue(skillTree.health.defense) * (maxHealth - currentHealth) / 100);
-}
-
-function getAttackWithoutHealthBonuses() {
-    return Math.round(attackBonus * getLevelBonus(level) * (1 + treeBonuses.attack / 50));
-}
-function getDefenseWithoutHealthBonuses() {
-    return Math.round(defenseBonus * getLevelBonus(level) * (1 + treeBonuses.defense / 50));
-}
 
 var hideStatsAt;
 function drawStatsBox(x, y, level, name, currentHealth, maxHealth, attack, defense, experience, nextLevel) {
@@ -162,7 +125,7 @@ function updateBattle(time) {
                 if (currentDungeon.isQuestDungeon) {
                     loot = {'treasure': makeMagicStoneLoot(), 'type': 'loot'};
                 } else {
-                    var coins = Math.ceil((.9 + Math.random() * .2) * (1 + treeBonuses.money / 50) * Math.pow(1.1, defeatedMonster.level) * defeatedMonster.level * 100);
+                    var coins = Math.ceil((.9 + Math.random() * .2) * getMoneySkillBonus() * Math.pow(1.1, defeatedMonster.level) * defeatedMonster.level * 100);
                     loot = {'treasure': $.extend({'value': coins, 'type': 'coins', 'scale': 1, 'onObtain': onObtainCoins}, chestSource), 'type': 'loot'};
                 }
                 var realCoords = toRealCoords([monsterTile.x, monsterTile.y]);

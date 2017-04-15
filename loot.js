@@ -18,7 +18,7 @@ function onObtainCoins() {
 
 function checkToGenerateLootForTile(tile) {
     if (tile.loot.length < 3) {
-        var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * (1 + treeBonuses.money / 50) * Math.pow(4, tile.level) / 3);
+        var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * getMoneySkillBonus() * Math.pow(4, tile.level) / 3);
         var coinDrops = generateLootCoins(coins, 1);
         var realCoords = toRealCoords([tile.x, tile.y]);
         for (var coinDrop of coinDrops) {
@@ -262,17 +262,17 @@ function drawLootTotals(fadeTime) {
         context.textBaseline = 'middle';
         var bottom = canvas.height / 2 - fontSize - 4;
         if (maxHealth !== initialMaxHealth) {
-            drawImage(context, heartSource.image, heartSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            drawOutlinedImage(context, heartSource.image, 'white', 2, heartSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
             embossText(context, healthBonusText, 'white', 'black', left + powerUpFontSize, bottom - powerUpFontSize / 2);
             left += powerUpFontSize + context.measureText(healthBonusText).width;
         }
         if (currentAttack !== initialAttack) {
-            drawImage(context, swordSource.image, swordSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            drawOutlinedImage(context, swordSource.image, 'white', 2, swordSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
             embossText(context, attackBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
             left += powerUpFontSize + context.measureText(attackBonusText).width;
         }
         if (currentDefense !== initialDefense) {
-            drawImage(context, shieldSource.image, shieldSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            drawOutlinedImage(context, shieldSource.image, 'white', 2, shieldSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
             embossText(context, defenseBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
         }
     }

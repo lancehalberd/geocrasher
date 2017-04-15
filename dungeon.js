@@ -58,7 +58,7 @@ function startNewFloor() {
         tileThings.push({'treasure': getWeightedPowerup(powerUpValue), 'type': 'loot'});
     } while (tileThings.length < 25 && Math.random() < .1);
 
-    var floorCoins = Math.ceil((.8 + Math.random() * .4) * (1 + treeBonuses.money / 50) * Math.pow(1.1, floorPower) * floorPower * 50);
+    var floorCoins = Math.ceil((.8 + Math.random() * .4) * getMoneySkillBonus() * Math.pow(1.1, floorPower) * floorPower * 50);
     // Intentionally allow more coins than we can hold. Then what the player actually gets will be somewhat random.
     var coinDrops = generateLootCoins(floorCoins, 30);
     while (tileThings.length < 25 && coinDrops.length) {
