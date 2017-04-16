@@ -264,7 +264,7 @@ function exploreSurroundingTiles() {
     }
 }
 function refreshActiveTiles() {
-    if (currentScene === 'dungeon') return;
+    if (currentDungeon) return;
     var oldActiveTiles = activeTiles;
     activeTiles = [];
     selectableTiles = [];
@@ -323,7 +323,7 @@ function initializeTile(tileData) {
 var origin;
 var watchPositionId, restartWatchPositionTime = 0;
 function getOrigin() {
-    return currentScene === 'dungeon' ? [gridLength / 2, gridLength / 2] : origin;
+    return currentDungeon ? [gridLength / 2, gridLength / 2] : origin;
 }
 if (testMode) {
     var stepSize = gridLength / 3;
@@ -360,7 +360,7 @@ var maxScale = 5e5;
 var minScale = 1.5e5;
 var actualScale = scale;
 function getActualScale() {
-    if (currentScene === 'dungeon') {
+    if (currentDungeon) {
         return dungeonScale;
     }
     return actualScale;
@@ -506,7 +506,7 @@ window.onpopstate = function (event) {
             } else {
                 history.pushState({}, '');
             }
-        } else if (currentScene === 'dungeon') {
+        } else if (currentDungeon) {
             if (confirm('Are you sure you want to exit the dungeon?')) {
                 exitDungeon();
             } else {

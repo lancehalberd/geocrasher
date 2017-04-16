@@ -127,7 +127,7 @@ function updateLootCollection() {
     for (var i = 0; i < collectingLoot.length; i++) {
         // Pull coins towards the player's position, the front of the queue quicker than the rest.
         var factor = Math.min(10, 3 * i + 1);
-        if (currentScene === 'dungeon') factor = 5;
+        if (currentDungeon) factor = 5;
         else if (fastMode) factor = 2;
         collectingLoot[i].x = collectingLoot[i].tx = (currentPosition[0] * 2 + collectingLoot[i].tx * factor) / (factor + 2);
         collectingLoot[i].y = collectingLoot[i].ty = (currentPosition[1] * 2 + collectingLoot[i].ty * factor) / (factor + 2);
@@ -148,7 +148,7 @@ function updateLootCollection() {
 
 function obtainloot(loot) {
     lootCollectedTime = now();
-    if (fastMode || currentScene === 'dungeon') {
+    if (fastMode || currentDungeon) {
         collectionBonus = 1;
     } else if (collectionBonus < 2) collectionBonus += .1;
     else collectionBonus += .05;
@@ -188,7 +188,7 @@ function drawCollectCoinsButton() {
     context.save();
     var enabled = false
     var lootCount = 0;
-    if (currentScene === 'dungeon') {
+    if (currentDungeon) {
         lootCount = selectedTile.loot.length;
     } else {
         lootCount = lootInRadius.length;

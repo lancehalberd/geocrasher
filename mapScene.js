@@ -78,7 +78,7 @@ function drawPerson() {
     var scaleToUse = getActualScale();
     var targetSize = Math.round(Math.min(gridLength * scaleToUse * .7, 64));
     var personDirection = direction;
-    if (currentScene === 'dungeon') {
+    if (currentDungeon) {
         targetSize = Math.round(gridLength * scaleToUse * 1.2);
         personDirection = 'down';
     }

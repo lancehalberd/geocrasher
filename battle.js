@@ -49,7 +49,7 @@ function getPlayerAttackTime() {
 }
 
 function getCurrentPosition() {
-    return currentScene === 'dungeon' ? [(dungeonPosition[0] + .5) * gridLength, (dungeonPosition[1] + .1) * gridLength] : currentPosition;
+    return currentDungeon ? [(dungeonPosition[0] + .5) * gridLength, (dungeonPosition[1] + .1) * gridLength] : currentPosition;
 }
 
 var monsterAttackTime, playerAttackTime;
@@ -91,13 +91,13 @@ function updateBattle(time) {
     }
     if (fightingMonster.currentHealth <= 0) {
         var defeatedMonster = fightingMonster;
-        if (currentScene !== 'dungeon') {
+        if (!currentDungeon) {
             updateGameState();
             exhaustTile(fightingMonster.tile);
         }
         fightingMonster.tile.monster = null;
 
-        if (Math.random() < 0.05 && currentScene !== 'dungeon') {
+        if (Math.random() < 0.05 && !currentDungeon) {
             var dungeonLevel = Math.max(1, Random.range(fightingMonster.level - 1, fightingMonster.level + 1));
             addDungeonToTile(fightingMonster.tile, dungeonLevel);
         }
@@ -108,7 +108,7 @@ function updateBattle(time) {
         fightingMonster = null;
         selectedTile = null;
         // Outside of dungeons, you get nearby treasure for fighting monsters.
-        if (currentScene !== 'dungeon') {
+        if (!currentDungeon) {
             updateMap();
             resetLootTotals();
             for (var loot of currentLootInMonsterRadius) {

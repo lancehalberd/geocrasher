@@ -30,6 +30,7 @@ function exitDungeon() {
     origin = currentPosition;
     fightingMonster = null;
     selectedTile = null;
+    currentDungeon = null;
     currentScene = sceneStack.pop();
     refreshActiveTiles();
 }
