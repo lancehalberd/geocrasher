@@ -6,8 +6,8 @@ function getMonsterPowerForTile(tile) {
 function makeBossMonster(monsterPower) {
     var boss = makeMonster(monsterPower);
     boss.maxHealth = boss.currentHealth = boss.maxHealth * 3;
-    boss.attack = Math.ceil(boss.attack * .8);
-    boss.defense = Math.ceil(boss.defense * 1.5);
+    boss.attack = Math.ceil(boss.attack * 1.1);
+    boss.defense = Math.ceil(boss.defense * 1.4);
     boss.experience *= 4;
     boss.isBoss = true;
     boss.tint = 'red';
