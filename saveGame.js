@@ -17,6 +17,9 @@ function newGameData() {
         'tileData': [],
         'gemData': [{'history': []}, {'history': []}, {'history': []}],
         'dungeonLevelCap': 2,
+        'treasureMaps': 20,
+        'hadTreasureMaps': false,
+        'currentMap': null,
         'skillData': {}
     };
 }
@@ -61,6 +64,7 @@ function loadSaveSlot(index) {
             treeBonuses[treeKey] += pointsUsed;
         }
     }
+    importTreasureMapsData(saveSlot);
     updatePlayerStats();
     currentGridCoords = null;
     clickedCoords = selectedTile = lastGoalPoint = null;
@@ -111,6 +115,7 @@ function exportSaveSlot() {
     for (var i = 0; i < gemData.length; i++) {
         data.gemData[i] = {'history': gemData[i].history};
     }
+    exportTreasureMapsData(data);
     return data;
 }
 
@@ -139,6 +144,9 @@ function fixSaveSlot(saveSlot) {
             if (!saveSlot.gemData[i][key]) saveSlot.gemData[i][key] = defaults.gemData[i][key];
         }
     }
+    saveSlot.treasureMaps = fixNumber(saveSlot.treasureMaps, defaults.treasureMaps);
+    saveSlot.hadTreasureMaps = ifdefor(saveSlot.hadTreasureMaps, defaults.hadTreasureMaps);
+    saveSlot.currentMap = ifdefor(saveSlot.currentMap, defaults.currentMap);
     return saveSlot
 }
 

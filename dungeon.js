@@ -41,7 +41,7 @@ function startNewFloor() {
     currentFloor = {'grid': {}};
     allFloors.push(currentFloor);
     var tileThings = [{'type': 'upstairs', 'source': exitSource}];
-    var numberOfMonsters = Random.range(8, 11);
+    var numberOfMonsters = Random.range(6, 8);
     var minPower = currentDungeon.level * .9, maxPower = currentDungeon.level * 1.1;
     var floorPower = minPower + (maxPower - minPower) * allFloors.length / currentDungeon.numberOfFloors;
     for (var i = 0; i < numberOfMonsters; i++) {
@@ -57,11 +57,17 @@ function startNewFloor() {
     do {
         var powerUpValue = (.8 + Math.random() * .4) * floorPower;
         tileThings.push({'treasure': getWeightedPowerup(powerUpValue), 'type': 'loot'});
-    } while (tileThings.length < 25 && Math.random() < .1);
+    } while (tileThings.length < 25 && Math.random() < .2);
 
     var floorCoins = Math.ceil((.8 + Math.random() * .4) * getMoneySkillBonus() * Math.pow(1.1, floorPower) * floorPower * 50);
     // Intentionally allow more coins than we can hold. Then what the player actually gets will be somewhat random.
     var coinDrops = generateLootCoins(floorCoins, 30);
+    // Fewer than 5 coin drops looks to sparse but I don't want to cahnge how generateLootCoins works,
+    // so in this case just add another set of coins worht ~1/2 the original amount. So now such floors
+    // will have higher value of coins even if by some chance they still have a small # of coins.
+    if (coinDrops.length < 5) {
+        coinDrops = coinDrops.concat(generateLootCoins(Math.ceil(floorCoins / 2), 30));
+    }
     while (tileThings.length < 25 && coinDrops.length) {
         tileThings.push({'treasure': Random.removeElement(coinDrops), 'type': 'loot'});
     }
@@ -69,7 +75,7 @@ function startNewFloor() {
     for (var y = -2; y <= 2; y++) {
         for (var x = -2; x <= 2; x++) {
             var tileKey = x + 'x' + y;
-            var realCoords = toRealCoords([x, y]);;
+            var realCoords = toRealCoords([x, y]);
             var newTile = {
                 'x': x,
                 'y': y,
@@ -77,6 +83,7 @@ function startNewFloor() {
                 'centerY': realCoords[1] + gridLength / 2,
                 'key': tileKey,
                 'contents': Random.removeElement(tileThings),
+                'loot': [],
                 'revealed': false,
                 'guards': 0
             };
@@ -287,7 +294,15 @@ function handleEnterExitButtonClick(x, y) {
     if (!isPointInRectObject(x, y, enterExitButton.target)) return false;
     // This is used on the world map.
     if (selectedTile.dungeon) {
-        enterDungeon(selectedTile.dungeon);
+        var dungeon = selectedTile.dungeon;
+        // Treasure map also has dungeon entrances, but once they are used, we
+        // should consume the map and also return to the main map and not the
+        // treasure map.
+        if (currentScene === 'treasureMap') {
+            currentMap = null;
+            hideTreasureMap();
+        }
+        enterDungeon(dungeon);
         return true;
     }
     // The rest is for inside the dungeons.

@@ -43,6 +43,7 @@ function handleMapClick(x, y) {
         collectLoot();
         return;
     }
+    if (handleTreasureMapButtonClick(x, y)) return;
     if (handleSkillButtonClick(x, y)) return;
     if (handleFightFleeButtonClick(x, y)) return;
     if (handleEnterExitButtonClick(x, y)) return;
@@ -97,7 +98,6 @@ function drawPerson() {
 }
 function drawMapScene() {
     drawGrid();
-    drawPerson();
     if (currentPosition && (fastMode || collectingLoot.length === 0)) {
         var point = project(currentPosition);
         context.save();
@@ -109,6 +109,7 @@ function drawMapScene() {
         context.stroke();
         context.restore();
     }
+    drawPerson();
 
     if (damageIndicators.length) drawDamageIndicators();
 
@@ -168,6 +169,7 @@ function drawMapScene() {
         else if (selectedTile.dungeon) drawEnterExitButton();
         drawGemIndicators();
         drawSkillButton();
+        drawTreasureMapButton();
     }
 
     drawCoinsIndicator();

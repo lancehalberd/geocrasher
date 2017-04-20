@@ -149,6 +149,10 @@ function isPointInRect(x, y, l, t, w, h) {
 }
 
 function isPointInRectObject(x, y, rectangle) {
+    if (!rectangle || ifdefor(rectangle.top) === null || ifdefor(rectangle.left) === null
+         || ifdefor(rectangle.width) === null || ifdefor(rectangle.height) === null) {
+        return false;
+    }
     return !(y < rectangle.top || y > (rectangle.top + rectangle.height)
         || x < rectangle.left || x > (rectangle.left + rectangle.width));
 }
@@ -243,6 +247,10 @@ function constrain(value, min, max) {
 
 function rectangle(left, top, width, height) {
     return {left: left, top: top, width: width, height: height, right: left + width, bottom: top + height};
+}
+function shrinkRectangle(rectangle, margin) {
+    return {'left': rectangle.left + margin, 'width': rectangle.width - 2 * margin,
+            'top': rectangle.top + margin, 'height': rectangle.height - 2 * margin};
 }
 function rectangleCenter(rectangle) {
     return [rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2];

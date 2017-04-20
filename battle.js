@@ -97,9 +97,15 @@ function updateBattle(time) {
         }
         fightingMonster.tile.monster = null;
 
-        if (Math.random() < 0.05 && !currentDungeon) {
+        // Primarily you are supposed to access dungeons through treasure maps now, but there
+        // is still a 1/50 chance a monster will drop a dungeon entrance.
+        if (Math.random() < 0.02 && !currentDungeon) {
             var dungeonLevel = Math.max(1, Random.range(fightingMonster.level - 1, fightingMonster.level + 1));
             addDungeonToTile(fightingMonster.tile, dungeonLevel);
+        } else if (Math.random() < .1 && !currentDungeon) {
+            // 2 at level 1 up to 7 at level 98
+            var value = Math.max(2, Math.floor(Math.sqrt(fightingMonster.level / 2)));
+            addLootToTile(fightingMonster.tile, makeTreasureMapLoot(value));
         }
         var monsterTile = fightingMonster.tile;
         fightingMonster.tile = null;

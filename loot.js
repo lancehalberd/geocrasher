@@ -39,20 +39,28 @@ function checkToGeneratePowerUp(tile) {
     var chanceToSpawn = .1 * ((4 - activePowerups.length) / 4) * ((maxLevel + 1 - tile.level) / (maxLevel));
     if (Math.random() > chanceToSpawn) return;
     var value = (.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.3, tile.level - 1);
-    var loot = {'treasure': getWeightedPowerup(value), 'tile': tile,
+    var loot = addLootToTile(tile, getWeightedPowerup(value, [makeTreasureMapLoot]));
+    tile.powerup = loot;
+    // On the world map only there is a small chance to find a treasure map.
+    // I guess this could also be added to dungeons, but then you might miss a large
+    // powerup for a map which doesn't seem great.
+    activePowerups.push(loot);
+}
+function addLootToTile(tile, treasure) {
+    var loot = {'treasure': treasure, 'tile': tile,
         'x': tile.centerX, 'y': tile.centerY,
         'tx': tile.centerX + (Math.random() - 0.5) * gridLength,
         'ty': tile.centerY + (Math.random() - 0.5) * gridLength};
     tile.loot.push(loot);
-    tile.powerup = loot;
-    activePowerups.push(loot);
+    return loot;
 }
-function getWeightedPowerup(value) {
+function getWeightedPowerup(value, additionalLoot) {
+    additionalLoot = ifdefor(additionalLoot, []);
     var lootMethod = Random.element(
         [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
          makeAttackLoot, makeAttackLoot, makeAttackLoot,
-         makeDefenseLoot, makeDefenseLoot, makeDefenseLoot]);
+         makeDefenseLoot, makeDefenseLoot, makeDefenseLoot].concat(additionalLoot));
     return lootMethod(value);
 }
 

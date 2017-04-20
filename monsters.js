@@ -66,7 +66,7 @@ function makeMonster(monsterPower) {
 function checkToGenerateMonster(tile, baseChance) {
     baseChance = ifdefor(baseChance, .05);
     // Monsters cannot spawn in shallows.
-    if (tile.level < 1) return;
+    if (tile.level < 1 || tile.dungeon) return;
     // Prevent monster from spawning within 2 tiles of another monster
     for (var otherMonster of activeMonsters) {
         if (getDistance([tile.x, tile.y], [otherMonster.tile.x, otherMonster.tile.y]) <= 2) return;

@@ -82,6 +82,7 @@ var portalSource = {'image': requireImage('gfx/map/portal.png'), 'top': 0, 'left
 var shellSource = {'image': requireImage('gfx/map/shell.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var exitSource = {'image': requireImage('gfx/map/exit.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 var magicStoneSource = {'image': requireImage('gfx/loot/magicStone.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
+var treasureMapSource = {'image': requireImage('gfx/map/map.png'), 'top': 0, 'left': 0, 'width': 34, 'height': 34};
 
 // Icon by Chris Brewer originally created for Treasure Tycoon
 var upArrows = {'image': requireImage('gfx/upArrows.png'), 'left': 0, 'top': 0, 'width': 32, 'height': 32};
@@ -93,7 +94,9 @@ var trashSource = {'image': requireImage('gfx/trash.png'), 'left': 0, 'top': 0, 
 var turtleSource = {'image': requireImage('gfx/monsters/turtle.png'), 'left': 0, 'top': 0, 'width': 128, 'height': 128};
 
 // Modified version of https://www.toptal.com/designers/subtlepatterns/rocky-wall/
-var darkStoneImage = requireImage('gfx/darkStone.png')
+var darkStoneImage = requireImage('gfx/darkStone.png');
+// https://www.toptal.com/designers/subtlepatterns/old-map/
+var oldMapImage = requireImage('gfx/oldMap.png');
 
 
 // Requires Attribution (http://creativecommons.org/licenses/by/3.0/)
@@ -242,4 +245,11 @@ function drawBar(context, x, y, width, height, background, color, percent) {
     }
     context.fillStyle = color;
     context.fillRect(x + 1, y + 1, Math.floor((width - 2) * percent), height - 2);
+}
+
+function fillRectangle(context, rectangle) {
+    context.fillRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
+}
+function drawRectangle(context, rectangle) {
+    context.rect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
 }

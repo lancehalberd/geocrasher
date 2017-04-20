@@ -90,6 +90,9 @@ function mainLoop() {
             case 'dungeon':
                 updateDungeon();
                 break;
+            case 'treasureMap':
+                updateTreasureMap();
+                break;
         }
     } catch (error) {
         clearTimeout(mainLoopId);
@@ -323,6 +326,10 @@ function initializeTile(tileData) {
 var origin;
 var watchPositionId, restartWatchPositionTime = 0;
 function getOrigin() {
+    if (currentScene === 'treasureMap') {
+        return [gridLength * (currentMap.size) / 2,
+                gridLength * (currentMap.size - 1) / 2];
+    }
     return currentDungeon ? [gridLength / 2, gridLength / 2] : origin;
 }
 if (testMode) {
@@ -360,6 +367,11 @@ var maxScale = 5e5;
 var minScale = 1.5e5;
 var actualScale = scale;
 function getActualScale() {
+    if (currentScene === 'treasureMap') {
+        return Math.min(
+                (canvas.height - 2 * iconSize) / (currentMap.size * gridLength),
+                (canvas.width - iconSize) / (currentMap.size * gridLength));
+    }
     if (currentDungeon) {
         return dungeonScale;
     }
@@ -424,6 +436,9 @@ document.addEventListener('touchend', function(event) {
             case 'dungeon':
                 handleDungeonClick(x, y);
                 break;
+            case 'treasureMap':
+                handleTreasureMapClick(x, y);
+                break;
             case 'skills':
                 handleSkillsClick(x, y);
                 break;
@@ -464,6 +479,9 @@ if (testMode) {
                 case 'dungeon':
                     handleDungeonClick(x, y);
                     break;
+                case 'treasureMap':
+                    handleTreasureMapClick(x, y);
+                    break;
                 case 'skills':
                     handleSkillsClick(x, y);
                     break;
@@ -499,6 +517,8 @@ window.onpopstate = function (event) {
         }*/
         if (currentScene === 'skills') {
             currentScene = sceneStack.pop();
+        } else if (currentScene === 'treasureMap') {
+            hideTreasureMap();
         } else if (currentScene === 'map') {
             if (confirm('Are you sure you want to quit and return to the main menu?')) {
                 saveGame();
