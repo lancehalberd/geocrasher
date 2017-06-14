@@ -10,6 +10,7 @@ var coinLoot = [
     {'value': 50000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 32, 'width': 20, 'height': 20, 'scale': 1, 'onObtain': onObtainCoins},
     {'value': 200000, 'type': 'coins', 'image': coinImage, 'left': 64, 'top': 64, 'width': 24, 'height': 24, 'scale': 1, 'onObtain': onObtainCoins}
 ];
+
 function onObtainCoins() {
     coins += this.value;
     coinsCollected += this.value;
@@ -17,7 +18,7 @@ function onObtainCoins() {
 
 function checkToGenerateLootForTile(tile) {
     if (tile.loot.length < 3) {
-        var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * (1 + treeBonuses.money / 50) * Math.pow(4, tile.level) / 3);
+        var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * getMoneySkillBonus() * Math.pow(4, tile.level) / 3);
         var coinDrops = generateLootCoins(coins, 1);
         var realCoords = toRealCoords([tile.x, tile.y]);
         for (var coinDrop of coinDrops) {
@@ -38,18 +39,21 @@ function checkToGeneratePowerUp(tile) {
     var chanceToSpawn = .1 * ((4 - activePowerups.length) / 4) * ((maxLevel + 1 - tile.level) / (maxLevel));
     if (Math.random() > chanceToSpawn) return;
     var value = (.4 + Math.random() * .2) * getTilePower(tile) * Math.pow(1.3, tile.level - 1);
-    var lootMethod = Random.element(
-        [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
-         makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
-         makeAttackLoot, makeAttackLoot, makeAttackLoot,
-         makeDefenseLoot, makeDefenseLoot]);
-    var loot = {'treasure': lootMethod(value), 'tile': tile,
+    var loot = {'treasure': getWeightedPowerup(value), 'tile': tile,
         'x': tile.centerX, 'y': tile.centerY,
         'tx': tile.centerX + (Math.random() - 0.5) * gridLength,
         'ty': tile.centerY + (Math.random() - 0.5) * gridLength};
     tile.loot.push(loot);
     tile.powerup = loot;
     activePowerups.push(loot);
+}
+function getWeightedPowerup(value) {
+    var lootMethod = Random.element(
+        [makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
+         makeHealthLoot, makeHealthLoot, makeHealthLoot, makeHealthLoot,
+         makeAttackLoot, makeAttackLoot, makeAttackLoot,
+         makeDefenseLoot, makeDefenseLoot, makeDefenseLoot]);
+    return lootMethod(value);
 }
 
 function makeHealthLoot(value) {
@@ -77,6 +81,14 @@ function onObtainDefenseLoot() {
     updatePlayerStats();
     showStats();
 }
+function makeMagicStoneLoot() {
+    return $.extend({'type': 'magicStone', 'scale': 1, 'onObtain': onObtainMagicStoneLoot}, magicStoneSource);
+}
+function onObtainMagicStoneLoot() {
+    dungeonLevelCap += 2;
+    // Display loot indication a bit longer for skill point bonus.
+    lootCollectedTime = now() + 2000;
+}
 var lootInRadius = [];
 var collectingLoot = [];
 var coinsCollected, collectionBonus, initialMaxHealth, initialAttack, initialDefense;
@@ -85,9 +97,11 @@ function resetLootTotals() {
     collectionBonus = .9;
     coinsCollected = 0;
     updatePlayerStats();
+    initialLevel = level;
+    initialSkillPoints = getTotalSkillPoints();
     initialMaxHealth = maxHealth;
-    initialAttack = attack;
-    initialDefense = defense;
+    initialAttack = getAttackWithoutHealthBonuses();
+    initialDefense = getDefenseWithoutHealthBonuses();
 }
 
 function collectLoot() {
@@ -109,9 +123,12 @@ function getCollectionRadius() {
 
 
 function updateLootCollection() {
+    var currentPosition = getCurrentPosition();
     for (var i = 0; i < collectingLoot.length; i++) {
         // Pull coins towards the player's position, the front of the queue quicker than the rest.
-        var factor = Math.min(10, fastMode ? 2 : (3 * i + 1));
+        var factor = Math.min(10, 3 * i + 1);
+        if (currentDungeon) factor = 5;
+        else if (fastMode) factor = 2;
         collectingLoot[i].x = collectingLoot[i].tx = (currentPosition[0] * 2 + collectingLoot[i].tx * factor) / (factor + 2);
         collectingLoot[i].y = collectingLoot[i].ty = (currentPosition[1] * 2 + collectingLoot[i].ty * factor) / (factor + 2);
     }
@@ -131,7 +148,7 @@ function updateLootCollection() {
 
 function obtainloot(loot) {
     lootCollectedTime = now();
-    if (fastMode) {
+    if (fastMode || currentDungeon) {
         collectionBonus = 1;
     } else if (collectionBonus < 2) collectionBonus += .1;
     else collectionBonus += .05;
@@ -169,11 +186,18 @@ function generateLootCoins(amount, limit) {
 var collectCoinsButton = {'target': {}};
 function drawCollectCoinsButton() {
     context.save();
-    if (!lootInRadius.length) context.globalAlpha = .6;
+    var enabled = false
+    var lootCount = 0;
+    if (currentDungeon) {
+        lootCount = selectedTile.loot.length;
+    } else {
+        lootCount = lootInRadius.length;
+    }
+    if (!lootCount) context.globalAlpha = .6;
     context.textBaseline = 'middle';
     context.textAlign = 'left';
     context.font = Math.floor(3 * iconSize / 4) + 'px sans-serif';
-    var metrics = context.measureText('x' + lootInRadius.length);
+    var metrics = context.measureText('x' + lootCount);
 
     var target = collectCoinsButton.target;
     target.width = iconSize - 10 + metrics.width;
@@ -184,6 +208,73 @@ function drawCollectCoinsButton() {
 
     drawImage(context, chestSource.image, chestSource, {'left': target.left, 'top': target.top, 'width': iconSize, 'height': iconSize});
 
-    embossText(context, 'x' + lootInRadius.length, 'white', 'black', target.left + iconSize - 10, canvas.height - 10 - iconSize / 2);
+    embossText(context, 'x' + lootCount, 'white', 'black', target.left + iconSize - 10, canvas.height - 10 - iconSize / 2);
+    context.restore();
+}
+
+function drawLootTotals(fadeTime) {
+    fadeTime = ifdefor(fadeTime, 2000);
+    if (now() > lootCollectedTime + fadeTime && (!fastMode || coinsCollected === 0)) return;
+    var localIconSize = iconSize;
+    context.save();
+    context.globalAlpha = fastMode ? 1 : Math.min(1, 2 - (now() - lootCollectedTime) / (fadeTime / 2));
+    var fontSize = Math.floor(3 * iconSize / 4);
+    context.font = fontSize + 'px sans-serif';
+    context.textAlign = 'center';
+    context.textBaseline = 'bottom';
+    var top = canvas.height / 2 + 2;
+    if (coinsCollected > 0) {
+        if (collectionBonus > 1) {
+            embossText(context, coinsCollected.abbreviate() + 'x' + collectionBonus.toFixed(2), 'gold', 'black', canvas.width / 2, canvas.height / 2 - 2);
+        } else {
+            top = Math.floor((canvas.height - localIconSize) / 2);
+        }
+        context.textBaseline = 'middle';
+        context.textAlign = 'left';
+        var totalCoinsText = '+' + Math.round(coinsCollected * collectionBonus).abbreviate();
+        var left = Math.floor(canvas.width / 2 - (context.measureText(totalCoinsText).width + localIconSize) / 2);
+        embossText(context, totalCoinsText, 'gold', 'black', left + localIconSize, top + localIconSize / 2);
+        drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left':left, 'top': top, 'width': localIconSize, 'height': localIconSize});
+    }
+    var powerUpFontSize = Math.floor(iconSize / 2);
+    var powerUpWidth = 0;
+    var currentAttack = getAttackWithoutHealthBonuses();
+    var currentDefense = getDefenseWithoutHealthBonuses();
+    var healthBonusText = '+' + (maxHealth - initialMaxHealth).abbreviate();
+    var attackBonusText = '+' + (currentAttack - initialAttack).abbreviate();
+    var defenseBonusText = '+' + (currentDefense - initialDefense).abbreviate();
+    context.font = powerUpFontSize + 'px sans-serif';
+    if (maxHealth !== initialMaxHealth) powerUpWidth += powerUpFontSize + context.measureText(healthBonusText).width;
+    if (currentAttack !== initialAttack) powerUpWidth += powerUpFontSize + context.measureText(attackBonusText).width;
+    if (currentDefense !== initialDefense) powerUpWidth += powerUpFontSize + context.measureText(defenseBonusText).width;
+    if (level !== initialLevel) {
+        context.textAlign = 'center';
+        context.textBaseline = 'bottom';
+        embossText(context, 'LEVEL UP', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
+    } else if (getTotalSkillPoints() !== initialSkillPoints) {
+        context.textAlign = 'center';
+        context.textBaseline = 'bottom';
+        embossText(context, '+1 Skill Point', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
+    }
+    if (powerUpWidth > 0) {
+        var left = (canvas.width - powerUpWidth) / 2;
+        context.textAlign = 'left';
+        context.textBaseline = 'middle';
+        var bottom = canvas.height / 2 - fontSize - 4;
+        if (maxHealth !== initialMaxHealth) {
+            drawOutlinedImage(context, heartSource.image, 'white', 2, heartSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            embossText(context, healthBonusText, 'white', 'black', left + powerUpFontSize, bottom - powerUpFontSize / 2);
+            left += powerUpFontSize + context.measureText(healthBonusText).width;
+        }
+        if (currentAttack !== initialAttack) {
+            drawOutlinedImage(context, swordSource.image, 'white', 2, swordSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            embossText(context, attackBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
+            left += powerUpFontSize + context.measureText(attackBonusText).width;
+        }
+        if (currentDefense !== initialDefense) {
+            drawOutlinedImage(context, shieldSource.image, 'white', 2, shieldSource, {'left':left, 'top': bottom - powerUpFontSize, 'width': powerUpFontSize, 'height': powerUpFontSize});
+            embossText(context, defenseBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
+        }
+    }
     context.restore();
 }

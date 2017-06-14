@@ -53,14 +53,15 @@ function mainLoop() {
             var target = [origin[0], origin[1]];
             if (fastMode || fixingGPS) {
                 target = currentPosition;
-            } else if (selectedTile) {
+            } else if (currentScene === 'map' && selectedTile) {
                 target = [selectedTile.centerX, selectedTile.centerY];
             } else {
                 screenCoords = project(currentPosition);
-                if (screenCoords[0] < 120) target[0] = currentPosition[0] + (canvas.width / 2 - 120) / actualScale;
-                if (screenCoords[0] > canvas.width - 120) target[0] = currentPosition[0] - (canvas.width / 2 - 120) / actualScale;
-                if (screenCoords[1] < 120) target[1] = currentPosition[1] - (canvas.height / 2 - 120) / actualScale;
-                if (screenCoords[1] > canvas.height - 120) target[1] = currentPosition[1] + (canvas.height / 2 - 120) / actualScale;
+                var scaleToUse = getActualScale();
+                if (screenCoords[0] < 120) target[0] = currentPosition[0] + (canvas.width / 2 - 120) / scaleToUse;
+                if (screenCoords[0] > canvas.width - 120) target[0] = currentPosition[0] - (canvas.width / 2 - 120) / scaleToUse;
+                if (screenCoords[1] < 120) target[1] = currentPosition[1] - (canvas.height / 2 - 120) / scaleToUse;
+                if (screenCoords[1] > canvas.height - 120) target[1] = currentPosition[1] + (canvas.height / 2 - 120) / scaleToUse;
                 //target = ifdefor(currentPosition, [180 + gridLength / 2, 180 + gridLength / 2]);
             }
             if (!origin) origin = target;
@@ -86,6 +87,9 @@ function mainLoop() {
             case 'map':
                 updateMap();
                 break;
+            case 'dungeon':
+                updateDungeon();
+                break;
         }
     } catch (error) {
         clearTimeout(mainLoopId);
@@ -106,11 +110,12 @@ animate();
 function watchError() {
     $('body').append('<div>There was an error getting position!</div>');
 }
-var iconSize = 32;
+var iconSize = 32, dungeonScale;
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     iconSize = 16 * Math.floor(Math.min(canvas.width / 6, canvas.height / 6) / 16);
+    dungeonScale = Math.min((canvas.height - 20) / (5 * gridLength), (canvas.width - 20) / (5 * gridLength));
     drawScene();
 }
 $( window ).resize(resizeCanvas);
@@ -153,15 +158,17 @@ function getGridRectangle(coords) {
 }
 function project(coords) {
     var origin = getOrigin();
-    var x = Math.round((coords[0] - origin[0]) * actualScale) + Math.round(canvas.width / 2);
-    var y = Math.round(-(coords[1] - origin[1]) * actualScale) + Math.round(canvas.height / 2);
+    var scaleToUse = getActualScale();
+    var x = Math.round((coords[0] - origin[0]) * scaleToUse) + Math.round(canvas.width / 2);
+    var y = Math.round(-(coords[1] - origin[1]) * scaleToUse) + Math.round(canvas.height / 2);
     return [x, y];
 }
 function unproject(screenCoords) {
     var origin = getOrigin();
-    var long = (screenCoords[0] - canvas.width / 2) / actualScale + origin[0];
-    var lat = -(screenCoords[1] - canvas.height / 2) / actualScale + origin[1];
-    return [long, lat];
+    var scaleToUse = getActualScale();
+    var longitude = (screenCoords[0] - canvas.width / 2) / scaleToUse + origin[0];
+    var lat = -(screenCoords[1] - canvas.height / 2) / scaleToUse + origin[1];
+    return [longitude, lat];
 }
 function toGridCoords(realCoords) {
     return [Math.floor(realCoords[0] / gridLength), Math.floor(realCoords[1] / gridLength)];
@@ -179,11 +186,12 @@ function updateGameState() {
             tile.exhaustCounter++;
             if (tile.exhaustCounter >= tile.exhausted) {
                 tile.exhausted = false;
-                checkToGenerateMonster(tile);
+                checkToGenerateMonster(tile, .5);
             }
         }
         if (!tile.exhausted) {
             checkToGenerateLootForTile(tile);
+            checkToGenerateMonster(tile, .05);
         }
     }
     checkToSpawnGems();
@@ -256,6 +264,7 @@ function exploreSurroundingTiles() {
     }
 }
 function refreshActiveTiles() {
+    if (currentDungeon) return;
     var oldActiveTiles = activeTiles;
     activeTiles = [];
     selectableTiles = [];
@@ -281,7 +290,7 @@ function refreshActiveTiles() {
                 if (tileData.exhausted) continue;
                 if (tileData.loot.length) continue;
                 checkToGenerateLootForTile(tileData);
-                checkToGenerateMonster(tileData);
+                checkToGenerateMonster(tileData, .25);
             }
         }
     }
@@ -314,7 +323,7 @@ function initializeTile(tileData) {
 var origin;
 var watchPositionId, restartWatchPositionTime = 0;
 function getOrigin() {
-    return origin;
+    return currentDungeon ? [gridLength / 2, gridLength / 2] : origin;
 }
 if (testMode) {
     var stepSize = gridLength / 3;
@@ -350,6 +359,12 @@ function getTileData(gridCoords, returnDefault) {
 var maxScale = 5e5;
 var minScale = 1.5e5;
 var actualScale = scale;
+function getActualScale() {
+    if (currentDungeon) {
+        return dungeonScale;
+    }
+    return actualScale;
+}
 var lastTouchEvent = null, firstTouchEvent = null;
 var lastClick = [0,0];
 var touchMoved = false;
@@ -367,8 +382,8 @@ document.addEventListener('touchmove', function (event) {
     if (lastTouchEvent.touches.length === 1 && event.touches.length === 1) {
         var dx = event.touches[0].pageX - lastTouchEvent.touches[0].pageX;
         var dy = event.touches[0].pageY - lastTouchEvent.touches[0].pageY;
-        origin[0] -= dx / actualScale;
-        origin[1] += dy / actualScale;
+        origin[0] -= dx / getActualScale();
+        origin[1] += dy / getActualScale();
         lastTouchEvent = event;
         if (!fightingMonster) selectedTile = null
         return;
@@ -406,6 +421,9 @@ document.addEventListener('touchend', function(event) {
             case 'map':
                 handleMapClick(x, y);
                 break;
+            case 'dungeon':
+                handleDungeonClick(x, y);
+                break;
             case 'skills':
                 handleSkillsClick(x, y);
                 break;
@@ -426,8 +444,8 @@ if (testMode) {
         if (!lastTouchEvent) return;
         var dx = event.pageX - lastTouchEvent.pageX;
         var dy = event.pageY - lastTouchEvent.pageY;
-        origin[0] -= dx / actualScale;
-        origin[1] += dy / actualScale;
+        origin[0] -= dx / getActualScale();
+        origin[1] += dy / getActualScale();
         lastTouchEvent = event;
         touchMoved = true;
     });
@@ -443,6 +461,9 @@ if (testMode) {
                 case 'map':
                     handleMapClick(x, y);
                     break;
+                case 'dungeon':
+                    handleDungeonClick(x, y);
+                    break;
                 case 'skills':
                     handleSkillsClick(x, y);
                     break;
@@ -454,16 +475,44 @@ if (testMode) {
     });
 }
 function pushScene(newScene) {
-    history.pushState({}, '');
+    history.pushState({'scene': newScene}, '');
     sceneStack.push(currentScene);
     currentScene = newScene;
 }
 function popScene() {
     history.back();
 }
-window.onpopstate = function () {
+var ignoreNextPop = false;
+window.onpopstate = function (event) {
+    if (ignoreNextPop) {
+        ignoreNextPop = false;
+        return;
+    }
     if (sceneStack.length) {
-        currentScene = sceneStack.pop();
+        /*
+         * This code prevents the forward button from acting like the back button, but
+         * it isn't clear it works in all cases.
+        if (history.state && history.state.scene !== sceneStack[sceneStack.length - 1]) {
+            ignoreNextPop = true;
+            history.back();
+            return;
+        }*/
+        if (currentScene === 'skills') {
+            currentScene = sceneStack.pop();
+        } else if (currentScene === 'map') {
+            if (confirm('Are you sure you want to quit and return to the main menu?')) {
+                saveGame();
+                currentScene = sceneStack.pop();
+            } else {
+                history.pushState({}, '');
+            }
+        } else if (currentDungeon) {
+            if (confirm('Are you sure you want to exit the dungeon?')) {
+                exitDungeon();
+            } else {
+                history.pushState({}, '');
+            }
+        }
     }
 }
 function getTouchEventDistance(touchEvent) {
