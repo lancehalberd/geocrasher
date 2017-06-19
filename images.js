@@ -23,24 +23,36 @@ function requireImage(imageFile) {
 }
 var initialImagesToLoad = [];
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
-var shallowSource = {'image': requireImage('gfx/map/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+// var shallowSource = {'image': requireImage('gfx/map/shallow.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var shallowSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 35, 'left': 18, 'width': 16, 'height': 16};
 
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
-var sandSource = {'image': requireImage('gfx/map/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+// var sandSource = {'image': requireImage('gfx/map/sand.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var sandSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 86, 'left': 18, 'width': 16, 'height': 16};
 
 // Modified from https://pixabay.com/en/seamless-tileable-texture-ground-1807373/
-var dirtSource = {'image': requireImage('gfx/map/dirt2.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+// var dirtSource = {'image': requireImage('gfx/map/dirt2.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+var dirtSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 137, 'left': 18, 'width': 16, 'height': 16};
 
 // Modified from https://pixabay.com/en/retro-flower-pattern-design-batik-1422325/
-var grassSource = {'image': requireImage('gfx/map/grass.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
-var forestSource = {'image': requireImage('gfx/map/forest.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+//var grassSource = {'image': requireImage('gfx/map/grass.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+//var forestSource = {'image': requireImage('gfx/map/forest.png'), 'top': 0, 'left': 0, 'width': 72, 'height': 72};
+
+var grassSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 188, 'left': 18, 'width': 16, 'height': 16};
+var forestSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 239, 'left': 18, 'width': 16, 'height': 16};
 
 // Modified from http://maxpixel.freegreatpicture.com/Background-Texture-Seamless-Stone-Rocks-1657467
-var hillSource = {'image': requireImage('gfx/map/hill.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-var mountainSource = {'image': requireImage('gfx/map/mountain.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-var peakSource = {'image': requireImage('gfx/map/peak.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
-var oceanImage = requireImage('gfx/map/ocean.png');
-var oceanSource = {'image': oceanImage, 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+//var hillSource = {'image': requireImage('gfx/map/hill.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+//var mountainSource = {'image': requireImage('gfx/map/mountain.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+//var peakSource = {'image': requireImage('gfx/map/peak.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
+var oceanImage = requireImage('gfx/map/landscapeTiles.png');
+var oceanSource = {'image': oceanImage, 'top': 1, 'left': 1, 'width': 16, 'height': 16};
+//var oceanImage = requireImage('gfx/map/ocean.png');
+//var oceanSource = {'image': oceanImage, 'top': 1, 'left': 1, 'width': 16, 'height': 16};
+
+var hillSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 290, 'left': 18, 'width': 16, 'height': 16};
+var mountainSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 317, 'left': 18, 'width': 16, 'height': 16};
+var peakSource = {'image': requireImage('gfx/map/landscapeTiles.png'), 'top': 341, 'left': 18, 'width': 16, 'height': 16};
 
 // Modified from https://pixabay.com/en/seamless-texture-texture-ice-cold-219909/
 var iceSource = {'image': requireImage('gfx/map/ice.png'), 'top': 0, 'left': 0, 'width': 64, 'height': 64};
@@ -110,11 +122,20 @@ for (var initialImageToLoad of initialImagesToLoad) {
 
 function drawImage(context, image, source, target) {
     context.save();
-    context.translate(target.left + target.width / 2, target.top + target.height / 2);
+    context.translate(
+        Math.round(target.left + target.width / 2), 
+        Math.round(target.top + target.height / 2)
+    );
     if (target.xScale || target.yScale) {
         context.scale(ifdefor(target.xScale, 1), ifdefor(target.yScale, 1));
     }
-    context.drawImage(image, source.left, source.top, source.width, source.height, -target.width / 2, -target.height / 2, target.width, target.height);
+    context.drawImage(image, 
+        Math.round(source.left), 
+        Math.round(source.top), 
+        Math.round(source.width), 
+        Math.round(source.height), 
+        Math.round(-target.width / 2), Math.round(-target.height / 2), 
+        Math.round(target.width), Math.round(target.height));
     context.restore();
 }
 

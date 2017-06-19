@@ -273,25 +273,29 @@ function refreshActiveTiles() {
     for (var y = currentGridCoords[1] - 4; y <= currentGridCoords[1] + 4; y++) {
         for (var x = currentGridCoords[0] - 4; x <= currentGridCoords[0] + 4; x++) {
             var key = x + 'x' + y;
-            if (gridData[key]) {
-                var tileData = gridData[key];
-                if (x >= currentGridCoords[0] - 3 && x <= currentGridCoords[0] + 3
-                    && y >= currentGridCoords[1] - 3 && y <= currentGridCoords[1] + 3) {
-                    selectableTiles.push(tileData);
-                }
-                activeTiles.push(tileData);
-                if (tileData.monster) activeMonsters.push(tileData.monster);
-                for (var loot of tileData.loot) {
-                    if (loot.treasure.type !== 'coins') {
-                        activePowerups.push(loot);
-                    }
-                }
-                // If a tile becomes active with no loot and isn't exhausted, make it spawn loot.
-                if (tileData.exhausted) continue;
-                if (tileData.loot.length) continue;
-                checkToGenerateLootForTile(tileData);
-                checkToGenerateMonster(tileData, .25);
+            if (!gridData[key]) {
+                var tileData = getTileData([x, y], true);
+                tileData.level = -1;
+                gridData[key] = tileData;
+                initializeTile(tileData);
             }
+            var tileData = gridData[key];
+            if (x >= currentGridCoords[0] - 3 && x <= currentGridCoords[0] + 3
+                && y >= currentGridCoords[1] - 3 && y <= currentGridCoords[1] + 3) {
+                selectableTiles.push(tileData);
+            }
+            activeTiles.push(tileData);
+            if (tileData.monster) activeMonsters.push(tileData.monster);
+            for (var loot of tileData.loot) {
+                if (loot.treasure.type !== 'coins') {
+                    activePowerups.push(loot);
+                }
+            }
+            // If a tile becomes active with no loot and isn't exhausted, make it spawn loot.
+            if (tileData.exhausted) continue;
+            if (tileData.loot.length) continue;
+            checkToGenerateLootForTile(tileData);
+            checkToGenerateMonster(tileData, .25);
         }
     }
     if (selectedTile && selectableTiles.indexOf(selectedTile) < 0) selectedTile = null;

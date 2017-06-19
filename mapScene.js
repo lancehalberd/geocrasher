@@ -240,6 +240,7 @@ function upgradeTile(tile) {
     checkToGenerateMonster(tile, .5);
     selectedTile = null;
     saveGame();
+    console.log(getAllNeighbors(tile));
 }
 function canUpgradeTile(tile) {
     var neighborSum = 0;
@@ -263,6 +264,7 @@ function costToUpgrade(data) {
 var tileMask = createCanvas(200, 200);
 function createOrUpdateTileCanvas(tile, scaleToUse) {
     var rectangle = tile.target;
+    const neighbor = (dx, dy) => tile.neighbors[dx + 'x' + dy] || {level: -1};
     if (!tile.canvas) tile.canvas = createCanvas(rectangle.width, rectangle.height);
     else {
         tile.canvas.width = rectangle.width;
@@ -271,66 +273,114 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
     if (tileMask.width != rectangle.width) tileMask.width = rectangle.width;
     if (tileMask.height != rectangle.height) tileMask.height = rectangle.height;
     var tileContext = tile.canvas.getContext('2d');
-    var context = tileMask.getContext('2d');
-
-    tile.scale = scaleToUse;
-    var padding = Math.round(rectangle.width / 30);
-    for (var i = 0; i <= tile.level; i++) {
-        context.save();
-        var totalPadding = padding * i;
-        var color = levelColors[i];
-        context.globalCompositeOperation = 'source-over';
-        context.clearRect(0, 0, rectangle.width, rectangle.height);
-        context.fillStyle = 'black';
-        context.fillRect(padding + totalPadding, totalPadding, rectangle.width - 2 * (totalPadding + padding), rectangle.height - 2 * totalPadding);
-        context.fillRect(totalPadding, padding + totalPadding, rectangle.width - 2 * totalPadding, rectangle.height - 2 * (totalPadding + padding));
-
-        context.beginPath();
-        context.arc(totalPadding + padding, totalPadding + padding, padding, 0, 2 * Math.PI);
-        context.fill();
-        context.beginPath();
-        context.arc(rectangle.width - totalPadding - padding, totalPadding + padding, padding,  0, 2 * Math.PI );
-        context.fill();
-        context.beginPath();
-        context.arc(padding + totalPadding, rectangle.height - totalPadding - padding, padding, 0, 2 * Math.PI);
-        context.fill();
-        context.beginPath();
-        context.arc(rectangle.width - totalPadding - padding, rectangle.height - totalPadding - padding, padding,  0, 2 * Math.PI);
-        context.fill();
-        if (tile.neighbors['0x-1'] && tile.neighbors['0x-1'].level >= i) {
-            context.fillRect(totalPadding, rectangle.height - totalPadding - padding, rectangle.width - 2 * totalPadding, totalPadding + padding);
-            if (tile.neighbors['-1x0'] && tile.neighbors['-1x0'].level >= i && tile.neighbors['-1x-1'] && tile.neighbors['-1x-1'].level >= i) {
-                context.fillRect(0, rectangle.height - totalPadding, totalPadding, totalPadding);
-            }
-            if (tile.neighbors['1x0'] && tile.neighbors['1x0'].level >= i && tile.neighbors['1x-1'] && tile.neighbors['1x-1'].level >= i) {
-                context.fillRect(rectangle.width - totalPadding, rectangle.height - totalPadding, totalPadding, totalPadding);
-            }
-        }
-        if (tile.neighbors['0x1'] && tile.neighbors['0x1'].level >= i) {
-            context.fillRect(totalPadding, 0, rectangle.width - 2 * totalPadding, totalPadding + padding);
-            if (tile.neighbors['-1x0'] && tile.neighbors['-1x0'].level >= i && tile.neighbors['-1x1'] && tile.neighbors['-1x1'].level >= i) {
-                context.fillRect(0, 0, totalPadding, totalPadding);
-            }
-            if (tile.neighbors['1x0'] && tile.neighbors['1x0'].level >= i && tile.neighbors['1x1'] && tile.neighbors['1x1'].level >= i) {
-                context.fillRect(rectangle.width - totalPadding, 0, totalPadding, totalPadding);
-            }
-        }
-        if (tile.neighbors['-1x0'] && tile.neighbors['-1x0'].level >= i) {
-            context.fillRect(0, totalPadding, totalPadding + padding, rectangle.height - 2 * totalPadding);
-        }
-        if (tile.neighbors['1x0'] && tile.neighbors['1x0'].level >= i) {
-            context.fillRect(rectangle.width - totalPadding - padding, totalPadding, totalPadding + padding, rectangle.height - 2 * totalPadding);
-        }
-        if (i === 0 ) context.globalAlpha = .75;
-        context.globalCompositeOperation = 'source-in';
-        if (color.image) {
-            drawImage(context, color.image, color, {'left': 0, 'top': 0, 'width': rectangle.width, 'height': rectangle.height});
+    tileContext.imageSmoothingEnabled = false;
+    // Draw the current tile's pattern to all four corners
+    if (tile.level >= 0) {
+        var patternSource = levelColors[tile.level];
+        drawImage(tileContext, patternSource.image, patternSource, 
+            {'left': 0, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+        drawImage(tileContext, patternSource.image, patternSource, 
+            {'left': rectangle.width / 2, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+        drawImage(tileContext, patternSource.image, patternSource, 
+            {'left': 0, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+        drawImage(tileContext, patternSource.image, patternSource, 
+            {'left': rectangle.width / 2, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+    }
+    for (var i = tile.level + 1; i < levelColors.length; i++) {
+        // top left
+        var patternSource = levelColors[i];
+        var cornerSource = copy(patternSource);
+        if (neighbor(0, 1).level >= i && neighbor(-1, 0).level >= i) {
+            // top and left filled in
+            cornerSource.left += 34;
+            cornerSource.top -= 17;
+        } else if (neighbor(0, 1).level >= i) {
+            // only top filled in
+            cornerSource.top += 17;
+        } else if (neighbor(-1, 0).level >= i) {
+            // only left filled in
+            cornerSource.left += 17;
+        } else if (neighbor(-1, 1).level >= i) {
+            // only corner filled in
+            cornerSource.left += 17;
+            cornerSource.top += 17;
         } else {
-            context.fillStyle = color;
-            context.fillRect(0, 0, rectangle.width, rectangle.height);
+            cornerSource = null;
         }
-        tileContext.drawImage(tileMask, 0, 0, rectangle.width, rectangle.height, 0, 0, rectangle.width, rectangle.height);
-        context.restore();
+        if (cornerSource) {
+            drawImage(tileContext, patternSource.image, cornerSource, 
+                {'left': 0, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+        }
+
+        // top right
+        cornerSource = copy(patternSource);
+        if (neighbor(0, 1).level >= i && neighbor(1, 0).level >= i) {
+            // top and left filled in
+            cornerSource.left += 51;
+            cornerSource.top -= 17;
+        } else if (neighbor(0, 1).level >= i) {
+            // only top filled in
+            cornerSource.top += 17;
+        } else if (neighbor(1, 0).level >= i) {
+            // only left filled in
+            cornerSource.left -= 17;
+        } else if (neighbor(1, 1).level >= i) {
+            // only corner filled in
+            cornerSource.left -= 17;
+            cornerSource.top += 17;
+        } else {
+            cornerSource = null;
+        }
+        if (cornerSource) {
+            drawImage(tileContext, patternSource.image, cornerSource, 
+                {'left': rectangle.width / 2, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+        }
+
+        // bottom left
+        cornerSource = copy(patternSource);
+        if (neighbor(0, -1).level >= i && neighbor(-1, 0).level >= i) {
+            // top and left filled in
+            cornerSource.left += 34;
+        } else if (neighbor(0, -1).level >= i) {
+            // only top filled in
+            cornerSource.top -= 17;
+        } else if (neighbor(-1, 0).level >= i) {
+            // only left filled in
+            cornerSource.left += 17;
+        } else if (neighbor(-1, -1).level >= i) {
+            // only corner filled in
+            cornerSource.left += 17;
+            cornerSource.top -= 17;
+        } else {
+            cornerSource = null;
+        }
+        if (cornerSource) {
+            drawImage(tileContext, patternSource.image, cornerSource, 
+                {'left': 0, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+        }
+
+        // bottom right
+        cornerSource = copy(patternSource);
+        if (neighbor(0, -1).level >= i && neighbor(1, 0).level >= i) {
+            // top and left filled in
+            cornerSource.left += 51;
+        } else if (neighbor(0, -1).level >= i) {
+            // only top filled in
+            cornerSource.top -= 17;
+        } else if (neighbor(1, 0).level >= i) {
+            // only left filled in
+            cornerSource.left -= 17;
+        } else if (neighbor(1, -1).level >= i) {
+            // only corner filled in
+            cornerSource.left -= 17;
+            cornerSource.top -= 17;
+        } else {
+            cornerSource = null;
+        }
+        if (cornerSource) {
+            drawImage(tileContext, patternSource.image, cornerSource, 
+                {'left': rectangle.width / 2, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+        }
     }
 }
 
@@ -350,6 +400,7 @@ function drawGrid() {
     visibleRectangle.width = Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - visibleRectangle.left;
     visibleRectangle.height = Math.min(canvas.height + gradientLength / 2, topLeftCorner[1] + 8 * gridSize) - visibleRectangle.top;
     context.save();
+    context.imageSmoothingEnabled = false;
     context.translate((((now() / 20)) % 1000 / 1000 - 1) * gridSize, -(((now() / 30)) % 1000 / 1000 + 1) * gridSize);
     var topLeftGridCorner = project([(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] + 4) * gridLength]);
     for (var top = topLeftGridCorner[1]; top <= topLeftGridCorner[1] + 9 * gridSize; top += gridSize) {

@@ -140,7 +140,7 @@ function getAllNeighbors(tile) {
             tile.neighbors.push(neighbor);
         }
     }
-    return tile.neighbors
+    return tile.neighbors;
 }
 function getSideNeighbors(tile) {
     if (tile.sideNeighbors) return tile.sideNeighbors;
