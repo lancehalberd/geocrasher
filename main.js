@@ -250,9 +250,10 @@ function exploreSurroundingTiles() {
     for (var dy = -1; dy <=1; dy++) {
         for (var dx = -1; dx <=1; dx++) {
             var tileData = getTileData([currentGridCoords[0] + dx, currentGridCoords[1] + dy], true);
-            if (!gridData[tileData.key]) {
+            if (tileData.level < 0) {
                 gridData[tileData.key] = tileData;
                 initializeTile(tileData);
+                tileData.level = 0;
                 checkToGenerateLootForTile(tileData);
                 newTileFound = true;
             }

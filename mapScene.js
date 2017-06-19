@@ -250,7 +250,7 @@ function canUpgradeTile(tile) {
         var neighbor = tile.neighbors[key];
         neighborSum += neighbor.level;
     }
-    return (numNeighbors >= 8) && (neighborSum >= (8 * tile.level));
+    return tile.level >=0 && (numNeighbors >= 8) && (neighborSum >= (8 * tile.level));
 }
 function costToUpgrade(data) {
     if (data.level >= maxLevel) return false;
@@ -277,13 +277,13 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
     // Draw the current tile's pattern to all four corners
     if (tile.level >= 0) {
         var patternSource = levelColors[tile.level];
-        drawImage(tileContext, patternSource.image, patternSource, 
+        drawImage(tileContext, patternSource.image, patternSource,
             {'left': 0, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
-        drawImage(tileContext, patternSource.image, patternSource, 
+        drawImage(tileContext, patternSource.image, patternSource,
             {'left': rectangle.width / 2, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
-        drawImage(tileContext, patternSource.image, patternSource, 
+        drawImage(tileContext, patternSource.image, patternSource,
             {'left': 0, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
-        drawImage(tileContext, patternSource.image, patternSource, 
+        drawImage(tileContext, patternSource.image, patternSource,
             {'left': rectangle.width / 2, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
     }
     for (var i = tile.level + 1; i < levelColors.length; i++) {
@@ -308,7 +308,7 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource, 
+            drawImage(tileContext, patternSource.image, cornerSource,
                 {'left': 0, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
         }
 
@@ -332,7 +332,7 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource, 
+            drawImage(tileContext, patternSource.image, cornerSource,
                 {'left': rectangle.width / 2, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
         }
 
@@ -355,7 +355,7 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource, 
+            drawImage(tileContext, patternSource.image, cornerSource,
                 {'left': 0, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
         }
 
@@ -378,7 +378,7 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource, 
+            drawImage(tileContext, patternSource.image, cornerSource,
                 {'left': rectangle.width / 2, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
         }
     }
