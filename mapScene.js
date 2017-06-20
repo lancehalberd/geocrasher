@@ -401,8 +401,8 @@ function drawGrid() {
     context.save();
     context.imageSmoothingEnabled = false;
     context.translate(
-         Math.round((((now() / 2)) % 1000 / 1000 - .5) * gridSize),
-        -Math.round((((now() / 3)) % 1000 / 1000 + .5) * gridSize)
+         Math.round((((now() / 15)) % 1000 / 1000 - .5) * gridSize),
+        -Math.round((((now() / 20)) % 1000 / 1000 + .5) * gridSize)
     );
     var topLeftGridCorner = project([(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] + 4) * gridLength]);
     for (var top = topLeftGridCorner[1]; top <= topLeftGridCorner[1] + 9 * gridSize; top += gridSize) {
