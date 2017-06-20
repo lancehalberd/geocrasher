@@ -123,19 +123,19 @@ for (var initialImageToLoad of initialImagesToLoad) {
 function drawImage(context, image, source, target) {
     context.save();
     context.translate(
-        Math.round(target.left + target.width / 2), 
-        Math.round(target.top + target.height / 2)
+        target.left + target.width / 2,
+        target.top + target.height / 2
     );
     if (target.xScale || target.yScale) {
         context.scale(ifdefor(target.xScale, 1), ifdefor(target.yScale, 1));
     }
-    context.drawImage(image, 
-        Math.round(source.left), 
-        Math.round(source.top), 
-        Math.round(source.width), 
-        Math.round(source.height), 
-        Math.round(-target.width / 2), Math.round(-target.height / 2), 
-        Math.round(target.width), Math.round(target.height));
+    context.drawImage(image,
+        (source.left),
+        (source.top),
+        (source.width),
+        (source.height),
+        (-target.width / 2), (-target.height / 2),
+        (target.width), (target.height));
     context.restore();
 }
 

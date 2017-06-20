@@ -240,7 +240,6 @@ function upgradeTile(tile) {
     checkToGenerateMonster(tile, .5);
     selectedTile = null;
     saveGame();
-    console.log(getAllNeighbors(tile));
 }
 function canUpgradeTile(tile) {
     var neighborSum = 0;
@@ -396,12 +395,15 @@ function drawGrid() {
     var visibleRectangle = {
         'left': Math.max(-gradientLength / 2, topLeftCorner[0]), 'top': Math.max(-gradientLength / 2, topLeftCorner[1])
     };
-    var gridSize = gridLength * scaleToUse;
+    var gridSize = Math.round(gridLength * scaleToUse);
     visibleRectangle.width = Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - visibleRectangle.left;
     visibleRectangle.height = Math.min(canvas.height + gradientLength / 2, topLeftCorner[1] + 8 * gridSize) - visibleRectangle.top;
     context.save();
     context.imageSmoothingEnabled = false;
-    context.translate((((now() / 20)) % 1000 / 1000 - 1) * gridSize, -(((now() / 30)) % 1000 / 1000 + 1) * gridSize);
+    context.translate(
+         Math.round((((now() / 2)) % 1000 / 1000 - .5) * gridSize),
+        -Math.round((((now() / 3)) % 1000 / 1000 + .5) * gridSize)
+    );
     var topLeftGridCorner = project([(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] + 4) * gridLength]);
     for (var top = topLeftGridCorner[1]; top <= topLeftGridCorner[1] + 9 * gridSize; top += gridSize) {
         for (var left = topLeftGridCorner[0]; left <= topLeftGridCorner[0] + 9 * gridSize; left += gridSize) {
