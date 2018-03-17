@@ -49,7 +49,9 @@ function mainLoop() {
                     walkTime += 40;
                 }
             }
-            if (!origin) origin = currentPosition;
+            // Because everything is on root, this is messed up by the introduction of window.origin.
+            // Fixed by checking if it is a string, but really I shouldn't be using global vars everywhere.
+            if (!origin || typeof(origin) === 'string') origin = currentPosition;
             var target = [origin[0], origin[1]];
             if (fastMode || fixingGPS) {
                 target = currentPosition;
@@ -241,7 +243,11 @@ function setCurrentPosition(realCoords) {
     if (currentScene === 'loading' || currentScene === 'title') return;
     var newGridCoords = toGridCoords(realCoords);
     if (currentGridCoords && currentGridCoords[0] === newGridCoords[0] && currentGridCoords[1] === newGridCoords[1]) {
-        return;
+        // If your coords haven't changed and this location is already explored, do nothing,
+        // but if the location isn't explored yet (say fixing gps was on previously), then DO
+        // allow exploring this tile.
+        // level is -1 on unexplored tiles.
+        if (getTileData(currentGridCoords).level >= 0) return;
     }
     currentGridCoords = newGridCoords;
 

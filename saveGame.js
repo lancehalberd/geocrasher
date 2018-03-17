@@ -17,7 +17,7 @@ function newGameData() {
         'tileData': [],
         'gemData': [{'history': []}, {'history': []}, {'history': []}],
         'dungeonLevelCap': 2,
-        'treasureMaps': 20,
+        'treasureMaps': 0,
         'hadTreasureMaps': false,
         'currentMap': null,
         'skillData': {}

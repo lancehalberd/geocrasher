@@ -17,6 +17,7 @@ function onObtainCoins() {
 }
 
 function checkToGenerateLootForTile(tile) {
+    if (tile.level < 0) return;
     if (tile.loot.length < 3) {
         var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * getMoneySkillBonus() * Math.pow(4, tile.level) / 3);
         var coinDrops = generateLootCoins(coins, 1);
