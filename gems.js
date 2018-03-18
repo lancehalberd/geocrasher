@@ -1,10 +1,10 @@
 
 var gemData = [
-    {'color': 'orange', 'source': orangeGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 8,
+    {'color': 'orange', 'source': orangeGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 6,
         'collectRadius': maxRadius * 1.5, 'ticks': 4, 'debuff': .95, 'tintAmount': .07, 'tickDuration': 500, 'historyDuration': 1000 * 20 * 15},
-    {'color': 'green', 'source': greenGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 12,
+    {'color': 'green', 'source': greenGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 10,
         'collectRadius': maxRadius * 2, 'ticks': 8, 'debuff': .95, 'tintAmount': .04, 'tickDuration': 300, 'historyDuration': 1000 * 40 * 15},
-    {'color': 'blue', 'source': blueGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 16,
+    {'color': 'blue', 'source': blueGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 14,
         'collectRadius': maxRadius * 3, 'ticks': 16, 'debuff': .95, 'tintAmount': .03, 'tickDuration': 200, 'historyDuration': 1000 * 60 * 15}
 ];
 function checkToSpawnGems() {

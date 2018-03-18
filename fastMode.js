@@ -1,4 +1,4 @@
-var fastMode = false, startingFastMode = false, endFastModeTime = 0, maxThreshold = 5000;
+var fastMode = false, startingFastMode = false, endFastModeTime = 0, maxThreshold = 500;
 var fixingGPS = false, endFixingGPSTime = 0;
 
 function updateFastMode(millisecondsBetweenUpdates) {
@@ -23,6 +23,6 @@ function updateFastMode(millisecondsBetweenUpdates) {
         return;
     }
     if (millisecondsBetweenUpdates <= maxThreshold) {
-        endFastModeTime = now() + 10000;
+        endFastModeTime = now() + 5000;
     }
 }

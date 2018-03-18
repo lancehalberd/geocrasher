@@ -18,7 +18,8 @@ function onObtainCoins() {
 
 function checkToGenerateLootForTile(tile) {
     if (tile.level < 0) return;
-    if (tile.loot.length < 3) {
+    // Tile size is quite small, so 2 coins per tile is still quite a few.
+    if (tile.loot.length < 2) {
         var coins = Math.ceil((.5 + Math.random()) * getTilePower(tile) * getMoneySkillBonus() * Math.pow(4, tile.level) / 3);
         var coinDrops = generateLootCoins(coins, 1);
         var realCoords = toRealCoords([tile.x, tile.y]);
