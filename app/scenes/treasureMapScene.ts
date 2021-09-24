@@ -1,13 +1,11 @@
+import { popScene } from 'app/states';
+
+import { GameState } from 'app/types';
+
 var currentMap, hadTreasureMaps = false, treasureMaps = 100;
 
 // Could make this flat 3 maps per pickup, but trying to use value for now
-function makeTreasureMapLoot(value) {
-    return $.extend({'value': Math.ceil(value), 'type': 'treasureMap', 'scale': .5, 'onObtain': onObtainTreasureMap}, treasureMapSource);
-}
-function onObtainTreasureMap() {
-    treasureMaps += this.value;
-    hadTreasureMaps = true;
-}
+
 function makeNewMap() {
     var size = 3 + Math.ceil(Math.sqrt(level));
     return makeMap(size);
@@ -93,7 +91,7 @@ function populateNewMap(map, x, y) {
 }
 function displayTreasureMap() {
     selectedTile = null;
-    fightingMonster = null;
+    state.battle.engagedMonster = null;
     if (!currentMap) {
         currentMap = makeNewMap();
     } else if (currentMap.revealed) {
@@ -103,10 +101,10 @@ function displayTreasureMap() {
     }
     pushScene('treasureMap');
 }
-function hideTreasureMap() {
-    selectedTile = null;
-    origin = currentPosition;
-    currentScene = sceneStack.pop();
+export function hideTreasureMap(state: GameState) {
+    state.selectedTile = null;
+    state.world.origin = state.world.currentPosition;
+    popScene(state);
     refreshActiveTiles();
 }
 function updateTreasureMap() {
@@ -155,7 +153,7 @@ function handleTreasureMapClick(x, y) {
     revealTreasureMapTile(clickedGridCoords[0], clickedGridCoords[1]);
 }
 
-function drawTreasureMapScene() {
+export function drawTreasureMapScene(context: CanvasRenderingContext2D, state: GameState) {
     var scaleToUse = getActualScale();
     context.fillStyle = context.createPattern(darkStoneImage, 'repeat');
     context.fillRect(0, 0, canvas.width, canvas.height);
@@ -174,7 +172,7 @@ function drawTreasureMapScene() {
                 fillRectangle(context, tile.target);
                 context.beginPath();
                 drawRectangle(context, tile.target);
-                drawRectangle(context, shrinkRectangle(tile.target, 2));
+                drawRectangle(context, pad(tile.target, -2));
                 context.fillStyle = '#444';
                 context.fill('evenodd');
                 context.fillStyle = '#666';
@@ -225,7 +223,7 @@ function isTreasureMapButtonVisible() {
     return hadTreasureMaps || treasureMaps;
 }
 function isTreasureMapButtonClickable() {
-    return !fightingMonster && !collectingLoot.length && (hadTreasureMaps || treasureMaps);
+    return !state.battle.engagedMonster && !collectingLoot.length && (hadTreasureMaps || treasureMaps);
 }
 function handleTreasureMapButtonClick(x, y) {
     if (!isTreasureMapButtonVisible()) return false;
@@ -249,7 +247,7 @@ function drawTreasureMapButton() {
     target.height = iconSize;
 
     drawImage(context, treasureMapSource.image, treasureMapSource,
-        {'left': target.left, 'top': target.top, 'width': iconSize, 'height': iconSize});
+        {y: target.left, y: target.top, w: iconSize, h: iconSize});
 
-    embossText(context, 'x' + treasureMaps, 'white', 'black', target.left + Math.floor(iconSize * .8) , target.top + 3 * target.height / 4);
+    drawEmbossedText(context, 'x' + treasureMaps, 'white', 'black', target.left + Math.floor(iconSize * .8) , target.top + 3 * target.height / 4);
 }

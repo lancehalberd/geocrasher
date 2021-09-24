@@ -1,44 +1,35 @@
 
+import { GameState, LootMarker, MapTile } from 'app/types';
+
+export function getTilePower(state: GameState, tile: MapTile): number {
+    // Base power is 1 + 2% of total tiles leveled + 20% of current tile level.
+    let power = 1 + (state.world.levelSums[1] ?? 0) / 50 + tile.level / 5;
+    // Tile gains 10% of each of its neighbors level.
+    for (const sideKey of [1, 3, 4, 6]) {
+        power += (tile.neighbors[sideKey].level ?? 0) / 10;
+    }
+    // Tile gains 5% of each of its corner neighbors level.
+    for (const cornerKey of [0, 2, 5, 7]) {
+        power += (tile.neighbors[cornerKey]?.level ?? 0) / 20;
+    }
+    return power;
+}
+
 var lootInMonsterRadius = [];
-function updateMap() {
+export function updateMap(state: GameState) {
     lootInRadius = [];
     lootInMonsterRadius = [];
     if (collectingLoot.length) {
         updateLootCollection();
     }
-    for (var tileData of activeTiles) {
-        for (var i = 0; i < tileData.loot.length; i++) {
-            var loot = tileData.loot[i];
-            // Remove all non coin loot during fastMode.
-            if (fastMode && loot === tileData.powerup) {
-                tileData.powerup = null;
-                tileData.loot.splice(i--, 1);
-                continue;
-            }
-            if (fastMode && loot === tileData.gem) {
-                tileData.gem = null;
-                tileData.loot.splice(i--, 1);
-                continue;
-            }
-            loot.x = (loot.x + loot.tx) / 2;
-            loot.y = (loot.y + loot.ty) / 2;
-            loot.inRadius = isLootInRadius(loot);
-            loot.inMonsterRadius = !fastMode && !loot.treasure.gem && isPointInMonsterRadius(loot.x, loot.y);
-            if (fastMode && loot.inRadius) {
-                if (collectingLoot.indexOf(loot) < 0) collectingLoot.push(loot);
-            } else if (loot.inRadius && !loot.inMonsterRadius) {
-                lootInRadius.push(loot);
-            }
-            if (loot.inMonsterRadius) {
-                lootInMonsterRadius.push(loot);
-            }
-        }
+    for (const tileData of state.world.activeTiles) {
+        updateTileLoot(state, tileData);
     }
-    if (fightingMonster) updateBattle(now());
+    if (state.battle.engagedMonster) updateBattle(state.time);
     if (damageIndicators.length) updateDamageIndicators();
 }
 function handleMapClick(x, y) {
-    if (fastMode || fixingGPS) return;
+    if (state.globalPosition.isFastMode || state.globalPosition.isFixingGPS) return;
     if (!selectedTile && lootInRadius.length && collectingLoot.length === 0 && isPointInRectObject(x, y, collectCoinsButton.target)) {
         collectLoot();
         return;
@@ -53,7 +44,7 @@ function handleMapClick(x, y) {
     }
     clickedCoords = unproject([x, y]);
     var clickedGridCoords = toGridCoords(clickedCoords);
-    if (tileIsExplored(clickedGridCoords) && !fightingMonster) {
+    if (tileIsExplored(clickedGridCoords) && !state.battle.engagedMonster) {
         if (!selectedTile || selectedTile.x !== clickedGridCoords[0] || selectedTile.y !== clickedGridCoords[1]){
             var clickedTile = getTileData(clickedGridCoords);
             if (selectableTiles.indexOf(clickedTile) >= 0) selectedTile = clickedTile;
@@ -66,12 +57,12 @@ function handleMapClick(x, y) {
 var direction = 'right';
 var directionOffsets = {
     'down': 0,
-    'left': 48,
+    x: 48,
     'up': 96,
     'right': 144
 };
 var walkOffsets = [0, 48, 0, 96], walkTime = 0;
-function drawPerson() {
+export function drawPerson(context: CanvasRenderingContext2D, state: GameState) {
     var personPosition = getCurrentPosition();
     if (!personPosition) return;
     // draw current location
@@ -85,20 +76,20 @@ function drawPerson() {
     }
     var frame = Math.floor(walkTime / 250) % walkOffsets.length;
     var source = {
-        'left': walkOffsets[frame],
-        'top': directionOffsets[personDirection] + 1,
-        'width': personSource.width, 'height': personSource.height - 1
+        x: walkOffsets[frame],
+        y: directionOffsets[personDirection] + 1,
+        w: personSource.width, h: personSource.height + 1
     }
     var target = {
-        'left': point[0] - Math.round(targetSize / 2),
-        'top': point[1] - targetSize,
-        'width': targetSize, 'height': targetSize
+        x: point[0] - Math.round(targetSize / 2),
+        y: point[1] - targetSize,
+        w: targetSize, h: targetSize
     };
-    drawOutlinedImage(context, personSource.image, 'white', 1, source, target);
+    drawImage(context, outlinedPersonImage, source, target);
 }
-function drawMapScene() {
+export function drawMapScene(context: CanvasRenderingContext2D, state: GameState) {
     drawGrid();
-    if (currentPosition && (fastMode || collectingLoot.length === 0)) {
+    if (currentPosition && (state.globalPosition.isFastMode || collectingLoot.length === 0)) {
         var point = project(currentPosition);
         context.save();
         context.globalAlpha = .3;
@@ -127,8 +118,8 @@ function drawMapScene() {
         context.restore();
         drawUpgradeButton(canUpgrade, costToUpgrade(selectedTile));
     }
-    var hideStatsIn = hideStatsAt - now();
-    if (!fastMode && !fixingGPS && (hideStatsIn > 0 || !playerStatsRectangle)) {
+    var hideStatsIn = hideStatsAt - state.time;
+    if (!state.globalPosition.isFastMode && !state.globalPosition.isFixingGPS && (hideStatsIn > 0 || !playerStatsRectangle)) {
         context.save();
         context.globalAlpha = Math.max(0, Math.min(1, hideStatsIn / 1000));
         playerStatsRectangle = drawStatsBox(5, 5, level, 'Hero', currentHealth, maxHealth, attack, defense, experience, experienceForNextLevel());
@@ -137,31 +128,31 @@ function drawMapScene() {
         drawLifeIndicator();
     }
     if (selectedTile && selectedTile.x === currentGridCoords[0] && selectedTile.y === currentGridCoords[1]) {
-        hideStatsAt = now() + 1500;
+        hideStatsAt = state.time + 1500;
     }
     drawMonsterStats();
     if (selectedTile && selectedTile.dungeon) drawDungeonStats();
     // collect coins button is replaced by 'Fight!' button when a monster is selected.
-    if (fixingGPS) {
+    if (state.globalPosition.isFixingGPS) {
         var fontSize = Math.floor(3 * iconSize / 4);
         context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
         var text = 'Updating';
-        for (var i = 0; i < (endFixingGPSTime - now()) / 1000; i++) {
+        for (var i = 0; i < (endFixingGPSTime - state.time) / 1000; i++) {
             text = '-' + text + '-';
         }
-        embossText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
-    } else if (fastMode) {
+        drawEmbossedText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
+    } else if (state.globalPosition.isFastMode) {
         var fontSize = Math.floor(3 * iconSize / 4);
         context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
         var text = 'Fast Mode';
-        for (var i = 0; i < (endFastModeTime - now()) / 2000; i++) {
+        for (var i = 0; i < (endFastModeTime - state.time) / 2000; i++) {
             text = '-' + text + '-';
         }
-        embossText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
+        drawEmbossedText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
     } else {
         if (!selectedTile) {
             if (collectingLoot.length === 0) drawCollectCoinsButton();
@@ -177,7 +168,7 @@ function drawMapScene() {
 }
 var playerStatsRectangle;
 
-function drawCoinsIndicator() {
+export function drawCoinsIndicator(context: CanvasRenderingContext2D, state: GameState) {
     var localIconSize = Math.floor(iconSize / 2);
     var coinsText = coins.abbreviate();
     var fontSize = Math.floor( localIconSize * .9);
@@ -188,24 +179,25 @@ function drawCoinsIndicator() {
     var margin = 10;
     var left = canvas.width - margin - metrics.width - margin - localIconSize - margin;
     var top = margin;
-    drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': left, 'top': margin, 'width': localIconSize, 'height': localIconSize});
-    embossText(context, coinsText, 'gold', 'white', left + localIconSize, margin + Math.round(localIconSize / 2));
+    drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {x: left, y: margin, w: localIconSize, h: localIconSize});
+    drawEmbossedText(context, coinsText, 'gold', 'white', left + localIconSize, margin + Math.round(localIconSize / 2));
 }
 
-function drawLifeIndicator() {
+export function drawLifeIndicator(context: CanvasRenderingContext2D, state: GameState) {
+    const { iconSize } = state.display;
     var localIconSize = Math.floor(iconSize / 2);
     var fontSize = Math.floor(3 * localIconSize / 4);
     context.font = fontSize + 'px sans-serif';
     context.textAlign = 'left';
     context.textBaseline = 'top';
 
-    drawImage(context, heartSource.image, heartSource, {'left': 10, 'top': 10, 'width': localIconSize, 'height': localIconSize});
-    embossText(context, currentHealth.abbreviate() + ' / ' + maxHealth.abbreviate(), 'red', 'white', 10 + localIconSize + 5, 10);
+    drawImage(context, heartSource.image, heartSource, {x: 10, y: 10, w: localIconSize, h: localIconSize});
+    drawEmbossedText(context, currentHealth.abbreviate() + ' / ' + maxHealth.abbreviate(), 'red', 'white', 10 + localIconSize + 5, 10);
     drawBar(context, 10, 10 + localIconSize + 5, localIconSize * 4, 6, 'white', 'red', currentHealth / maxHealth);
 }
 
 var upgradeButton = {'target': {}};
-function drawUpgradeButton(canUpgrade, cost) {
+function drawUpgradeButton(context: CanvasRenderingContext2D, state: GameState, canUpgrade: boolean, cost: number) {
     context.save();
     if (cost > coins || !canUpgrade) context.globalAlpha = .5;
     context.textBaseline = 'middle';
@@ -219,8 +211,8 @@ function drawUpgradeButton(canUpgrade, cost) {
     target.top = canvas.height - 10 - iconSize;
     target.height = iconSize;
 
-    drawSolidTintedImage(context, upArrows.image, (cost <= coins && canUpgrade) ? 'green' : 'red', upArrows, {'left': target.left, 'top': target.top, 'width': iconSize, 'height': iconSize});
-    embossText(context, text, (cost <= coins) ? 'white' : 'red', 'black', target.left + iconSize, canvas.height - 10 - iconSize / 2);
+    drawSolidTintedImage(context, upArrows.image, (cost <= coins && canUpgrade) ? 'green' : 'red', upArrows, {x: target.left, y: target.top, w: iconSize, h: iconSize});
+    drawEmbossedText(context, text, (cost <= coins) ? 'white' : 'red', 'black', target.left + iconSize, canvas.height - 10 - iconSize / 2);
 
     context.restore();
 }
@@ -254,7 +246,7 @@ function canUpgradeTile(tile) {
     return tile.level >=0 && (numNeighbors >= 8) && (neighborSum >= (8 * tile.level));
 }
 function costToUpgrade(data) {
-    if (data.level >= maxLevel) return false;
+    if (data.level >= maxTileLevel) return false;
     var cost = 5;
     for (var i = 1; i <= data.level + 1; i++) {
         cost += 2 * (ifdefor(levelSums[i], 0) + 1) * Math.pow(10, i - 1);
@@ -279,13 +271,13 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
     if (tile.level >= 0) {
         var patternSource = levelColors[tile.level];
         drawImage(tileContext, patternSource.image, patternSource,
-            {'left': 0, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+            {x: 0, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
         drawImage(tileContext, patternSource.image, patternSource,
-            {'left': rectangle.width / 2, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+            {x: rectangle.width / 2, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
         drawImage(tileContext, patternSource.image, patternSource,
-            {'left': 0, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+            {x: 0, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
         drawImage(tileContext, patternSource.image, patternSource,
-            {'left': rectangle.width / 2, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+            {x: rectangle.width / 2, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
     }
     for (var i = tile.level + 1; i < levelColors.length; i++) {
         // top left
@@ -310,7 +302,7 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
         }
         if (cornerSource) {
             drawImage(tileContext, patternSource.image, cornerSource,
-                {'left': 0, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+                {x: 0, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
         }
 
         // top right
@@ -334,7 +326,7 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
         }
         if (cornerSource) {
             drawImage(tileContext, patternSource.image, cornerSource,
-                {'left': rectangle.width / 2, 'top': 0, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+                {x: rectangle.width / 2, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
         }
 
         // bottom left
@@ -357,7 +349,7 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
         }
         if (cornerSource) {
             drawImage(tileContext, patternSource.image, cornerSource,
-                {'left': 0, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+                {x: 0, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
         }
 
         // bottom right
@@ -380,22 +372,22 @@ function createOrUpdateTileCanvas(tile, scaleToUse) {
         }
         if (cornerSource) {
             drawImage(tileContext, patternSource.image, cornerSource,
-                {'left': rectangle.width / 2, 'top': rectangle.height / 2, 'width': rectangle.width / 2, 'height': rectangle.height / 2});
+                {x: rectangle.width / 2, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
         }
     }
 }
 
-function drawGrid() {
+function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
     var scaleToUse = getActualScale();
-    var origin = getOrigin();
-    var canvasRectangle = {'left': 0, 'top': 0, 'width': canvas.width, 'height': canvas.height};
+    var origin = getOrigin(state);
+    var canvasRectangle = {x: 0, y: 0, w: canvas.width, h: canvas.height};
     context.fillStyle = 'black';
     context.fillRect(0, 0, canvas.width, canvas.height);
     if (!currentGridCoords) return;
     var gradientLength = .3 * scaleToUse * gridLength;
     var topLeftCorner = project([currentPosition[0] - 4 * gridLength, currentPosition[1] + 4 * gridLength]);
     var visibleRectangle = {
-        'left': Math.max(-gradientLength / 2, topLeftCorner[0]), 'top': Math.max(-gradientLength / 2, topLeftCorner[1])
+        x: Math.max(-gradientLength / 2, topLeftCorner[0]), y: Math.max(-gradientLength / 2, topLeftCorner[1])
     };
     var gridSize = Math.round(gridLength * scaleToUse);
     visibleRectangle.width = Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - visibleRectangle.left;
@@ -403,14 +395,14 @@ function drawGrid() {
     context.save();
     context.imageSmoothingEnabled = false;
     context.translate(
-         Math.round((((now() / 15)) % 1000 / 1000 - .5) * gridSize),
-        -Math.round((((now() / 20)) % 1000 / 1000 + .5) * gridSize)
+         Math.round((((state.time / 15)) % 1000 / 1000 - .5) * gridSize),
+        -Math.round((((state.time / 20)) % 1000 / 1000 + .5) * gridSize)
     );
     var topLeftGridCorner = project([(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] + 4) * gridLength]);
     for (var top = topLeftGridCorner[1]; top <= topLeftGridCorner[1] + 9 * gridSize; top += gridSize) {
         for (var left = topLeftGridCorner[0]; left <= topLeftGridCorner[0] + 9 * gridSize; left += gridSize) {
             var target = {
-                'left': left, 'top': top, 'width': gridSize, 'height': gridSize
+                x: left, y: top, w: gridSize, h: gridSize
             };
             drawImage(context, oceanSource.image, oceanSource, target);
         }
@@ -460,8 +452,8 @@ function drawGrid() {
     for (var tile of activeTiles) {
         if (tile.dungeon) {
             var source = tile.dungeon.source;
-            var target = {'left': tile.target.left + tile.target.width / 6, 'width':  2 * tile.target.width / 3,
-                'top': tile.target.top + tile.target.height / 6, 'height':  2 * tile.target.width / 3};
+            var target = {x: tile.target.left + tile.target.width / 6, w:  2 * tile.target.width / 3,
+                y: tile.target.top + tile.target.height / 6, h:  2 * tile.target.width / 3};
             if (tile === selectedTile) drawOutlinedImage(context, source.image, 'red', 2, source, target);
             else drawImage(context, source.image, source, target);
         }
@@ -501,36 +493,27 @@ function drawGrid() {
         context.fillStyle = gradient;
         context.fillRect(0, top, canvas.width, canvas.height - top);
     }
-    if (debugMode) {
+    if (isDebugMode) {
         context.font = Math.round(iconSize / 2) + 'px sans-serif';
         context.textAlign = 'center';
         context.testBaseline = 'top';
-        embossText(context, draws, 'white', 'black', canvas.width / 2, 5);
+        drawEmbossedText(context, draws, 'white', 'black', canvas.width / 2, 5);
     }
 }
-function drawLoot(loot, scaleToUse) {
+export function drawLootMarker(context: CanvasRenderingContext2D, state: GameState, loot: LootMarker, scaleToUse: number) {
     var center = project([loot.x, loot.y]);
     var lootScale = gridLength * scaleToUse / 64;
     var targetWidth = loot.treasure.width * loot.treasure.scale * lootScale;
     var targetHeight = loot.treasure.height * loot.treasure.scale * lootScale;
     var target = {
-        'left': Math.round(center[0] - targetWidth / 2),
-        'top': Math.round(center[1] - targetHeight / 2),
-        'width': targetWidth, 'height': targetHeight
+        x: Math.round(center[0] - targetWidth / 2),
+        y: Math.round(center[1] - targetHeight / 2),
+        w: targetWidth, h: targetHeight
     };
     if (loot.inMonsterRadius || loot.inRadius) {
         var tintColor = loot.inMonsterRadius ? 'red' : 'gold';
-        drawTintedImage(context, loot.treasure.image, tintColor, .25 + Math.cos(now() / 200) * .25, loot.treasure, target);
+        drawTintedImage(context, loot.treasure.image, tintColor, .25 + Math.cos(state.time / 200) * .25, loot.treasure, target);
     } else {
         drawImage(context, loot.treasure.image, loot.treasure, target);
     }
-}
-
-function isPointInMonsterRadius(x, y) {
-    for (var monster of activeMonsters) {
-        if (getDistance([monster.tile.centerX, monster.tile.centerY], [x, y]) <= monster.radius) {
-            return true;
-        }
-    }
-    return false;
 }

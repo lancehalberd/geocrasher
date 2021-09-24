@@ -19,22 +19,22 @@ function handleTitleClick(x, y) {
         }
     }
 }
-function drawTitleScene() {
+export function drawTitleScene(context: CanvasRenderingContext2D, state: GameState) {
     var narrow = canvas.height > canvas.width;
     var backgroundScale = Math.max(canvas.width / titleBackground.width, canvas.height / titleBackground.height);
     var targetWidth = Math.ceil(titleBackground.width * backgroundScale);
     var targetHeight = Math.ceil(titleBackground.height * backgroundScale);
     drawImage(context, titleBackground,
-        {'left': 0, 'top': 0, 'width': titleBackground.width, 'height': titleBackground.height},
-        {'left': (canvas.width - targetWidth) / 2, 'top': (canvas.height - targetHeight) / 2, 'width': targetWidth, 'height': targetHeight}
+        {y: 0, y: 0, w: titleBackground.width, h: titleBackground.height},
+        {y: (canvas.width - targetWidth) / 2, y: (canvas.height - targetHeight) / 2, w: targetWidth, h: targetHeight}
     );
     context.fillStyle = 'gold';
     var titleFontSize = Math.min(200, Math.floor(canvas.height / 4), Math.floor(canvas.width / 5));
     context.font = 'bold ' + titleFontSize + 'px sans-serif';
     context.textAlign = 'center'
     context.textBaseline = 'top';
-    outlineText(context, 'Geo', 'brown', 'white', 3, canvas.width / 2, 10);
-    outlineText(context, 'Crasher', 'gold', 'white', 3, canvas.width / 2, titleFontSize);
+    drawOutlinedText(context, 'Geo', 'brown', 'white', 3, canvas.width / 2, 10);
+    drawOutlinedText(context, 'Crasher', 'gold', 'white', 3, canvas.width / 2, titleFontSize);
     var mainButtonWidth = Math.ceil(narrow ? Math.min(300, canvas.width / 2) : canvas.width / 5);
     var buttonHeight = Math.ceil( mainButtonWidth / 2);
     var deleteButtonWidth = Math.floor(buttonHeight / 3);
@@ -61,7 +61,7 @@ function drawTitleScene() {
     for (var saveSlot of saveSlots) {
         // Slot
         var slotLabelWidth = Math.round(buttonHeight / 4);
-        saveSlot.target = {'left': left, 'top': top, 'width': mainButtonWidth, 'height': buttonHeight};
+        saveSlot.target = {y: left, y: top, w: mainButtonWidth, h: buttonHeight};
         context.fillStyle = 'black';
         context.fillRect(saveSlot.target.left, saveSlot.target.top, saveSlot.target.width, saveSlot.target.height);
         context.fillStyle = 'white';
@@ -87,17 +87,17 @@ function drawTitleScene() {
         context.fillText(levelText, statsLeft + statsPadding, statsTop + Math.round(localIconSize / 2));
         // Health
         var middleLeft = statsLeft + Math.ceil(statsWidth / 2);
-        drawImage(context, heartSource.image, heartSource, {'left': middleLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
+        drawImage(context, heartSource.image, heartSource, {y: middleLeft, y: statsTop, w: localIconSize, h: localIconSize});
         context.fillStyle = 'red';
         context.fillText(Math.round(saveSlot.healthBonus * levelBonus).abbreviate(), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
         statsTop += localIconSize + statsPadding;
 
         context.fillStyle = 'black';
         // Attack
-        drawImage(context, swordSource.image, swordSource, {'left': statsLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
+        drawImage(context, swordSource.image, swordSource, {y: statsLeft, y: statsTop, w: localIconSize, h: localIconSize});
         context.fillText(Math.round(saveSlot.attackBonus * levelBonus).abbreviate(), statsLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
         // Defense
-        drawImage(context, shieldSource.image, shieldSource, {'left': middleLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
+        drawImage(context, shieldSource.image, shieldSource, {y: middleLeft, y: statsTop, w: localIconSize, h: localIconSize});
         context.fillText(Math.round(saveSlot.defenseBonus * levelBonus).abbreviate(), middleLeft + localIconSize, statsTop + Math.round(localIconSize / 2) );
         statsTop += localIconSize + statsPadding;
 
@@ -106,17 +106,17 @@ function drawTitleScene() {
         var coinsText = saveSlot.coins.abbreviate();
         var totalCoinsWidth = localIconSize + context.measureText(coinsText).width;
         var coinsLeft = statsLeft + Math.ceil(statsWidth / 4); //Math.floor(statsLeft + (statsWidth - totalCoinsWidth) / 2);
-        drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {'left': coinsLeft, 'top': statsTop, 'width': localIconSize, 'height': localIconSize});
+        drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {y: coinsLeft, y: statsTop, w: localIconSize, h: localIconSize});
         context.fillText(coinsText, coinsLeft + localIconSize, statsTop + Math.round(localIconSize / 2));
 
         // Trash
-        saveSlot.deleteTarget = {'left': left + mainButtonWidth, 'top': top, 'width': deleteButtonWidth, 'height': buttonHeight};
+        saveSlot.deleteTarget = {y: left + mainButtonWidth, y: top, w: deleteButtonWidth, h: buttonHeight};
         context.fillStyle = 'black';
         context.fillRect(saveSlot.deleteTarget.left, saveSlot.deleteTarget.top, saveSlot.deleteTarget.width, saveSlot.deleteTarget.height);
         context.fillStyle = '#AAA';
         context.fillRect(saveSlot.deleteTarget.left, saveSlot.deleteTarget.top + border, saveSlot.deleteTarget.width - border, saveSlot.deleteTarget.height - 2 * border);
         var trashSize = saveSlot.deleteTarget.width;
-        var trashTarget = {'left': left + mainButtonWidth - Math.round(border / 2), 'top': top + (buttonHeight - trashSize) / 2, 'width': trashSize, 'height': trashSize};
+        var trashTarget = {y: left + mainButtonWidth - Math.round(border / 2), y: top + (buttonHeight - trashSize) / 2, w: trashSize, h: trashSize};
         drawImage(context, trashSource.image, trashSource, trashTarget);
 
         if (narrow) {
@@ -125,13 +125,4 @@ function drawTitleScene() {
             left += totalButtonWidth + padding;
         }
     }
-}
-
-function outlineText(context, text, textColor, borderColor, thickness, left, top) {
-    context.fillStyle = borderColor;
-    for (var dy = -1; dy <=1; dy++)
-        for (var dx = -1; dx <=1; dx++)
-            if (dx != 0 || dy !=0) context.fillText(text, left + dx * thickness, top + dy * thickness);
-    context.fillStyle = textColor;
-    context.fillText(text, left, top);
 }

@@ -1,23 +1,40 @@
+import { gridLength, maxRadius } from 'app/gameConstants';
+import { blueGemSource, greenGemSource, orangeGemSource } from 'app/images';
+import { getDistance } from 'app/utils/index';
+import { project, toGridCoords } from 'app/world';
 
-var gemData = [
-    {'color': 'orange', 'source': orangeGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 6,
-        'collectRadius': maxRadius * 1.5, 'ticks': 4, 'debuff': .95, 'tintAmount': .07, 'tickDuration': 500, 'historyDuration': 1000 * 20 * 15},
-    {'color': 'green', 'source': greenGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 10,
-        'collectRadius': maxRadius * 2, 'ticks': 8, 'debuff': .95, 'tintAmount': .04, 'tickDuration': 300, 'historyDuration': 1000 * 40 * 15},
-    {'color': 'blue', 'source': blueGemSource, 'scale': .25, 'loot': null, 'history': [], 'spawnRadius': gridLength * 14,
-        'collectRadius': maxRadius * 3, 'ticks': 16, 'debuff': .95, 'tintAmount': .03, 'tickDuration': 200, 'historyDuration': 1000 * 60 * 15}
+import { GameState, MapTile } from 'app/types';
+
+const gemData = [
+    {
+        color: 'orange', source: orangeGemSource, scale: .25, spawnRadius: gridLength * 6,
+        collectRadius: maxRadius * 1.5, ticks: 4, debuff: .95,
+        tintAmount: .07, tickDuration: 500, historyDuration: 1000 * 20 * 15
+    },
+    {
+        color: 'green', source: greenGemSource, scale: .25, spawnRadius: gridLength * 10,
+        collectRadius: maxRadius * 2, ticks: 8, debuff: .95,
+        tintAmount: .04, tickDuration: 300, historyDuration: 1000 * 40 * 15
+    },
+    {
+        color: 'blue', source: blueGemSource, scale: .25, spawnRadius: gridLength * 14,
+        collectRadius: maxRadius * 3, ticks: 16, debuff: .95,
+        tintAmount: .03, tickDuration: 200, historyDuration: 1000 * 60 * 15
+    },
 ];
-function checkToSpawnGems() {
-    if (fastMode || fixingGPS) return;
-    for (var gem of gemData) {
+export function checkToSpawnGems(state: GameState): void {
+    if (state.globalPosition.isFastMode || state.globalPosition.isFixingGPS) {
+        return;
+    }
+    for (const gem of gemData) {
         if (gem.loot) {
-            if (getDistance([gem.loot.x, gem.loot.y], currentPosition) < gem.spawnRadius + gridLength * 5) continue;
+            if (getDistance([gem.loot.x, gem.loot.y], state.world.currentPosition) < gem.spawnRadius + gridLength * 5) continue;
             var tile = gem.loot.tile;
             tile.loot.splice(tile.loot.indexOf(gem.loot), 1);
             tile.gem = null;
             gem.loot = null;
         }
-        var theta = Math.random() * 2 * Math.PI, bestTile = null;
+        var theta = Math.random() * 2 * Math.PI, bestTile: MapTile = null;
         for (var dt = 0; dt < 2 * Math.PI; dt += Math.PI / 20) {
             var coords = [currentPosition[0] + Math.cos(theta + dt) * gem.spawnRadius, currentPosition[1] + Math.sin(theta + dt) * gem.spawnRadius];
             var gridCoords = toGridCoords(coords);
@@ -27,13 +44,13 @@ function checkToSpawnGems() {
         }
         if (!bestTile) continue;
         var x = bestTile.centerX + (Math.random() - 0.5) * gridLength, y = bestTile.centerY + (Math.random() - 0.5) * gridLength;
-        gem.loot =  {'treasure': $.extend({'gem': gem, 'scale': gem.scale, 'onObtain': onObtainGem}, gem.source),
+        gem.loot =  {'treasure': $.extend({'gem': gem, scale: gem.scale, 'onObtain': onObtainGem}, gem.source),
             'tile': bestTile, 'x': x, 'y': y, 'tx': x, 'ty': y};
         bestTile.loot.push(gem.loot);
         bestTile.gem = gem.loot;
     }
 }
-function clearAllGems() {
+export function clearAllGems(state: GameState) {
     for (var gem of gemData) {
         if (!gem.loot) continue;
         var tile = gem.loot.tile;
@@ -43,10 +60,10 @@ function clearAllGems() {
     }
 }
 
-function areCoordsInGemHistory(coords, gem) {
+function areCoordsInGemHistory(state: GameState, coords, gem) {
     for (var i = 0; i < gem.history.length; i++) {
         var oldLocation = gem.history[i];
-        if (now() - oldLocation.time >= gem.historyDuration) {
+        if (state.time - oldLocation.time >= gem.historyDuration) {
             gem.history.splice(i--, 1);
             continue;
         }
@@ -65,7 +82,7 @@ function drawGemIndicators() {
             var percent = gem.counter / gem.ticks
             if (percent > 0) {
                 context.save();
-                context.globalAlpha = (percent >= 1) ? .3 : .2 + .3 * (gem.nextTick - now()) / gem.tickDuration;
+                context.globalAlpha = (percent >= 1) ? .3 : .2 + .3 * (gem.nextTick - state.time) / gem.tickDuration;
                 context.fillStyle = gem.color;
                 context.beginPath();
                 if (percent < 1) context.moveTo(playerScreenCoords[0], playerScreenCoords[1]);
@@ -74,12 +91,12 @@ function drawGemIndicators() {
                 context.fill();
                 context.restore();
             }
-            if (collectingLoot.length) gem.nextTick = now() + gem.tickDuration;
-            if (now() >= gem.nextTick && gem.counter){
+            if (collectingLoot.length) gem.nextTick = state.time + gem.tickDuration;
+            if (state.time >= gem.nextTick && gem.counter){
                 gem.counter--;
-                updateGameState();
-                gem.nextTick = now() + gem.tickDuration;
-                for (var monster of activeMonsters) {
+                advanceGameState();
+                gem.nextTick = state.time + gem.tickDuration;
+                for (var monster of state.world.activeMonsterMarkers) {
                     if (monster.tint !== gem.color) monster.tintAmount = 0;
                     monster.tint = gem.color;
                     monster.tintAmount += gem.tintAmount;
@@ -146,11 +163,11 @@ function drawGemIndicators() {
     }
 }
 
-function onObtainGem() {
+function onObtainGem(state: GameState) {
     var gem = this.gem;
     var loot = this.gem.loot;
     gem.loot = null;
-    gem.history.push({'x': currentPosition[0], 'y': currentPosition[1], 'time': now()});
+    gem.history.push({'x': currentPosition[0], 'y': currentPosition[1], 'time': state.time});
     var radiusSquared = gem.collectRadius * gem.collectRadius;
     // We don't need to restart bonus counter because it is already counting for this pickup.
     for (var tileData of activeTiles) {
