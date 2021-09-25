@@ -74,7 +74,7 @@ function areCoordsInGemHistory(state: GameState, coords, gem) {
     return false;
 }
 
-function drawGemIndicators() {
+export function drawGemIndicators(context: CanvasRenderingContext2D, state: GameState) {
     var scaleToUse = getActualScale();
     var playerScreenCoords = project(currentPosition);
     for (var gem of gemData) {

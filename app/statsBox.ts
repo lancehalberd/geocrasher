@@ -1,5 +1,4 @@
-
-import { getAvatarPosition } from 'app/avatar';
+import { experienceForNextLevel } from 'app/avatar';
 import { drawBar, drawFrame } from 'app/draw';
 import { heartSource, shieldSource, swordSource } from 'app/images';
 import { abbreviateNumber } from 'app/utils/index';
@@ -55,6 +54,16 @@ export function drawStatsBox(context: CanvasRenderingContext2D, state: GameState
     var centerX = Math.floor(x + w / 2);
     drawFrame(context, shieldSource, {x: centerX + padding, y: y, w: localIconSize, h: localIconSize});
     context.fillText(abbreviateNumber(defense), centerX + localIconSize + padding, y);
+}
+
+export function drawAvatarStats(context: CanvasRenderingContext2D, state: GameState) {
+    drawStatsBox(context, state,
+        5, 5,
+        state.saved.avatar.level, 'Hero',
+        state.saved.avatar.currentHealth, state.avatar.maxHealth,
+        state.avatar.attack, state.avatar.defense,
+        state.saved.avatar.experience, experienceForNextLevel(state)
+    );
 }
 
 export function drawMonsterStats(context: CanvasRenderingContext2D, state: GameState) {

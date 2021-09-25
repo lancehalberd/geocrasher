@@ -1,5 +1,5 @@
 import { createCanvasAndContext } from 'app/dom';
-import { drawOutlinedImage } from 'app/draw';
+import { createAnimation, drawOutlinedImage } from 'app/draw';
 
 import { Frame } from 'app/types';
 
@@ -73,6 +73,15 @@ export const personSource: Frame = {image: requireImage('gfx/person.png'), x: 0,
 export const [outlinedPersonImage, outlinedPersonContext] = createCanvasAndContext(144, 194);
 export const [outlinedMoneyImage, outlinedMoneyContext] = createCanvasAndContext(moneySource.w + 2, moneySource.h + 2);
 export const outlinedMoneySource: Frame = {image: outlinedMoneyImage, x: 0, y: 0, w: 26, h: 26};
+
+export const avatarDimensions = {w: 48, h: 49};
+export const walkFrames = [0, 1, 0, 2];
+export const avatarAnimations = {
+    up: createAnimation(outlinedPersonImage, avatarDimensions, {x: 0, y: 2, top: 1, cols: 3, frameMap: walkFrames}),
+    down: createAnimation(outlinedPersonImage, avatarDimensions, {x: 0, y: 0, top: 1, cols: 3, frameMap: walkFrames}),
+    left: createAnimation(outlinedPersonImage, avatarDimensions, {x: 0, y: 1, top: 1, cols: 3, frameMap: walkFrames}),
+    right: createAnimation(outlinedPersonImage, avatarDimensions, {x: 0, y: 3, top: 1, cols: 3, frameMap: walkFrames}),
+};
 
 export function createOutlinedMoneyImage() {
     outlinedMoneyContext.globalAlpha = .7;

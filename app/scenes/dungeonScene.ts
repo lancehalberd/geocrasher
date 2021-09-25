@@ -1,4 +1,4 @@
-import { experienceForNextLevel, regenerateHealth } from 'app/avatar';
+import { regenerateHealth } from 'app/avatar';
 import { drawDamageIndicators, getFightOrFleeButton, updateBattle } from 'app/battle';
 import { drawEmbossedText, drawFrame, drawOutlinedImage, fillRectangle, pad } from 'app/draw';
 import { gridLength } from 'app/gameConstants';
@@ -17,7 +17,7 @@ import { getMoneySkillBonus, getSkillButton } from 'app/scenes/skillsScene';
 import { drawCoinsIndicator, drawLifeIndicator, drawLootMarker, drawPerson } from 'app/scenes/mapScene';
 import { hideTreasureMap } from 'app/scenes/treasureMapScene';
 import { popScene, pushScene } from 'app/state';
-import { drawMonsterStats, drawStatsBox } from 'app/statsBox';
+import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
 import Random from 'app/utils/Random';
 import { getActualScale, getGridRectangle, refreshActiveTiles, toGridCoords, toRealCoords, unproject } from 'app/world';
 import { DungeonFloor, DungeonMarker, DungeonTileContent, GameState, HudButton, MapTile } from 'app/types';
@@ -336,11 +336,8 @@ export function drawDungeonScene(context: CanvasRenderingContext2D, state: GameS
     const hideStatsIn = state.loot.hideStatsAt - state.time;
     if (hideStatsIn > 0) {
         context.save();
-        context.globalAlpha = Math.max(0, Math.min(1, hideStatsIn / 1000));
-        drawStatsBox(context, state, 5, 5,
-            state.saved.avatar.level, 'Hero',
-            state.saved.avatar.currentHealth, state.avatar.maxHealth,
-            state.avatar.attack, state.avatar.defense, state.saved.avatar.experience, experienceForNextLevel(state));
+            context.globalAlpha = Math.max(0, Math.min(1, hideStatsIn / 1000));
+            drawAvatarStats(context, state);
         context.restore();
     } else {
         drawLifeIndicator(context, state);
@@ -415,6 +412,9 @@ const enterExitButton: HudButton = {
     target: { x: 0, y: 0, w: 0, h: 0}
 };
 
+export function getEnterExitButton() {
+    return enterExitButton;
+}
 export function drawEnterExitButton(context: CanvasRenderingContext2D, state: GameState) {
     enterExitButton.render(context, state);
 }

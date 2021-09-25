@@ -131,7 +131,7 @@ export function drawTileMonster(context: CanvasRenderingContext2D, state: GameSt
     let frame = monster.frame;
     if (monster.tint) {
         prepareTintedImage();
-        frame = getTintedImage(frame, monster.tint.color, monster.tint.amount);
+        frame = getTintedImage(frame, monster.tint);
     }
     if (tile === state.selectedTile) {
         // Outline the monster and draw its radius when the tile is selected.

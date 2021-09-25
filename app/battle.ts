@@ -30,7 +30,9 @@ export function updateBattle(state: GameState) {
     // End battle if the player is too far from the monster marker.
     const monster = state.battle.engagedMonster;
     const { marker } = state.battle.engagedMonster;
-    updateDamageIndicators(state);
+    if (state.battle.damageIndicators.length) {
+        updateDamageIndicators(state);
+    }
     if (state.world.activeMonsterMarkers.indexOf(marker) <= 0) {
         state.battle.engagedMonster = null;
         return;
@@ -228,7 +230,7 @@ function pushDamageIndicator(state: GameState, targetPosition: number[], sourceP
     });
 }
 
-function updateDamageIndicators(state: GameState) {
+function updateDamageIndicators(state: GameState): void {
     for (const indicator of state.battle.damageIndicators) {
         indicator.position[0] += indicator.velocity[0];
         indicator.position[1] += indicator.velocity[1];

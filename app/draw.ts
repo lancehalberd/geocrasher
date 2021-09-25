@@ -3,7 +3,7 @@ import { frameLength } from 'app/gameConstants';
 import { requireImage } from 'app/images';
 import {
     ExtraAnimationProperties, Frame, FrameAnimation, FrameDimensions, FrameImage, FrameRectangle,
-    Rectangle,
+    Rectangle, Tint,
 } from 'app/types';
 
 interface CreateAnimationOptions {
@@ -183,11 +183,11 @@ export function drawSolidTintedImage(context: CanvasRenderingContext2D, tint: st
 
 const [globalTintCanvas, globalTintContext] = createCanvasAndContext(150, 300);
 globalTintContext.imageSmoothingEnabled = false;
-export function drawTintedImage(context: CanvasRenderingContext2D, tint: string, amount: number, frame: Frame, target: Rectangle): void {
+export function drawTintedImage(context: CanvasRenderingContext2D, {color, amount}: Tint, frame: Frame, target: Rectangle): void {
     context.save();
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
-    globalTintContext.fillStyle = tint;
+    globalTintContext.fillStyle = color;
     globalTintContext.clearRect(0, 0, frame.w, frame.h);
     drawFrame(globalTintContext, frame, {...frame, x: 0, y: 0});
     globalTintContext.globalCompositeOperation = "source-in";
@@ -204,9 +204,9 @@ const [globalCompositeCanvas, globalCompositeContext] = createCanvasAndContext(1
 export function prepareTintedImage(): void {
     globalCompositeContext.clearRect(0, 0, globalCompositeCanvas.width, globalCompositeCanvas.height);
 }
-export function getTintedImage(frame: Frame, tint: string, amount: number): Frame {
+export function getTintedImage(frame: Frame, tint: Tint): Frame {
     const target: Rectangle = {x: 0, y: 0, w: frame.w, h: frame.h};
-    drawTintedImage(globalCompositeContext, tint, amount, frame, target);
+    drawTintedImage(globalCompositeContext, tint, frame, target);
     return { image: globalCompositeCanvas, ...target };
 }
 
@@ -244,6 +244,13 @@ export function pad({x, y, w, h}: Rectangle, m: number): Rectangle {
 export function fillRectangle(context: CanvasRenderingContext2D, color: string, {x, y, w, h}: Rectangle): void {
     context.fillStyle = color;
     context.fillRect(x, y, w, h);
+}
+export function drawRectangleFrame(context: CanvasRenderingContext2D, color: string, thickness: number, {x, y, w, h}: Rectangle) {
+    context.beginPath();
+    context.rect(x, y, w, h);
+    context.rect(x + thickness, y + thickness, w - 2 * thickness, h - 2 * thickness);
+    context.fillStyle = color;
+    context.fill('evenodd');
 }
 export function drawRectangle(context: CanvasRenderingContext2D, {x, y, w, h}: Rectangle): void {
     context.rect(x, y, w, h);

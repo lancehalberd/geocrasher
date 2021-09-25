@@ -1,3 +1,6 @@
+import { handleDungeonClick } from 'app/scenes/dungeonScene';
+import { handleMapClick } from 'app/scenes/mapScene';
+import { handleTitleClick } from 'app/scenes/titleScene';
 import { getState } from 'app/state';
 import { getActualScale } from 'app/world';
 
@@ -60,19 +63,19 @@ function handleTouchEnd(event: TouchEvent) {
         lastClick = [x, y];
         switch (currentScene) {
             case 'title':
-                handleTitleClick(x, y);
+                handleTitleClick(state, x, y);
                 break;
             case 'map':
-                handleMapClick(x, y);
+                handleMapClick(state, x, y);
                 break;
             case 'dungeon':
-                handleDungeonClick(x, y);
+                handleDungeonClick(state, x, y);
                 break;
             case 'treasureMap':
-                handleTreasureMapClick(x, y);
+                handleTreasureMapClick(state, x, y);
                 break;
             case 'skills':
-                handleSkillsClick(x, y);
+                handleSkillsClick(state, x, y);
                 break;
         }
     }
@@ -104,19 +107,19 @@ function handleMouseUp(event: MouseEvent) {
         lastClick = [x, y];
         switch (currentScene) {
             case 'title':
-                handleTitleClick(x, y);
+                handleTitleClick(state, x, y);
                 break;
             case 'map':
-                handleMapClick(x, y);
+                handleMapClick(state, x, y);
                 break;
             case 'dungeon':
-                handleDungeonClick(x, y);
+                handleDungeonClick(state, x, y);
                 break;
             case 'treasureMap':
-                handleTreasureMapClick(x, y);
+                handleTreasureMapClick(state, x, y);
                 break;
             case 'skills':
-                handleSkillsClick(x, y);
+                handleSkillsClick(state, x, y);
                 break;
         }
     }

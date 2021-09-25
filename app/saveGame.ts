@@ -1,9 +1,8 @@
-import { gridLength } from 'app/gameConstants';
 import { skills } from 'app/scenes/skillsScene';
-import { getDefaultSavedState, getState, resetState } from 'app/state';
-import { toRealCoords } from 'app/world';
+import { getDefaultSavedState, getState, pushScene, resetState } from 'app/state';
+import { initializeWorldMapTile } from 'app/world';
 
-import { GameState, MapTile, SavedGameState, SavedMapTile } from 'app/types';
+import { GameState, SavedGameState } from 'app/types';
 
 const importedSaveDataString = window.localStorage.getItem('geocrasher2Saves');
 const importedSaveData: {
@@ -24,7 +23,7 @@ export function loadSaveSlot(saveSlotIndex: number) {
     state.world.tileGrid = [];
     for (const tile of state.saved.world.tiles) {
         state.world.tileGrid[tile.y] = state.world.tileGrid[tile.y] ?? [];
-        state.world.tileGrid[tile.y][tile.x] = initializeTile(tile);
+        state.world.tileGrid[tile.y][tile.x] = initializeWorldMapTile(state, tile);
     }
 
     state.avatar.usedSkillPoints = 0;
@@ -43,39 +42,11 @@ export function loadSaveSlot(saveSlotIndex: number) {
     importTreasureMapsData(saveSlot);
     updatePlayerStats();
     currentGridCoords = null;
-    clickedCoords = selectedTile = lastGoalPoint = null;
-    hideStatsAt = state.time + 2000;
-    pushScene('map');
+    state.selectedTile = state.lastGoalPoint = null;
+    state.loot.hideStatsAt = state.time + 2000;
+    pushScene(state, 'map');
     clearAllGems();
     checkToSpawnGems();
-}
-
-export function initializeTile(tileData: SavedMapTile): MapTile {
-    const realCoords = toRealCoords([tileData.x, tileData.y]);
-    const centerX = realCoords[0] + gridLength / 2;
-    const centerY = realCoords[1] + gridLength / 2;
-    if (!tileData.loot) tileData.loot = [];
-    if (!tileData.neighbors) {
-        tileData.neighbors = {};
-        for (var y = -1; y <= 1; y++) {
-            for (var x = -1; x <= 1; x++) {
-                if (x === 0 && y === 0) continue;
-                var neighbor = gridData[(tileData.x + x) +'x' + (tileData.y + y)];
-                if (!neighbor) continue;
-                tileData.neighbors[x + 'x' + y] = neighbor;
-                neighbor.neighbors[(-x) + 'x' + (-y)] = tileData;
-            }
-        }
-    }
-    for (var i = 0; i <= tileData.level; i++) {
-        levelSums[i] = (levelSums[i] ?? 0) + (1 + tileData.level - i);
-    }
-    return {
-        loot: [],
-        ...tileData,
-        centerX,
-        centerY,
-    };
 }
 
 export function saveGame(state: GameState) {

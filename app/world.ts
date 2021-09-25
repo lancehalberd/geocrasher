@@ -1,34 +1,14 @@
-import { gridLength, maxTileLevel } from 'app/gameConstants';
-import {
-    shallowSource,
-    sandSource,
-    dirtSource,
-    grassSource,
-    forestSource,
-    hillSource,
-    mountainSource,
-    peakSource,
-    iceSource,
-} from 'app/images';
+import { advanceGameState } from 'app/advanceGameState';
+import { updateFastMode } from 'app/fastMode';
+import { gridLength } from 'app/gameConstants';
+import { checkToSpawnGems } from 'app/gems';
+import { checkToGenerateLootForTile } from 'app/loot';
+import { checkToGenerateMonster } from 'app/monsters';
+import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
+import { getDistance } from 'app/utils/index';
 
 import { GameState, MapTile, Rectangle } from 'app/types';
-
-export const levelColors = [
-    shallowSource,
-    sandSource,
-    dirtSource,
-    grassSource,
-    forestSource,
-    hillSource,
-    mountainSource,
-    peakSource,
-    iceSource,
-];
-
-if (levelColors.length !== maxTileLevel + 1) {
-    console.error(`Incorrect number of tiles found, expected ${maxTileLevel + 1} found ${levelColors.length}`, levelColors.length);
-}
 
 export function getIconSize() {
     const { canvas } = getState().display;
@@ -92,13 +72,12 @@ export function toRealCoords(gridCoords: number[]): number[] {
     return [gridCoords[0] * gridLength, gridCoords[1] * gridLength];
 }
 
-export function tileIsExplored(gridCoords: number[]) {
-    var key = gridCoords[0] + 'x' + gridCoords[1];
-    return !!gridData[key];
+export function isTileExplored(state: GameState, gridCoords: number[]) {
+    return !!state.world.tileGrid[gridCoords[1]]?.[gridCoords[0]];
 }
-export function getTileData(gridCoords: number[], returnDefault: boolean = false) {
-    var key = gridCoords[0] + 'x' + gridCoords[1];
-    return gridData[key] ?? (returnDefault ? {'level': 0, 'power': 0, 'key': key, 'x': gridCoords[0], 'y': gridCoords[1]} : null);
+export function getTileData(state: GameState, gridCoords: number[], returnDefault: boolean = false): MapTile {
+    const mapTile = state.world.tileGrid[gridCoords[1]]?.[gridCoords[0]];
+    return mapTile ?? (returnDefault ? {level: 0, x: gridCoords[0], y: gridCoords[1]} : null);
 }
 
 export function exhaustTile(tile: MapTile): void {
@@ -106,103 +85,145 @@ export function exhaustTile(tile: MapTile): void {
     tile.exhaustCounter = 0;
 }
 
-var activeTiles = [];
-var selectableTiles = [];
-export function setCurrentPosition(realCoords: number[]) {
-    currentPosition = realCoords;
-    if (!lastGoalPoint || state.globalPosition.isFixingGPS) {
-        lastGoalPoint = currentPosition;
-        lastGoalTime = state.time;
-    } else if (getDistance(currentPosition, lastGoalPoint) > gridLength / 2) {
-        lastGoalPoint = currentPosition;
-        updateFastMode(state.time - lastGoalTime);
-        lastGoalTime = state.time;
+export function setCurrentPosition(state: GameState, realCoords: number[]) {
+    state.world.currentPosition = realCoords;
+    // Only apply updates for moving if we have selected and loaded saved game.
+    if (state.currentScene === 'loading' || state.currentScene === 'title') {
+        return;
+    }
+    if (!state.lastGoalPoint || state.globalPosition.isFixingGPS) {
+        state.lastGoalPoint = state.world.currentPosition;
+        state.lastGoalTime = state.time;
+    } else if (getDistance(state.world.currentPosition, state.lastGoalPoint) > gridLength / 2) {
+        state.lastGoalPoint = state.world.currentPosition;
+        updateFastMode(state, state.time - state.lastGoalTime);
+        state.lastGoalTime = state.time;
         advanceGameState(state);
     }
-    if (state.globalPosition.isFastMode && state.time > endFastModeTime) {
-        state.globalPosition.isFastMode = startingFastMode = false;
-        checkToSpawnGems();
+    if (state.globalPosition.isFastMode && state.time > state.globalPosition.endFastModeTime) {
+        state.globalPosition.isFastMode = state.globalPosition.isStartingFastMode = false;
+        checkToSpawnGems(state);
     }
-    if (state.globalPosition.isFixingGPS && state.time > endFixingGPSTime) {
+    if (state.globalPosition.isFixingGPS && state.time > state.globalPosition.endFixingGPSTime) {
         state.globalPosition.isFixingGPS = false;
-         if ((currentScene !== 'loading' && currentScene !== 'title') && currentGridCoords) {
-            exploreSurroundingTiles();
+        if (state.world.currentGridCoords) {
+            exploreSurroundingTiles(state);
         }
-        checkToSpawnGems();
+        checkToSpawnGems(state);
     }
-    // Only apply updates for moving if we are displaying the map scene.
-    if (currentScene === 'loading' || currentScene === 'title') return;
-    var newGridCoords = toGridCoords(realCoords);
-    if (currentGridCoords && currentGridCoords[0] === newGridCoords[0] && currentGridCoords[1] === newGridCoords[1]) {
+    const { currentGridCoords } = state.world;
+    const newGridCoords = toGridCoords(realCoords);
+    if (currentGridCoords?.[0] === newGridCoords[0] && currentGridCoords?.[1] === newGridCoords[1]) {
         // If your coords haven't changed and this location is already explored, do nothing,
         // but if the location isn't explored yet (say fixing gps was on previously), then DO
         // allow exploring this tile.
         // getTileData returns null if the second parameter is false and the tile is unexplored.
-        const tileData = getTileData(currentGridCoords, false);
-        if (tileData && tileData.level >= 0) return;
+        const mapTile = getTileData(state, currentGridCoords, false);
+        if (mapTile && mapTile.level >= 0) {
+            return;
+        }
     }
-    currentGridCoords = newGridCoords;
+    state.world.currentGridCoords = newGridCoords;
 
-    if (!state.globalPosition.isFixingGPS) exploreSurroundingTiles();
-    refreshActiveTiles();
+    if (!state.globalPosition.isFixingGPS) {
+        exploreSurroundingTiles(state);
+    }
+    refreshActiveTiles(state);
 }
-function exploreSurroundingTiles() {
-    var newTileFound = false;
-    for (var dy = -1; dy <=1; dy++) {
-        for (var dx = -1; dx <=1; dx++) {
-            var tileData = getTileData([currentGridCoords[0] + dx, currentGridCoords[1] + dy], true);
-            if (tileData.level < 0) {
-                gridData[tileData.key] = tileData;
-                initializeTile(tileData);
-                tileData.level = 0;
-                checkToGenerateLootForTile(tileData);
+function exploreSurroundingTiles(state: GameState) {
+    let newTileFound = false;
+    for (let dy = -1; dy <=1; dy++) {
+        for (let dx = -1; dx <=1; dx++) {
+            const mapTile = getTileData(state, [state.world.currentGridCoords[0] + dx, state.world.currentGridCoords[1] + dy], true);
+            if (mapTile.level < 0) {
+                initializeWorldMapTile(state, mapTile);
+                mapTile.level = 0;
+                checkToGenerateLootForTile(state, mapTile);
                 newTileFound = true;
             }
         }
     }
     if (newTileFound) {
-        saveGame();
-        refreshActiveTiles();
+        saveGame(state);
+        refreshActiveTiles(state);
     }
 }
 
 export function refreshActiveTiles(state: GameState) {
-    if (currentDungeon) return;
-    var oldActiveTiles = activeTiles;
-    activeTiles = [];
-    selectableTiles = [];
+    if (state.dungeon.currentDungeon) {
+        return;
+    }
+    const oldActiveTiles = state.world.activeTiles;
+    const { currentGridCoords, tileGrid } = state.world;
+    state.world.activeTiles = [];
+    state.world.selectableTiles = new Set();
     state.world.activeMonsterMarkers = [];
-    activePowerupMarkers = [];
-    for (var y = currentGridCoords[1] - 4; y <= currentGridCoords[1] + 4; y++) {
-        for (var x = currentGridCoords[0] - 4; x <= currentGridCoords[0] + 4; x++) {
-            var key = x + 'x' + y;
-            if (!gridData[key]) {
-                var tileData = getTileData([x, y], true);
-                tileData.level = -1;
-                gridData[key] = tileData;
-                initializeTile(tileData);
+    state.loot.activePowerupMarkers = new Set();
+    for (let y = currentGridCoords[1] - 4; y <= currentGridCoords[1] + 4; y++) {
+        for (let x = currentGridCoords[0] - 4; x <= currentGridCoords[0] + 4; x++) {
+            let mapTile = tileGrid[y]?.[x];
+            if (!mapTile) {
+                mapTile = getTileData(state, [x, y], true);
+                mapTile.level = -1;
+                initializeWorldMapTile(state, mapTile);
             }
-            var tileData = gridData[key];
             if (x >= currentGridCoords[0] - 3 && x <= currentGridCoords[0] + 3
                 && y >= currentGridCoords[1] - 3 && y <= currentGridCoords[1] + 3) {
-                selectableTiles.push(tileData);
+                state.world.selectableTiles.add(mapTile);
             }
-            activeTiles.push(tileData);
-            if (tileData.monster) state.world.activeMonsterMarkers.push(tileData.monster);
-            for (var loot of tileData.loot) {
-                if (loot.treasure.type !== 'coins') {
-                    activePowerupMarkers.push(loot);
+            state.world.activeTiles.push(mapTile);
+            if (mapTile.monsterMarker) {
+                state.world.activeMonsterMarkers.push(mapTile.monsterMarker);
+            }
+            for (const lootMarker of mapTile.lootMarkers) {
+                if (lootMarker.loot.type !== 'coins') {
+                    state.loot.activePowerupMarkers.add(lootMarker);
                 }
             }
             // If a tile becomes active with no loot and isn't exhausted, make it spawn loot.
-            if (tileData.exhausted) continue;
-            if (tileData.loot.length) continue;
-            checkToGenerateLootForTile(tileData);
-            checkToGenerateMonster(tileData, .25);
+            if (!mapTile.exhaustedDuration && !mapTile.lootMarkers.length) {
+                checkToGenerateLootForTile(state, mapTile);
+                checkToGenerateMonster(state, mapTile, 0.25);
+            }
         }
     }
-    if (selectedTile && selectableTiles.indexOf(selectedTile) < 0) selectedTile = null;
-    for (var tile of oldActiveTiles) {
-        if (activeTiles.indexOf(tile) < 0 ) delete tile.canvas;
+    if (!state.world.selectableTiles.has(state.selectedTile)) {
+        state.selectedTile = null;
     }
+    for (const mapTile of oldActiveTiles) {
+        if (state.world.activeTiles.indexOf(mapTile) < 0 ) {
+            delete mapTile.canvas;
+        }
+    }
+}
+
+export function initializeWorldMapTile(state: GameState, mapTile: MapTile): MapTile {
+    const realCoords = toRealCoords([mapTile.x, mapTile.y]);
+    mapTile.centerX = realCoords[0] + gridLength / 2;
+    mapTile.centerY = realCoords[1] + gridLength / 2;
+    if (!mapTile.lootMarkers) {
+        mapTile.lootMarkers = [];
+    }
+    if (!mapTile.neighbors) {
+        mapTile.neighbors = [];
+        for (let y = 0; y <= 2; y++) {
+            for (let x = 0; x <= 2; x++) {
+                const i = 3 * y + x;
+                if (x === 0 && y === 0) {
+                    mapTile.neighbors[i] = mapTile;
+                    continue;
+                }
+                const otherTile = state.world.tileGrid[y]?.[x];
+                if (!otherTile) continue;
+                mapTile.neighbors[i] = otherTile;
+                otherTile.neighbors[9 - i] = mapTile;
+            }
+        }
+    }
+    for (let i = 0; i <= mapTile.level; i++) {
+        state.world.levelSums[i] = (state.world.levelSums[i] ?? 0) + (1 + mapTile.level - i);
+    }
+    state.world.tileGrid[mapTile.y] = state.world.tileGrid[mapTile.y] ?? [];
+    state.world.tileGrid[mapTile.y][mapTile.x] = mapTile;
+    return mapTile;
 }

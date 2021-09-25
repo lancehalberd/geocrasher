@@ -105,9 +105,10 @@ export interface SavedMapTile {
     level?: number
 }
 export interface MapTile extends SavedMapTile {
-    centerX: number
-    centerY: number
-    target: Rectangle
+    centerX?: number
+    centerY?: number
+    scale?: number
+    target?: Rectangle
     dungeonMarker?: DungeonMarker
     monsterMarker?: MonsterMarker
     // The number of monsters guarding this tile in a dungeon.
@@ -115,8 +116,8 @@ export interface MapTile extends SavedMapTile {
     guards?: number
     // Array of 8 surrounding tiles keyed like:
     // [0, 1, 2]
-    // [3, -, 4]
-    // [5, 6, 7]
+    // [3, 4, 5]
+    // [6, 7, 8]
     neighbors?: MapTile[]
     gemMarker?: LootMarker
     lootMarkers?: LootMarker[]
@@ -124,6 +125,8 @@ export interface MapTile extends SavedMapTile {
     dungeonContents?: DungeonTileContent
     dungeonContentsRevealed?: boolean
     dungeonContentsRevealable?: boolean
+    canvas?: HTMLCanvasElement
+    isVisible?: boolean
 }
 
 export interface TreasureHuntMap {
@@ -186,6 +189,7 @@ export interface WorldState {
     currentGridCoords?: number[]
     levelSums: number[]
     tileGrid: MapTile[][]
+    selectableTiles: Set<MapTile>
 }
 export interface SavedAvatarState {
     level: number
@@ -200,6 +204,7 @@ export interface AvatarState {
     affinityBonuses: {
         [key in SkillAffinity]: number
     }
+    animationTime: number
     selectedSkill?: Skill
     usedSkillPoints: number
     // Computer stats that are actually used in combat.
@@ -272,6 +277,7 @@ export interface GameState {
     time: number
     world: WorldState
     globalPosition: {
+        direction: 'up' | 'down' | 'left' | 'right',
         lastPosition?: {
             coords: {
                 longitude: number
@@ -282,6 +288,7 @@ export interface GameState {
         isFixingGPS: boolean
         // The time we will wait until t
         endFixingGPSTime: number
+        endFastModeTime?: number
         // This flag is set when the user is moving too quickly for normal game play.
         // We want to discourage players from playing while riding a bicycle or driving a car.
         isFastMode: boolean
@@ -289,7 +296,7 @@ export interface GameState {
         isStartingFastMode: boolean
     }
     loot: {
-        activePowerupMarkers: LootMarker[]
+        activePowerupMarkers: Set<LootMarker>
         collectingLoot: LootMarker[]
         coinsCollected?: number
         hideStatsAt?: number

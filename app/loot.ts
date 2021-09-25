@@ -142,7 +142,7 @@ function checkToGeneratePowerUp(state: GameState, tile: MapTile) {
     if (state.globalPosition.isFastMode || state.globalPosition.isFixingGPS) return;
     // Only one powerup per tile, and no powerups spawn on shallow water.
     if (tile.powerupMarker || tile.level < 1) return;
-    var chanceToSpawn = .1 * ((4 - state.loot.activePowerupMarkers.length) / 4) * ((maxTileLevel + 1 - tile.level) / (maxTileLevel));
+    var chanceToSpawn = .1 * ((4 - state.loot.activePowerupMarkers.size) / 4) * ((maxTileLevel + 1 - tile.level) / (maxTileLevel));
     if (Math.random() > chanceToSpawn) return;
     var value = (.4 + Math.random() * .2) * getTilePower(state, tile) * Math.pow(1.3, tile.level - 1);
     // On the world map only there is a small chance to find a treasure map.
@@ -150,7 +150,7 @@ function checkToGeneratePowerUp(state: GameState, tile: MapTile) {
     // powerup for a map which doesn't seem great.
     const lootMarker = addLootToTile(tile, getWeightedPowerup(state, value, [makeTreasureMapLoot]));
     tile.powerupMarker = lootMarker;
-    state.loot.activePowerupMarkers.push(lootMarker);
+    state.loot.activePowerupMarkers.add(lootMarker);
 }
 export function addLootToTile(tile: MapTile, loot: Loot) {
     const realCoords = toRealCoords([tile.x, tile.y]);
@@ -265,7 +265,7 @@ function isLootInRadius(state: GameState, loot: LootMarker): boolean {
     return dx * dx + dy * dy < actualRadius * actualRadius;
 }
 
-function getCollectionRadius(state: GameState) {
+export function getCollectionRadius(state: GameState) {
     return Math.sqrt((1 + getSkillValue(state, 'radius')) * state.saved.radius * state.saved.radius);
 }
 
@@ -323,10 +323,7 @@ function obtainloot(state: GameState, lootMarker: LootMarker): void {
     if (tile.gemMarker === lootMarker) {
         tile.gemMarker = null;
     }
-    const powerupIndex = state.loot.activePowerupMarkers.indexOf(lootMarker);
-    if (powerupIndex >= 0) {
-        state.loot.activePowerupMarkers.splice(powerupIndex, 1);
-    }
+    state.loot.activePowerupMarkers.delete(lootMarker);
     if (lootMarker.loot.onObtain) {
         lootMarker.loot.onObtain(state);
     }

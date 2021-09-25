@@ -1,8 +1,10 @@
+import { requireImage } from 'app/images';
+import { GameState } from 'app/types';
 
 var titleBackground = requireImage('gfx/beach.jpg');
 var titleButtons = [];
 
-function handleTitleClick(x, y) {
+export function handleTitleClick(state: GameState, x: number, y: number): void {
     for (var saveIndex = 0; saveIndex < saveSlots.length; saveIndex++) {
         var saveSlot = saveSlots[saveIndex];
         if (isPointInRectObject(x, y, saveSlot.target)) {

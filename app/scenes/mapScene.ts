@@ -1,5 +1,58 @@
+import { drawDamageIndicators, getFightOrFleeButton, updateBattle } from 'app/battle';
+import { isDebugMode } from 'app/context';
+import { createCanvas } from 'app/dom';
+import {
+    drawBar, drawEmbossedText, drawFrame, drawOutlinedImage,
+    drawRectangleFrame, drawSolidTintedImage, drawTintedImage, getFrame,
+} from 'app/draw';
+import { gridLength, maxTileLevel } from 'app/gameConstants';
+import { drawGemIndicators } from 'app/gems';
+import { handleHudButtonClick, renderHudButtons } from 'app/hud';
+import {
+    avatarAnimations, heartSource, outlinedMoneySource, upArrows,
+    oceanSource,
+    shallowSource,
+    sandSource,
+    dirtSource,
+    grassSource,
+    forestSource,
+    hillSource,
+    mountainSource,
+    peakSource,
+    iceSource,
+} from 'app/images';
+import {
+    checkToGenerateLootForTile, drawLootTotals, getCollectButton,
+    getCollectionRadius, updateLootCollection, updateTileLoot,
+} from 'app/loot';
+import { checkToGenerateMonster, drawTileMonster } from 'app/monsters';
+import { saveGame } from 'app/saveGame';
+import { drawDungeonStats, getEnterExitButton } from 'app/scenes/dungeonScene';
+import { getSkillValue, getSkillButton } from 'app/scenes/skillsScene';
+import { getTreasureMapButton } from 'app/scenes/treasureMapScene';
+import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
+import { abbreviateNumber, rectanglesOverlap } from 'app/utils/index';
+import {
+    getActualScale, getGridRectangle, getTileData,
+    project, isTileExplored, toGridCoords, unproject,
+} from 'app/world';
+import { GameState, HudButton, LootMarker, MapTile } from 'app/types';
 
-import { GameState, LootMarker, MapTile } from 'app/types';
+export const levelColors = [
+    shallowSource,
+    sandSource,
+    dirtSource,
+    grassSource,
+    forestSource,
+    hillSource,
+    mountainSource,
+    peakSource,
+    iceSource,
+];
+
+if (levelColors.length !== maxTileLevel + 1) {
+    console.error(`Incorrect number of tiles found, expected ${maxTileLevel + 1} found ${levelColors.length}`, levelColors.length);
+}
 
 export function getTilePower(state: GameState, tile: MapTile): number {
     // Base power is 1 + 2% of total tiles leveled + 20% of current tile level.
@@ -15,479 +68,543 @@ export function getTilePower(state: GameState, tile: MapTile): number {
     return power;
 }
 
-var lootInMonsterRadius = [];
 export function updateMap(state: GameState) {
-    lootInRadius = [];
-    lootInMonsterRadius = [];
-    if (collectingLoot.length) {
-        updateLootCollection();
+    state.loot.lootInRadius = [];
+    state.loot.lootInMonsterRadius = [];
+    updateLootCollection(state);
+    for (const mapTile of state.world.activeTiles) {
+        updateTileLoot(state, mapTile);
     }
-    for (const tileData of state.world.activeTiles) {
-        updateTileLoot(state, tileData);
-    }
-    if (state.battle.engagedMonster) updateBattle(state.time);
-    if (damageIndicators.length) updateDamageIndicators();
+    updateBattle(state);
 }
-function handleMapClick(x, y) {
-    if (state.globalPosition.isFastMode || state.globalPosition.isFixingGPS) return;
-    if (!selectedTile && lootInRadius.length && collectingLoot.length === 0 && isPointInRectObject(x, y, collectCoinsButton.target)) {
-        collectLoot();
+
+function getMapHudButtons(): HudButton[] {
+    return [
+        getFightOrFleeButton(),
+        getSkillButton(),
+        getCollectButton(),
+        getEnterExitButton(),
+        getTreasureMapButton(),
+        upgradeTileButton,
+    ];
+}
+// Update the targets for skill buttons for the current display settings.
+// This should be called each frame before checking for user clicks or rendering the buttons.
+let lastCanvasSize: {w: number, h: number} = null;
+function updateAllMapButtonTargets(state: GameState): void {
+    const { canvas } = state.display;
+    if (lastCanvasSize?.w === canvas.width && lastCanvasSize?.h === canvas.height) {
         return;
     }
-    if (handleTreasureMapButtonClick(x, y)) return;
-    if (handleSkillButtonClick(x, y)) return;
-    if (handleFightFleeButtonClick(x, y)) return;
-    if (handleEnterExitButtonClick(x, y)) return;
-    if (selectedTile && !selectedTile.monster && !selectedTile.dungeon && canUpgradeTile(selectedTile) && isPointInRectObject(x, y, upgradeButton.target)) {
-        upgradeTile(selectedTile);
+    lastCanvasSize = {w: canvas.width, h: canvas.height};
+    for (const button of getMapHudButtons()) {
+        button.updateTarget(state);
+    }
+}
+
+export function handleMapClick(state: GameState, x: number, y: number): void {
+    if (state.globalPosition.isFastMode || state.globalPosition.isFixingGPS) {
         return;
     }
-    clickedCoords = unproject([x, y]);
-    var clickedGridCoords = toGridCoords(clickedCoords);
-    if (tileIsExplored(clickedGridCoords) && !state.battle.engagedMonster) {
-        if (!selectedTile || selectedTile.x !== clickedGridCoords[0] || selectedTile.y !== clickedGridCoords[1]){
-            var clickedTile = getTileData(clickedGridCoords);
-            if (selectableTiles.indexOf(clickedTile) >= 0) selectedTile = clickedTile;
-        } else {
-            selectedTile = null;
+    updateAllMapButtonTargets(state);
+    handleHudButtonClick(state, x, y, getMapHudButtons());
+    const clickedCoords = unproject(state, [x, y]);
+    const clickedGridCoords = toGridCoords(clickedCoords);
+    if (isTileExplored(state, clickedGridCoords) && !state.battle.engagedMonster) {
+        const clickedTile = getTileData(state, clickedGridCoords);
+        if (state.selectedTile === clickedTile) {
+            state.selectedTile = null;
+        } else if (state.world.selectableTiles.has(clickedTile)) {
+            state.selectedTile = clickedTile;
         }
     }
 }
 
-var direction = 'right';
-var directionOffsets = {
-    'down': 0,
-    x: 48,
-    'up': 96,
-    'right': 144
-};
-var walkOffsets = [0, 48, 0, 96], walkTime = 0;
 export function drawPerson(context: CanvasRenderingContext2D, state: GameState) {
-    var personPosition = getCurrentPosition();
+    const personPosition = state.world.currentPosition;
     if (!personPosition) return;
     // draw current location
-    var point = project(personPosition);
-    var scaleToUse = getActualScale();
-    var targetSize = Math.round(Math.min(gridLength * scaleToUse * .7, 64));
-    var personDirection = direction;
-    if (currentDungeon) {
+    const point = project(state, personPosition);
+    const scaleToUse = getActualScale(state);
+    let targetSize = Math.round(Math.min(gridLength * scaleToUse * .7, 64));
+    let personDirection = state.globalPosition.direction;
+    if (state.dungeon.currentDungeon) {
         targetSize = Math.round(gridLength * scaleToUse * 1.2);
         personDirection = 'down';
     }
-    var frame = Math.floor(walkTime / 250) % walkOffsets.length;
-    var source = {
-        x: walkOffsets[frame],
-        y: directionOffsets[personDirection] + 1,
-        w: personSource.width, h: personSource.height + 1
-    }
-    var target = {
+    const animation = avatarAnimations[personDirection];
+    const frame = getFrame(animation, state.avatar.animationTime);
+    const target = {
         x: point[0] - Math.round(targetSize / 2),
         y: point[1] - targetSize,
         w: targetSize, h: targetSize
     };
-    drawImage(context, outlinedPersonImage, source, target);
+    drawFrame(context, frame, target);
 }
+
 export function drawMapScene(context: CanvasRenderingContext2D, state: GameState) {
-    drawGrid();
-    if (currentPosition && (state.globalPosition.isFastMode || collectingLoot.length === 0)) {
-        var point = project(currentPosition);
+    const { canvas, iconSize } = state.display;
+    // Draws the background as well as all markers (loot, monsters + dungeons).
+    drawGrid(context, state);
+    // Draw the collection radius ring, but only if we know the current position and the player
+    // is not currently collecting loot or the player is auto-collecting loot in fast mode.
+    if (state.world.currentPosition && (state.globalPosition.isFastMode || state.loot.collectingLoot.length === 0)) {
+        //
+        const point = project(state, state.world.currentPosition);
         context.save();
-        context.globalAlpha = .3;
-        context.strokeStyle = 'gold';
-        context.lineWidth = 4;
-        context.beginPath();
-        context.arc(point[0], point[1], getCollectionRadius() * getActualScale(), 0 , 2 * Math.PI);
-        context.stroke();
+            context.globalAlpha = .3;
+            context.strokeStyle = 'gold';
+            context.lineWidth = 4;
+            context.beginPath();
+            context.arc(point[0], point[1], getCollectionRadius(state) * getActualScale(state), 0 , 2 * Math.PI);
+            context.stroke();
         context.restore();
     }
-    drawPerson();
+    drawPerson(context, state);
+    drawDamageIndicators(context, state);
 
-    if (damageIndicators.length) drawDamageIndicators();
-
-    if (selectedTile && !selectedTile.monster && !selectedTile.dungeon) {
-        var rectangle = getGridRectangle([selectedTile.x, selectedTile.y]);
-        var canUpgrade = canUpgradeTile(selectedTile);
+    const { selectedTile } = state;
+    if (selectedTile && !selectedTile.monsterMarker && !selectedTile.dungeonMarker) {
+        const rectangle = getGridRectangle(state, [selectedTile.x, selectedTile.y]);
+        const canUpgrade = canUpgradeTile(state, selectedTile);
         context.save();
-        context.globalAlpha = .4;
-        context.fillStyle = canUpgrade ? 'green' : 'red';
-        var thickness = 4;
-        context.fillRect(rectangle.left, rectangle.top, rectangle.width, thickness);
-        context.fillRect(rectangle.left, rectangle.top + rectangle.height - thickness, rectangle.width, thickness);
-        context.fillRect(rectangle.left, rectangle.top + thickness, thickness, rectangle.height - 2 * thickness);
-        context.fillRect(rectangle.left + rectangle.width - thickness, rectangle.top + thickness, thickness, rectangle.height - 2 * thickness);
+            context.globalAlpha = .4;
+            drawRectangleFrame(context, canUpgrade ? 'green' : 'red', 4, rectangle);
         context.restore();
-        drawUpgradeButton(canUpgrade, costToUpgrade(selectedTile));
     }
-    var hideStatsIn = hideStatsAt - state.time;
-    if (!state.globalPosition.isFastMode && !state.globalPosition.isFixingGPS && (hideStatsIn > 0 || !playerStatsRectangle)) {
+    const hideStatsIn = state.loot.hideStatsAt - state.time;
+    if (!state.globalPosition.isFastMode && !state.globalPosition.isFixingGPS && hideStatsIn > 0) {
         context.save();
-        context.globalAlpha = Math.max(0, Math.min(1, hideStatsIn / 1000));
-        playerStatsRectangle = drawStatsBox(5, 5, level, 'Hero', currentHealth, maxHealth, attack, defense, experience, experienceForNextLevel());
+            context.globalAlpha = Math.max(0, Math.min(1, hideStatsIn / 1000));
+            drawAvatarStats(context, state);
         context.restore();
     } else {
-        drawLifeIndicator();
+        drawLifeIndicator(context, state);
     }
-    if (selectedTile && selectedTile.x === currentGridCoords[0] && selectedTile.y === currentGridCoords[1]) {
-        hideStatsAt = state.time + 1500;
+    // Force showing stats if the avatar is in the selected tile.
+    if (selectedTile?.x === state.world.currentGridCoords[0] && selectedTile?.y === state.world.currentGridCoords[1]) {
+        state.loot.hideStatsAt = state.time + 1500;
     }
-    drawMonsterStats();
-    if (selectedTile && selectedTile.dungeon) drawDungeonStats();
+    drawMonsterStats(context, state);
+    if (selectedTile && selectedTile.dungeonMarker) {
+        drawDungeonStats(context, state);
+    }
     // collect coins button is replaced by 'Fight!' button when a monster is selected.
     if (state.globalPosition.isFixingGPS) {
-        var fontSize = Math.floor(3 * iconSize / 4);
+        const fontSize = Math.floor(3 * iconSize / 4);
         context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
-        var text = 'Updating';
-        for (var i = 0; i < (endFixingGPSTime - state.time) / 1000; i++) {
+        let text = 'Updating';
+        for (let i = 0; i < (state.globalPosition.endFixingGPSTime - state.time) / 1000; i++) {
             text = '-' + text + '-';
         }
         drawEmbossedText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
     } else if (state.globalPosition.isFastMode) {
-        var fontSize = Math.floor(3 * iconSize / 4);
+        const fontSize = Math.floor(3 * iconSize / 4);
         context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
-        var text = 'Fast Mode';
-        for (var i = 0; i < (endFastModeTime - state.time) / 2000; i++) {
+        let text = 'Fast Mode';
+        for (let i = 0; i < (state.globalPosition.endFastModeTime - state.time) / 2000; i++) {
             text = '-' + text + '-';
         }
         drawEmbossedText(context, text, 'gold', 'black', canvas.width / 2, canvas.height - 10);
     } else {
-        if (!selectedTile) {
-            if (collectingLoot.length === 0) drawCollectCoinsButton();
-        } else if (selectedTile.monster) drawFightFleeButton();
-        else if (selectedTile.dungeon) drawEnterExitButton();
-        drawGemIndicators();
-        drawSkillButton();
-        drawTreasureMapButton();
+        drawGemIndicators(context, state);
+        updateAllMapButtonTargets(state);
+        renderHudButtons(context, state, getMapHudButtons());
     }
-
-    drawCoinsIndicator();
-    drawLootTotals();
+    drawCoinsIndicator(context, state);
+    drawLootTotals(context, state);
 }
-var playerStatsRectangle;
 
 export function drawCoinsIndicator(context: CanvasRenderingContext2D, state: GameState) {
-    var localIconSize = Math.floor(iconSize / 2);
-    var coinsText = coins.abbreviate();
-    var fontSize = Math.floor( localIconSize * .9);
+    const { canvas, iconSize } = state.display;
+    const localIconSize = Math.floor(iconSize / 2);
+    const coinsText = abbreviateNumber(state.saved.coins);
+    const fontSize = Math.floor( localIconSize * .9);
     context.font = fontSize + 'px sans-serif';
     context.textAlign = 'left'
     context.textBaseline = 'middle';
-    var metrics = context.measureText(coinsText)
-    var margin = 10;
-    var left = canvas.width - margin - metrics.width - margin - localIconSize - margin;
-    var top = margin;
-    drawImage(context, outlinedMoneySource.image, outlinedMoneySource, {x: left, y: margin, w: localIconSize, h: localIconSize});
-    drawEmbossedText(context, coinsText, 'gold', 'white', left + localIconSize, margin + Math.round(localIconSize / 2));
+    const metrics = context.measureText(coinsText);
+    const margin = 10;
+    const x = canvas.width - metrics.width - localIconSize - 3 * margin;
+    const y = margin;
+    drawFrame(context, outlinedMoneySource, {x, y, w: localIconSize, h: localIconSize});
+    drawEmbossedText(context, coinsText, 'gold', 'white', x + localIconSize, y + Math.round(localIconSize / 2));
 }
 
 export function drawLifeIndicator(context: CanvasRenderingContext2D, state: GameState) {
     const { iconSize } = state.display;
-    var localIconSize = Math.floor(iconSize / 2);
-    var fontSize = Math.floor(3 * localIconSize / 4);
+    const localIconSize = Math.floor(iconSize / 2);
+    const fontSize = Math.floor(3 * localIconSize / 4);
     context.font = fontSize + 'px sans-serif';
     context.textAlign = 'left';
     context.textBaseline = 'top';
 
-    drawImage(context, heartSource.image, heartSource, {x: 10, y: 10, w: localIconSize, h: localIconSize});
-    drawEmbossedText(context, currentHealth.abbreviate() + ' / ' + maxHealth.abbreviate(), 'red', 'white', 10 + localIconSize + 5, 10);
-    drawBar(context, 10, 10 + localIconSize + 5, localIconSize * 4, 6, 'white', 'red', currentHealth / maxHealth);
+    drawFrame(context, heartSource, {x: 10, y: 10, w: localIconSize, h: localIconSize});
+    const { currentHealth } = state.saved.avatar;
+    const { maxHealth } = state.avatar;
+    const healthText = abbreviateNumber(currentHealth) + ' / ' + abbreviateNumber(maxHealth);
+    drawEmbossedText(context, healthText, 'red', 'white', 10 + localIconSize + 5, 10);
+    drawBar(context, {x: 10, y: 10 + localIconSize + 5, w: localIconSize * 4, h: 6}, 'white', 'red', currentHealth / maxHealth);
 }
 
-var upgradeButton = {'target': {}};
-function drawUpgradeButton(context: CanvasRenderingContext2D, state: GameState, canUpgrade: boolean, cost: number) {
-    context.save();
-    if (cost > coins || !canUpgrade) context.globalAlpha = .5;
-    context.textBaseline = 'middle';
-    context.textAlign = 'left';
-    context.font = Math.floor(3 * iconSize / 4) + 'px sans-serif';
-    var text = canUpgrade ? '-' + cost.abbreviate() : '---';
-    var metrics = context.measureText(text);
-    var target = upgradeButton.target;
-    target.width = iconSize + metrics.width;
-    target.left = Math.floor((canvas.width - target.width) / 2);
-    target.top = canvas.height - 10 - iconSize;
-    target.height = iconSize;
+const upgradeTileButton: HudButton = {
+    onClick(state: GameState): void {
+        upgradeTile(state, state.selectedTile);
+    },
+    isDisabled(state: GameState) {
+        const { selectedTile } = state;
+        const cost = costToUpgrade(state, selectedTile);
+        return !canUpgradeTile(state, selectedTile) || cost > state.saved.coins;
+    },
+    isVisible(state: GameState) {
+        const { selectedTile } = state;
+        if (!selectedTile) {
+            return false;
+        }
+        if (selectedTile.monsterMarker || selectedTile.dungeonMarker) {
+            return false;
+        }
+        return true;
+    },
+    render(context: CanvasRenderingContext2D, state: GameState): void {
+        const { iconSize } = state.display;
+        const { selectedTile } = state;
 
-    drawSolidTintedImage(context, upArrows.image, (cost <= coins && canUpgrade) ? 'green' : 'red', upArrows, {x: target.left, y: target.top, w: iconSize, h: iconSize});
-    drawEmbossedText(context, text, (cost <= coins) ? 'white' : 'red', 'black', target.left + iconSize, canvas.height - 10 - iconSize / 2);
+        const canUpgrade = canUpgradeTile(state, selectedTile);
+        const cost = costToUpgrade(state, selectedTile);
+        const canAfford = cost <= state.saved.coins;
+        context.save();
+            if (!canAfford || !canUpgrade) {
+                context.globalAlpha = .5;
+            }
+            context.textBaseline = 'middle';
+            context.textAlign = 'left';
+            context.font = Math.floor(3 * iconSize / 4) + 'px sans-serif';
+            var text = canUpgrade ? '-' + abbreviateNumber(cost) : '---';
+            drawSolidTintedImage(context, (canAfford && canUpgrade) ? 'green' : 'red', upArrows, {...this.target, w: iconSize, h: iconSize});
+            drawEmbossedText(context, text, canAfford ? 'white' : 'red', 'black', this.target.x + iconSize, this.target.y + iconSize / 2);
+        context.restore();
+    },
+    updateTarget(state: GameState): void {
+        const { canvas, iconSize } = state.display;
+        const w = iconSize * 4;
+        // Bottom center of the screen.
+        this.target = {
+            x: Math.floor((canvas.width - w) / 2),
+            y: canvas.height - 10 - iconSize,
+            w,
+            h: iconSize
+        };
+    },
+    target: { x: 0, y: 0, w: 0, h: 0}
+};
 
-    context.restore();
-}
-
-function upgradeTile(tile) {
-    var cost = costToUpgrade(tile);
-    if (!cost || coins < cost) return;
+function upgradeTile(state: GameState, tile: MapTile): void {
+    const cost = costToUpgrade(state, tile);
+    if (!cost || state.saved.coins < cost) {
+        return;
+    }
     tile.level++;
     delete tile.canvas;
-    for (var neighborKey in tile.neighbors) {
-        delete tile.neighbors[neighborKey].canvas;
+    for (const neighbor of tile.neighbors) {
+        delete neighbor.canvas;
     }
-    coins -= cost;
+    state.saved.coins -= cost;
     for (var i = 0; i <= tile.level; i++) {
-        levelSums[i] = ifdefor(levelSums[i], 0) + 1;
+        state.world.levelSums[i] = (state.world.levelSums[i] ?? 0) + 1;
     }
-    tile.exhausted = false;
-    checkToGenerateLootForTile(tile);
-    checkToGenerateMonster(tile, .5);
-    selectedTile = null;
-    saveGame();
+    tile.exhaustedDuration = 0;
+    checkToGenerateLootForTile(state, tile);
+    checkToGenerateMonster(state, tile, .5);
+    state.selectedTile = null;
+    saveGame(state);
 }
-function canUpgradeTile(tile) {
-    var neighborSum = 0;
-    var numNeighbors = 0;
-    for (var key in tile.neighbors) {
+function canUpgradeTile(state: GameState, tile: MapTile): boolean {
+    let neighborSum = 0;
+    let numNeighbors = 0;
+    for (let key in tile.neighbors) {
         numNeighbors++;
-        var neighbor = tile.neighbors[key];
-        neighborSum += neighbor.level;
+        neighborSum += tile.neighbors[key]?.level ?? 0;
     }
     return tile.level >=0 && (numNeighbors >= 8) && (neighborSum >= (8 * tile.level));
 }
-function costToUpgrade(data) {
-    if (data.level >= maxTileLevel) return false;
-    var cost = 5;
-    for (var i = 1; i <= data.level + 1; i++) {
-        cost += 2 * (ifdefor(levelSums[i], 0) + 1) * Math.pow(10, i - 1);
+function costToUpgrade(state: GameState, tile: MapTile): number {
+    if (tile.level >= maxTileLevel) {
+        return -1;
     }
-    return Math.floor(cost * (1 - getSkillValue(skillTree.money.explorer)));
+    let cost = 5;
+    for (let i = 1; i <= tile.level + 1; i++) {
+        cost += 2 * ((state.world.levelSums[i] ?? 0) + 1) * Math.pow(10, i - 1);
+    }
+    return Math.floor(cost * (1 - getSkillValue(state, 'explorer')));
 }
 
-var tileMask = createCanvas(200, 200);
-function createOrUpdateTileCanvas(tile, scaleToUse) {
-    var rectangle = tile.target;
-    const neighbor = (dx, dy) => tile.neighbors[dx + 'x' + dy] || {level: -1};
-    if (!tile.canvas) tile.canvas = createCanvas(rectangle.width, rectangle.height);
-    else {
-        tile.canvas.width = rectangle.width;
-        tile.canvas.height = rectangle.height;
+function createOrUpdateTileCanvas(state: GameState, tile: MapTile, scaleToUse: number) {
+    const rectangle = tile.target;
+    const neighborLevel = (dx: number, dy: number): number => {
+        return tile.neighbors[(dx + 1) + 3 * (dy + 1)]?.level ?? -1;
     }
-    if (tileMask.width != rectangle.width) tileMask.width = rectangle.width;
-    if (tileMask.height != rectangle.height) tileMask.height = rectangle.height;
-    var tileContext = tile.canvas.getContext('2d');
+    if (!tile.canvas) {
+        tile.canvas = createCanvas(rectangle.w, rectangle.h);
+    } else {
+        tile.canvas.width = rectangle.w;
+        tile.canvas.height = rectangle.h;
+    }
+    const tileContext = tile.canvas.getContext('2d');
     tileContext.imageSmoothingEnabled = false;
     // Draw the current tile's pattern to all four corners
     if (tile.level >= 0) {
-        var patternSource = levelColors[tile.level];
-        drawImage(tileContext, patternSource.image, patternSource,
-            {x: 0, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
-        drawImage(tileContext, patternSource.image, patternSource,
-            {x: rectangle.width / 2, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
-        drawImage(tileContext, patternSource.image, patternSource,
-            {x: 0, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
-        drawImage(tileContext, patternSource.image, patternSource,
-            {x: rectangle.width / 2, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
+        const patternSource = levelColors[tile.level];
+        drawFrame(tileContext, patternSource,
+            {x: 0, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
+        drawFrame(tileContext, patternSource,
+            {x: rectangle.w / 2, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
+        drawFrame(tileContext, patternSource,
+            {x: 0, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
+        drawFrame(tileContext, patternSource,
+            {x: rectangle.w / 2, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
     }
-    for (var i = tile.level + 1; i < levelColors.length; i++) {
+    for (let i = tile.level + 1; i < levelColors.length; i++) {
         // top left
-        var patternSource = levelColors[i];
-        var cornerSource = copy(patternSource);
-        if (neighbor(0, 1).level >= i && neighbor(-1, 0).level >= i) {
+        const patternSource = levelColors[i];
+        let cornerSource = {...patternSource};
+        if (neighborLevel(0, 1) >= i && neighborLevel(-1, 0) >= i) {
             // top and left filled in
-            cornerSource.left += 34;
-            cornerSource.top -= 17;
-        } else if (neighbor(0, 1).level >= i) {
+            cornerSource.x += 34;
+            cornerSource.y -= 17;
+        } else if (neighborLevel(0, 1) >= i) {
             // only top filled in
-            cornerSource.top += 17;
-        } else if (neighbor(-1, 0).level >= i) {
+            cornerSource.y += 17;
+        } else if (neighborLevel(-1, 0) >= i) {
             // only left filled in
-            cornerSource.left += 17;
-        } else if (neighbor(-1, 1).level >= i) {
+            cornerSource.x += 17;
+        } else if (neighborLevel(-1, 1) >= i) {
             // only corner filled in
-            cornerSource.left += 17;
-            cornerSource.top += 17;
+            cornerSource.x += 17;
+            cornerSource.y += 17;
         } else {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource,
-                {x: 0, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
+            drawFrame(tileContext, cornerSource, {x: 0, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
         }
 
         // top right
-        cornerSource = copy(patternSource);
-        if (neighbor(0, 1).level >= i && neighbor(1, 0).level >= i) {
+        cornerSource = {...patternSource};
+        if (neighborLevel(0, 1) >= i && neighborLevel(1, 0) >= i) {
             // top and left filled in
-            cornerSource.left += 51;
-            cornerSource.top -= 17;
-        } else if (neighbor(0, 1).level >= i) {
+            cornerSource.x += 51;
+            cornerSource.y -= 17;
+        } else if (neighborLevel(0, 1) >= i) {
             // only top filled in
-            cornerSource.top += 17;
-        } else if (neighbor(1, 0).level >= i) {
+            cornerSource.y += 17;
+        } else if (neighborLevel(1, 0) >= i) {
             // only left filled in
-            cornerSource.left -= 17;
-        } else if (neighbor(1, 1).level >= i) {
+            cornerSource.x -= 17;
+        } else if (neighborLevel(1, 1) >= i) {
             // only corner filled in
-            cornerSource.left -= 17;
-            cornerSource.top += 17;
+            cornerSource.x -= 17;
+            cornerSource.y += 17;
         } else {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource,
-                {x: rectangle.width / 2, y: 0, w: rectangle.width / 2, h: rectangle.height / 2});
+            drawFrame(tileContext, cornerSource,
+                {x: rectangle.w / 2, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
         }
 
         // bottom left
-        cornerSource = copy(patternSource);
-        if (neighbor(0, -1).level >= i && neighbor(-1, 0).level >= i) {
+        cornerSource = {...patternSource};
+        if (neighborLevel(0, -1) >= i && neighborLevel(-1, 0) >= i) {
             // top and left filled in
-            cornerSource.left += 34;
-        } else if (neighbor(0, -1).level >= i) {
+            cornerSource.x += 34;
+        } else if (neighborLevel(0, -1) >= i) {
             // only top filled in
-            cornerSource.top -= 17;
-        } else if (neighbor(-1, 0).level >= i) {
+            cornerSource.y -= 17;
+        } else if (neighborLevel(-1, 0) >= i) {
             // only left filled in
-            cornerSource.left += 17;
-        } else if (neighbor(-1, -1).level >= i) {
+            cornerSource.x += 17;
+        } else if (neighborLevel(-1, -1) >= i) {
             // only corner filled in
-            cornerSource.left += 17;
-            cornerSource.top -= 17;
+            cornerSource.x += 17;
+            cornerSource.y -= 17;
         } else {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource,
-                {x: 0, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
+            drawFrame(tileContext, cornerSource,
+                {x: 0, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
         }
 
         // bottom right
-        cornerSource = copy(patternSource);
-        if (neighbor(0, -1).level >= i && neighbor(1, 0).level >= i) {
+        cornerSource = {...patternSource};
+        if (neighborLevel(0, -1) >= i && neighborLevel(1, 0) >= i) {
             // top and left filled in
-            cornerSource.left += 51;
-        } else if (neighbor(0, -1).level >= i) {
+            cornerSource.x += 51;
+        } else if (neighborLevel(0, -1) >= i) {
             // only top filled in
-            cornerSource.top -= 17;
-        } else if (neighbor(1, 0).level >= i) {
+            cornerSource.y -= 17;
+        } else if (neighborLevel(1, 0) >= i) {
             // only left filled in
-            cornerSource.left -= 17;
-        } else if (neighbor(1, -1).level >= i) {
+            cornerSource.x -= 17;
+        } else if (neighborLevel(1, -1) >= i) {
             // only corner filled in
-            cornerSource.left -= 17;
-            cornerSource.top -= 17;
+            cornerSource.x -= 17;
+            cornerSource.y -= 17;
         } else {
             cornerSource = null;
         }
         if (cornerSource) {
-            drawImage(tileContext, patternSource.image, cornerSource,
-                {x: rectangle.width / 2, y: rectangle.height / 2, w: rectangle.width / 2, h: rectangle.height / 2});
+            drawFrame(tileContext, cornerSource,
+                {x: rectangle.w / 2, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
         }
     }
 }
 
 function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
-    var scaleToUse = getActualScale();
-    var origin = getOrigin(state);
-    var canvasRectangle = {x: 0, y: 0, w: canvas.width, h: canvas.height};
+    const { canvas, iconSize } = state.display;
+    const scaleToUse = getActualScale(state);
+    const canvasRectangle = {x: 0, y: 0, w: canvas.width, h: canvas.height};
     context.fillStyle = 'black';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    if (!currentGridCoords) return;
-    var gradientLength = .3 * scaleToUse * gridLength;
-    var topLeftCorner = project([currentPosition[0] - 4 * gridLength, currentPosition[1] + 4 * gridLength]);
-    var visibleRectangle = {
-        x: Math.max(-gradientLength / 2, topLeftCorner[0]), y: Math.max(-gradientLength / 2, topLeftCorner[1])
-    };
-    var gridSize = Math.round(gridLength * scaleToUse);
-    visibleRectangle.width = Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - visibleRectangle.left;
-    visibleRectangle.height = Math.min(canvas.height + gradientLength / 2, topLeftCorner[1] + 8 * gridSize) - visibleRectangle.top;
-    context.save();
-    context.imageSmoothingEnabled = false;
-    context.translate(
-         Math.round((((state.time / 15)) % 1000 / 1000 - .5) * gridSize),
-        -Math.round((((state.time / 20)) % 1000 / 1000 + .5) * gridSize)
-    );
-    var topLeftGridCorner = project([(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] + 4) * gridLength]);
-    for (var top = topLeftGridCorner[1]; top <= topLeftGridCorner[1] + 9 * gridSize; top += gridSize) {
-        for (var left = topLeftGridCorner[0]; left <= topLeftGridCorner[0] + 9 * gridSize; left += gridSize) {
-            var target = {
-                x: left, y: top, w: gridSize, h: gridSize
-            };
-            drawImage(context, oceanSource.image, oceanSource, target);
-        }
+    const { currentGridCoords, currentPosition } = state.world;
+    if (!currentGridCoords) {
+        return;
     }
+    const gradientLength = 0.3 * scaleToUse * gridLength;
+    const topLeftCorner = project(state, [currentPosition[0] - 4 * gridLength, currentPosition[1] + 4 * gridLength]);
+    const gridSize = Math.round(gridLength * scaleToUse);
+    let x = Math.max(-gradientLength / 2, topLeftCorner[0]);
+    let y = Math.max(-gradientLength / 2, topLeftCorner[1]);
+    const visibleRectangle = {
+        x, y,
+        w: Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - x,
+        h: Math.min(canvas.height + gradientLength / 2, topLeftCorner[1] + 8 * gridSize) - y,
+    };
+    context.save();
+        context.imageSmoothingEnabled = false;
+        context.translate(
+             Math.round((((state.time / 15)) % 1000 / 1000 - .5) * gridSize),
+            -Math.round((((state.time / 20)) % 1000 / 1000 + .5) * gridSize)
+        );
+        const topLeftGridCorner = project(state, [(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] + 4) * gridLength]);
+        for (let y = topLeftGridCorner[1]; y <= topLeftGridCorner[1] + 9 * gridSize; y += gridSize) {
+            for (let x = topLeftGridCorner[0]; x <= topLeftGridCorner[0] + 9 * gridSize; x += gridSize) {
+                drawFrame(context, oceanSource, { x, y, w: gridSize, h: gridSize });
+            }
+        }
     context.restore();
 
-    var draws = 0;
-    for (var tileData of activeTiles) {
-        var rectangle = getGridRectangle([tileData.x, tileData.y]);
-        tileData.target = rectangle;
-        tileData.visible = rectanglesOverlap(rectangle, canvasRectangle);
-        if (!tileData.visible) continue;
+    const visibleTiles = new Set<MapTile>();
+    let draws = 0;
+    for (const mapTile of state.world.activeTiles) {
+        const rectangle = getGridRectangle(state, [mapTile.x, mapTile.y]);
+        mapTile.target = rectangle;
+        if (!rectanglesOverlap(rectangle, canvasRectangle)) {
+            continue;
+        }
+        visibleTiles.add(mapTile);
         draws++;
-        if (!tileData.canvas || tileData.scale !== scaleToUse) createOrUpdateTileCanvas(tileData, scaleToUse);
-        context.drawImage(tileData.canvas, 0, 0, tileData.canvas.width, tileData.canvas.height,
-            rectangle.left, rectangle.top, rectangle.width, rectangle.height);
-        if (tileData.exhausted) {
-            var exhaustRadius = Math.min(rectangle.width / 2, rectangle.height / 2) - (1 + tileData.level) * Math.round(rectangle.width / 30);
+        if (!mapTile.canvas || mapTile.scale !== scaleToUse) {
+            createOrUpdateTileCanvas(state, mapTile, scaleToUse);
+        }
+        context.drawImage(mapTile.canvas, 0, 0, mapTile.canvas.width, mapTile.canvas.height,
+            rectangle.x, rectangle.y, rectangle.w, rectangle.h);
+        if (mapTile.exhaustedDuration) {
+            const exhaustRadius = Math.min(rectangle.w / 2, rectangle.h / 2) - (1 + mapTile.level) * Math.round(rectangle.w / 30);
             context.save();
-            var percent = (tileData.exhausted - tileData.exhaustCounter) / tileData.exhausted;
+            const percent = (mapTile.exhaustedDuration - mapTile.exhaustCounter) / mapTile.exhaustedDuration;
 
             context.globalAlpha = .25;
             context.fillStyle = 'black';
             context.lineWidth = 3;
             context.strokeStyle = 'white';
             context.beginPath();
-            if (percent < 1) context.moveTo(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2);
-            context.arc(rectangle.left + rectangle.width / 2, rectangle.top + rectangle.height / 2, exhaustRadius, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
+            if (percent < 1) context.moveTo(rectangle.x + rectangle.w / 2, rectangle.y + rectangle.h / 2);
+            context.arc(rectangle.x + rectangle.w / 2, rectangle.y + rectangle.h / 2, exhaustRadius, -Math.PI / 2 - percent * 2 * Math.PI, -Math.PI / 2);
             if (percent < 1) context.closePath();
             context.stroke();
             context.fill();
             context.restore();
         }
     }
-    for (var tileData of activeTiles) {
-        if (!tileData.visible) continue;
-        for (var loot of tileData.loot) {
+    // Draw coins first
+    for (const mapTile of state.world.activeTiles) {
+        if (!visibleTiles.has(mapTile)) {
+            continue;
+        }
+        for (const loot of mapTile.lootMarkers) {
             draws++;
-            if (loot !== tileData.powerup && loot !== tileData.gem) drawLoot(loot, scaleToUse);
+            if (loot !== mapTile.powerupMarker && loot !== mapTile.gemMarker) {
+                drawLootMarker(context, state, loot, scaleToUse);
+            }
         }
     }
-    for (var tileData of activeTiles) {
-        if (!tileData.visible) continue;
-        if (tileData.powerup) drawLoot(tileData.powerup, scaleToUse);
-        if (tileData.gem) drawLoot(tileData.gem, scaleToUse);
-    }
-    for (var tile of activeTiles) {
-        if (tile.dungeon) {
-            var source = tile.dungeon.source;
-            var target = {x: tile.target.left + tile.target.width / 6, w:  2 * tile.target.width / 3,
-                y: tile.target.top + tile.target.height / 6, h:  2 * tile.target.width / 3};
-            if (tile === selectedTile) drawOutlinedImage(context, source.image, 'red', 2, source, target);
-            else drawImage(context, source.image, source, target);
+    // Powerups + Gems are on top of coins so they don't get obscured.
+    for (const mapTile of state.world.activeTiles) {
+        if (!visibleTiles.has(mapTile)) {
+            continue;
         }
-        var monster = tile.monster;
-        if (!monster) continue;
-        if (!tile.visible) continue;
-        draws++;
-        drawTileMonster(tile, scaleToUse);
+        if (mapTile.powerupMarker) {
+            drawLootMarker(context, state, mapTile.powerupMarker, scaleToUse);
+        }
+        if (mapTile.gemMarker) {
+            drawLootMarker(context, state, mapTile.gemMarker, scaleToUse);
+        }
     }
-    if (visibleRectangle.left + gradientLength > 0) {
-        var gradient = context.createLinearGradient(visibleRectangle.left, 0, visibleRectangle.left + gradientLength, 0);
+    // Draw dungeons + monsters last.
+    for (const mapTile of state.world.activeTiles) {
+        if (!visibleTiles.has(mapTile)) {
+            continue;
+        }
+        if (mapTile.dungeonMarker) {
+            const frame = mapTile.dungeonMarker.frame;
+            const target = {
+                x: mapTile.target.x + mapTile.target.w / 6,
+                y: mapTile.target.y + mapTile.target.h / 6,
+                w: 2 * mapTile.target.w / 3,
+                h: 2 * mapTile.target.w / 3,
+            };
+            draws++;
+            if (mapTile === state.selectedTile) {
+                drawOutlinedImage(context, 'red', 2, frame, target);
+            } else {
+                drawFrame(context, frame, target);
+            }
+        }
+        if (!mapTile.monsterMarker) {
+            drawTileMonster(context, state, mapTile, scaleToUse);
+        }
+    }
+    if (visibleRectangle.x + gradientLength > 0) {
+        const gradient = context.createLinearGradient(visibleRectangle.x, 0, visibleRectangle.x + gradientLength, 0);
         gradient.addColorStop(0, 'black');
         gradient.addColorStop(1, 'transparent');
         context.fillStyle = gradient;
-        context.fillRect(0, 0, visibleRectangle.left + gradientLength, canvas.height);
+        context.fillRect(0, 0, visibleRectangle.x + gradientLength, canvas.height);
     }
-    if (visibleRectangle.top + gradientLength > 0) {
-        var gradient = context.createLinearGradient(0, visibleRectangle.top, 0, visibleRectangle.top + gradientLength);
+    if (visibleRectangle.y + gradientLength > 0) {
+        const gradient = context.createLinearGradient(0, visibleRectangle.y, 0, visibleRectangle.y + gradientLength);
         gradient.addColorStop(0, 'black');
         gradient.addColorStop(1, 'transparent');
         context.fillStyle = gradient;
-        context.fillRect(0, 0, canvas.width, visibleRectangle.top + gradientLength);
+        context.fillRect(0, 0, canvas.width, visibleRectangle.y + gradientLength);
     }
-    if (visibleRectangle.left + visibleRectangle.width - gradientLength < canvas.width) {
-        var left = visibleRectangle.left + visibleRectangle.width - gradientLength;
-        var gradient = context.createLinearGradient(left, 0, visibleRectangle.left + visibleRectangle.width, 0);
+    if (visibleRectangle.x + visibleRectangle.w - gradientLength < canvas.width) {
+        const left = visibleRectangle.x + visibleRectangle.w - gradientLength;
+        const gradient = context.createLinearGradient(left, 0, visibleRectangle.x + visibleRectangle.w, 0);
         gradient.addColorStop(0, 'transparent');
         gradient.addColorStop(1, 'black');
         context.fillStyle = gradient;
         context.fillRect(left, 0, canvas.width - left, canvas.height);
     }
-    if (visibleRectangle.top + gradientLength > 0) {
-        var top = visibleRectangle.top + visibleRectangle.height - gradientLength;
-        var gradient = context.createLinearGradient(0, top, 0, visibleRectangle.top + visibleRectangle.height);
+    if (visibleRectangle.y + gradientLength > 0) {
+        const top = visibleRectangle.y + visibleRectangle.h - gradientLength;
+        const gradient = context.createLinearGradient(0, top, 0, visibleRectangle.y + visibleRectangle.h);
         gradient.addColorStop(0, 'transparent');
         gradient.addColorStop(1, 'black');
         context.fillStyle = gradient;
@@ -496,24 +613,24 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
     if (isDebugMode) {
         context.font = Math.round(iconSize / 2) + 'px sans-serif';
         context.textAlign = 'center';
-        context.testBaseline = 'top';
-        drawEmbossedText(context, draws, 'white', 'black', canvas.width / 2, 5);
+        context.textBaseline = 'top';
+        drawEmbossedText(context, `${draws}`, 'white', 'black', canvas.width / 2, 5);
     }
 }
-export function drawLootMarker(context: CanvasRenderingContext2D, state: GameState, loot: LootMarker, scaleToUse: number) {
-    var center = project([loot.x, loot.y]);
-    var lootScale = gridLength * scaleToUse / 64;
-    var targetWidth = loot.treasure.width * loot.treasure.scale * lootScale;
-    var targetHeight = loot.treasure.height * loot.treasure.scale * lootScale;
-    var target = {
-        x: Math.round(center[0] - targetWidth / 2),
-        y: Math.round(center[1] - targetHeight / 2),
-        w: targetWidth, h: targetHeight
+export function drawLootMarker(context: CanvasRenderingContext2D, state: GameState, lootMarker: LootMarker, scaleToUse: number) {
+    const center = project(state, [lootMarker.x, lootMarker.y]);
+    const lootScale = gridLength * scaleToUse / 64;
+    const w = lootMarker.loot.frame.w * lootMarker.loot.scale * lootScale;
+    const h = lootMarker.loot.frame.h * lootMarker.loot.scale * lootScale;
+    const target = {
+        x: Math.round(center[0] - w / 2),
+        y: Math.round(center[1] - h / 2),
+        w, h,
     };
-    if (loot.inMonsterRadius || loot.inRadius) {
-        var tintColor = loot.inMonsterRadius ? 'red' : 'gold';
-        drawTintedImage(context, loot.treasure.image, tintColor, .25 + Math.cos(state.time / 200) * .25, loot.treasure, target);
+    if (lootMarker.isInMonsterRadius || lootMarker.isInAvatarRadius) {
+        const tintColor = lootMarker.isInMonsterRadius ? 'red' : 'gold';
+        drawTintedImage(context, {color: tintColor, amount: .4 + Math.cos(state.time / 150) * .3}, lootMarker.loot.frame, target);
     } else {
-        drawImage(context, loot.treasure.image, loot.treasure, target);
+        drawFrame(context, lootMarker.loot.frame, target);
     }
 }

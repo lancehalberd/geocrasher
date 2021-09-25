@@ -1,37 +1,33 @@
-import { popScene } from 'app/states';
+import { gridLength } from 'app/gameConstants';
+import { popScene } from 'app/state';
+import { drawCoinsIndicator, drawLifeIndicator } from 'app/scenes/mapScene';
+import { GameState, HudButton } from 'app/types';
 
-import { GameState } from 'app/types';
+interface TreasureMap {
+    tiles: TreasureMapTile[][]
+    revealed?: boolean
+    dungeonLevel?: number
+}
+interface TreasureMapTile {
+    isGoal?: boolean
+    revealed?: boolean
+}
 
-var currentMap, hadTreasureMaps = false, treasureMaps = 100;
-
-// Could make this flat 3 maps per pickup, but trying to use value for now
-
-function makeNewMap() {
-    var size = 3 + Math.ceil(Math.sqrt(level));
+function makeNewMap(state: GameState): TreasureMap {
+    const size = 3 + Math.ceil(Math.sqrt(state.saved.avatar.level));
     return makeMap(size);
 }
-function makeMap(size) {
-    var map = {'grid': {}, 'size': size};
-    for (var row = 0; row < size; row++) {
-        for (var col = 0; col < size; col++) {
-            var tileKey = col + 'x' + row;
-            var realCoords = toRealCoords([col, row]);
-            var newTile = {
-                'x': col,
-                'y': row,
-                'centerX': realCoords[0] + gridLength / 2,
-                'centerY': realCoords[1] + gridLength / 2,
-                'key': tileKey,
-                'contents': null,
-                'revealed': false,
-                'guards': 0
-            };
-            map.grid[tileKey] = newTile;
+function makeMap(size: number): TreasureMap {
+    const map: TreasureMap = {tiles: []};
+    for (const y = 0; y < size; y++) {
+        map.tiles[y] = [];
+        for (const x = 0; x < size; x++) {
+            map.tiles[y][x] = {};
         }
     }
     return map;
 }
-function exportTreasureMapsData (data) {
+function exportTreasureMapsData(data) {
     data.hadTreasureMaps = hadTreasureMaps;
     data.treasureMaps = treasureMaps;
     if (currentMap) {
@@ -48,9 +44,6 @@ function exportTreasureMapsData (data) {
     }
 }
 function importTreasureMapsData(saveSlot) {
-    hadTreasureMaps = saveSlot.hadTreasureMaps;
-    treasureMaps = saveSlot.treasureMaps;
-    var savedMap = saveSlot.currentMap;
     if (savedMap) {
         currentMap = makeMap(savedMap.size);
         if (savedMap.revealed) {
@@ -188,11 +181,11 @@ export function drawTreasureMapScene(context: CanvasRenderingContext2D, state: G
             } else if (distance > 0) {
                 source = sandSource;
             }
-            drawImage(context, source.image, source, tile.target);
+            drawFrame(context, source, tile.target);
             if (tile.dungeon) {
                 drawOutlinedImage(context, tile.dungeon.source.image, 'red', 1, tile.dungeon.source, tile.target);
             } else if (tile.contents === 'T') {
-                drawImage(context, chestSource.image, chestSource, tile.target);
+                drawFrame(context, chestSource, tile.target);
             } /*else if (tile.contents) {
                 context.save();
                 context.fillStyle = '#040';
@@ -210,15 +203,21 @@ export function drawTreasureMapScene(context: CanvasRenderingContext2D, state: G
             }*/
         }
     }
-    if (selectedTile && selectedTile.dungeon) drawDungeonStats();
+    const { selectedTile } = state;
+    if (selectedTile && selectedTile.dungeonMarker) {
+        drawDungeonStats();
+    }
     drawTreasureMapButton();
-    drawCoinsIndicator();
+    drawCoinsIndicator(context, state);
     drawLootTotals(1000);
-    drawLifeIndicator();
+    drawLifeIndicator(context, state);
     if (selectedTile) drawEnterExitButton();
 }
 
 var treasureMapButton = {'target': {}};
+export function getTreasureMapButton(): HudButton {
+    return treasureMapButton;
+}
 function isTreasureMapButtonVisible() {
     return hadTreasureMaps || treasureMaps;
 }
