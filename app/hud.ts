@@ -12,13 +12,14 @@ export function renderHudButtons(context: CanvasRenderingContext2D, state: GameS
 }
 
 export function handleHudButtonClick(state: GameState, x: number, y: number, buttons: HudButton[]): boolean {
-    for (const button of buttons) {
+    // The buttons are considered in reverse order so that buttons drawn on top have highest priority.
+    for (const button of [...buttons].reverse()) {
         if (button.isVisible?.(state) === false) {
             continue;
         }
         if (isPointInRectangle(x, y, button.target)) {
             if (button.isDisabled?.(state) !== true) {
-                button.onClick(state);
+                button.onClick(state, x, y);
             }
             return true;
         }

@@ -1,7 +1,7 @@
 import { createCanvasAndContext } from 'app/dom';
 import { createAnimation, drawOutlinedImage } from 'app/draw';
 
-import { Frame } from 'app/types';
+import { Frame, Rectangle } from 'app/types';
 
 const assetVersion = '1';
 const images: {[key: string]: HTMLImageElement} = {};
@@ -13,12 +13,21 @@ function loadImage(source: string, callback: () => void): HTMLImageElement {
 }
 
 let numberOfImagesLeftToLoad = 0;
-export function requireImage(imageFile: string): HTMLImageElement {
-    if (images[imageFile]) return images[imageFile];
+export function requireImage(imageFile: string, callback?: (image: HTMLImageElement) => void): HTMLImageElement {
+    if (images[imageFile]) {
+        // Make sure this callback runs after the return value gets set.
+        setTimeout(() => callback?.(images[imageFile]), 1);
+        return images[imageFile];
+    }
     numberOfImagesLeftToLoad++;
     return loadImage(imageFile, () => {
         numberOfImagesLeftToLoad--;
+        callback?.(images[imageFile]);
     });
+}
+export function requireFrame(imageFile: string, {x, y, w, h}: Rectangle, callback?: (image: HTMLImageElement) => void): Frame {
+    const image = requireImage(imageFile, callback);
+    return { image, x, y, w, h };
 }
 export function finishedLoadingImages(): boolean {
     return numberOfImagesLeftToLoad === 0;
@@ -65,10 +74,15 @@ export const iceSource = {image: requireImage('gfx/map/ice.png'), x: 0, y: 0, w:
 export const chestSource: Frame = {image: requireImage('gfx/chest-open.png'), x: 0, y: 0, w: 32, h: 32};
 
 // Icons by Hillary originally created for Treasure Tycoon
-export const coinImage = requireImage('gfx/loot/moneyIcon.png');
+export const coinImage = requireImage('gfx/loot/moneyIcon.png', () => {
+    outlinedMoneyContext.globalAlpha = 0.7;
+    drawOutlinedImage(outlinedMoneyContext, 'white', 1, moneySource, {...moneySource, x: 1, y: 1});
+});
 export const moneySource: Frame = {image: coinImage, x: 64, y: 64, w: 24, h: 24};
 // Original images by Hillary created for Geo Crasher
-export const personSource: Frame = {image: requireImage('gfx/person.png'), x: 0, y: 0, w: 48, h: 48};
+export const personSource: Frame = requireFrame('gfx/person.png', {x: 0, y: 0, w: 48, h: 48}, () => {
+    drawOutlinedImage(outlinedPersonContext, 'white', 1, personSource, {x: 0, y: 0, w: 144, h: 192});
+});
 // The person image has enough room between cells for the outline, except at the bottom of the image.
 export const [outlinedPersonImage, outlinedPersonContext] = createCanvasAndContext(144, 194);
 export const [outlinedMoneyImage, outlinedMoneyContext] = createCanvasAndContext(moneySource.w + 2, moneySource.h + 2);
@@ -82,12 +96,6 @@ export const avatarAnimations = {
     left: createAnimation(outlinedPersonImage, avatarDimensions, {x: 0, y: 1, top: 1, cols: 3, frameMap: walkFrames}),
     right: createAnimation(outlinedPersonImage, avatarDimensions, {x: 0, y: 3, top: 1, cols: 3, frameMap: walkFrames}),
 };
-
-export function createOutlinedMoneyImage() {
-    outlinedMoneyContext.globalAlpha = .7;
-    drawOutlinedImage(outlinedMoneyContext, 'white', 1, moneySource, {...moneySource, x: 1, y: 1});
-    drawOutlinedImage(outlinedPersonContext, 'white', 1, personSource, {x: 0, y: 0, w: 144, h: 192});
-}
 
 // From open source game prototyping images: http://www.lostgarden.com/2007/05/dancs-miraculously-flexible-game.html
 export const heartSource: Frame = {image: requireImage('gfx/loot/heart.png'), x: 0, y: 0, w: 50, h: 50};

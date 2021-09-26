@@ -1,252 +1,255 @@
-import { gridLength } from 'app/gameConstants';
-import { popScene } from 'app/state';
+import { drawEmbossedText, drawFrame, drawOutlinedImage, drawRectangle, fillRectangle, pad } from 'app/draw';
+import { frameLength, gridLength } from 'app/gameConstants';
+import { handleHudButtonClick, renderHudButtons } from 'app/hud';
+import {
+    darkStoneImage,
+    grassSource,
+    oceanSource,
+    sandSource,
+    shallowSource,
+    oldMapImage,
+    treasureMapSource,
+} from 'app/images';
+import { drawLootTotals } from 'app/loot';
+import { saveGame } from 'app/saveGame';
+import { createDungeon, drawDungeonStats, getDungeonLevel, getEnterExitButton } from 'app/scenes/dungeonScene';
 import { drawCoinsIndicator, drawLifeIndicator } from 'app/scenes/mapScene';
-import { GameState, HudButton } from 'app/types';
+import { popScene, pushScene } from 'app/state';
+import SRandom from 'app/utils/SRandom';
+import { getActualScale, getGridRectangle, refreshActiveTiles, toGridCoords, unproject } from 'app/world'
+import { GameState, HudButton, SavedTreasureHuntMap, TreasureHuntMap } from 'app/types';
 
-interface TreasureMap {
-    tiles: TreasureMapTile[][]
-    revealed?: boolean
-    dungeonLevel?: number
-}
-interface TreasureMapTile {
-    isGoal?: boolean
-    revealed?: boolean
-}
-
-function makeNewMap(state: GameState): TreasureMap {
+function startNewTreasureMap(state: GameState): void {
     const size = 3 + Math.ceil(Math.sqrt(state.saved.avatar.level));
-    return makeMap(size);
+    state.saved.treasureHunt.currentMap = {
+        seed: Math.random(),
+        size,
+        revealedCoordinates: [],
+    };
+    initializeTreasureMapStateFromSave(state);
 }
-function makeMap(size: number): TreasureMap {
-    const map: TreasureMap = {tiles: []};
-    for (const y = 0; y < size; y++) {
+function makeMap(size: number): TreasureHuntMap {
+    const map: TreasureHuntMap = {
+        tiles: [],
+        revealAnimationTime: 0,
+    };
+    for (let y = 0; y < size; y++) {
         map.tiles[y] = [];
-        for (const x = 0; x < size; x++) {
+        for (let x = 0; x < size; x++) {
             map.tiles[y][x] = {};
         }
     }
     return map;
 }
-function exportTreasureMapsData(data) {
-    data.hadTreasureMaps = hadTreasureMaps;
-    data.treasureMaps = treasureMaps;
-    if (currentMap) {
-        data.currentMap = {'size': currentMap.size};
-        if (currentMap.revealed) {
-            data.currentMap.treasureX = currentMap.treasureX;
-            data.currentMap.treasureY = currentMap.treasureY;
-            data.currentMap.revealed = currentMap.revealed;
-            if (currentMap.revealed[currentMap.treasureY][currentMap.treasureX]) {
-                var treasureTile = currentMap.grid[currentMap.treasureX + 'x' + currentMap.treasureY];
-                data.currentMap.level = treasureTile.dungeon.level;
+export function initializeTreasureMapStateFromSave(state: GameState) {
+    const savedMap = state.saved.treasureHunt.currentMap;
+    if (!savedMap) {
+        state.treasureHunt.currentMap = null;
+        return;
+    }
+    const [tx, ty] = getTreasureLocation(savedMap);
+    const currentMap = makeMap(savedMap.size);
+    if (savedMap.revealedCoordinates.length) {
+        for (const [x, y] of savedMap.revealedCoordinates) {
+            currentMap.tiles[y][x].isRevealed = true;
+            // In case something changes in our generator and the dungeon is newly uncovered on load
+            // make sure to set the dungeonLevel, which indicates the dungeon has been found.
+            if (x === tx && y === ty && !savedMap.dungeonLevel) {
+                savedMap.dungeonLevel = getDungeonLevel(state, state.saved.avatar.level);
             }
         }
     }
-}
-function importTreasureMapsData(saveSlot) {
-    if (savedMap) {
-        currentMap = makeMap(savedMap.size);
-        if (savedMap.revealed) {
-            currentMap.treasureX = savedMap.treasureX;
-            currentMap.treasureY = savedMap.treasureY;
-            currentMap.grid[currentMap.treasureX + 'x' + currentMap.treasureY].contents = 'T';
-            currentMap.revealed = [];
-            for (var row = 0; row < currentMap.size; row++) {
-                currentMap.revealed[row] = savedMap.revealed[row].slice();
-            }
-            if (currentMap.revealed[currentMap.treasureY][currentMap.treasureX]) {
-                var treasureTile = currentMap.grid[currentMap.treasureX + 'x' + currentMap.treasureY];
-                addDungeonToTile(treasureTile, savedMap.level);
-            }
-        }
-    } else {
-        currentMap = null;
+    state.treasureHunt.currentMap = currentMap;
+    if (savedMap.dungeonLevel) {
+        currentMap.dungeon = createDungeon(state, savedMap.dungeonLevel);
     }
 }
-// I don't ever want people to find the treasure on their first click, so we populate
-// the map the first time a user clicks a cell. This is similar to how mine sweeper prevents
-// user's from clicking on a mine on their first click.
-function populateNewMap(map, x, y) {
-    var grid = map.grid;
-    var size = map.size;
-    var treasureX, treasureY;
-    while (true) {
-        treasureY = Random.range(0, size - 1);
-        treasureX = Random.range(0, size - 1);
-        if (treasureX == x && treasureY == y) continue;
-        grid[treasureX + 'x' + treasureY].contents = 'T';
-        map.treasureX = treasureX;
-        map.treasureY = treasureY;
-        break;
-    }
-    map.revealed = [];
-    for (var row = 0; row < size; row++) map.revealed[row] = [];
+
+function getTreasureLocation(savedMap: SavedTreasureHuntMap): number[] {
+    const random = SRandom.seed(savedMap.seed);
+    return [
+        random.range(0, savedMap.size - 1),
+        random.nextSeed().range(0, savedMap.size - 1),
+    ];
 }
-function displayTreasureMap() {
-    selectedTile = null;
+function showTreasureMapScene(state: GameState) {
+    state.selectedTile = null;
     state.battle.engagedMonster = null;
-    if (!currentMap) {
-        currentMap = makeNewMap();
-    } else if (currentMap.revealed) {
-        if (currentMap.revealed[currentMap.treasureY][currentMap.treasureX]) {
-            selectedTile = currentMap.grid[currentMap.treasureX + 'x' + currentMap.treasureY];
-        }
+    if (!state.saved.treasureHunt.currentMap) {
+        startNewTreasureMap(state);
     }
-    pushScene('treasureMap');
+    pushScene(state, 'treasureMap');
 }
 export function hideTreasureMap(state: GameState) {
     state.selectedTile = null;
     state.world.origin = state.world.currentPosition;
     popScene(state);
-    refreshActiveTiles();
+    refreshActiveTiles(state);
 }
-function updateTreasureMap() {
-    // Once the treasure is revealed, reveal all the squares on the map.
-    if (!currentMap.revealed) return;
-    if (!currentMap.revealed[currentMap.treasureY][currentMap.treasureX]) return;
-    // Only reveal one per frame to make it less jarring.
-    for (var row = 0; row < currentMap.size; row++) {
-        for (var column = 0; column < currentMap.size; column++) {
-            if (!currentMap.revealed[row][column]) {
-                currentMap.revealed[row][column] = true;
-                return;
-            }
-        }
+export function updateTreasureMap(state: GameState): void {
+    const savedMap = state.saved.treasureHunt.currentMap;
+    // Advance the reveal animation time once the dungeon is discovered.
+    if (savedMap?.dungeonLevel) {
+        state.treasureHunt.currentMap.revealAnimationTime += frameLength;
     }
 }
 
-function revealTreasureMapTile(x, y) {
-    if (!treasureMaps) return;
-    if (x < 0 || y <0 || x >= currentMap.size || y >= currentMap.size) return;
-    // Populate the map if the revealed table doesn't exist yet.
-    if (!currentMap.revealed) populateNewMap(currentMap, x, y);
-    if (!currentMap.revealed[y][x]) {
-        currentMap.revealed[y][x] = true;
-        treasureMaps--;
-        var tile = currentMap.grid[x + 'x' + y];
-        if (tile.contents === 'T') {
-            selectedTile = tile;
-            // This will be either the player level or the dungeon cap, whichever happens
-            // to be lower.
-            addDungeonToTile(tile, level);
-        }
-        saveGame();
+function revealTreasureMapTile(state: GameState, x: number, y: number) {
+    if (!state.saved.treasureHunt.mapCount) {
+        return;
     }
+    const savedMap = state.saved.treasureHunt.currentMap;
+    const currentMap = state.treasureHunt.currentMap;
+    if (x < 0 || y < 0 || x >= savedMap.size || y >= savedMap.size) {
+        return;
+    }
+    if (currentMap.tiles[y][x].isRevealed) {
+        return;
+    }
+    savedMap.revealedCoordinates.push([x, y]);
+    currentMap.tiles[y][x].isRevealed = true;
+    state.saved.treasureHunt.mapCount--;
+    const [tx, ty] = getTreasureLocation(savedMap);
+    if (tx === x && ty === y) {
+        savedMap.dungeonLevel = getDungeonLevel(state, state.saved.avatar.level);
+        currentMap.dungeon = createDungeon(state, savedMap.dungeonLevel);
+    }
+    saveGame(state);
 }
 
 
-function handleTreasureMapClick(x, y) {
-    // Hud interactions
-    if (handleTreasureMapButtonClick(x, y)) return;
-    // This only appears once the treasure is found and it is a dungeon entrance.
-    if (handleEnterExitButtonClick(x, y)) return;
-    // Tile interactions
-    var clickedCoords = unproject([x, y]);
-    var clickedGridCoords = toGridCoords(clickedCoords);
-    revealTreasureMapTile(clickedGridCoords[0], clickedGridCoords[1]);
+export function handleTreasureMapClick(state: GameState, x: number, y: number) {
+    updateAllTreasureMapButtonTargets(state);
+    if (handleHudButtonClick(state, x, y, getTreasureMapButtons())) {
+        return;
+    }
+    // The treasure map is not interactive after the dungeon has been discovered.
+    if (state.treasureHunt.currentMap?.dungeon) {
+        return
+    }
+    const clickedCoords = unproject(state, [x, y]);
+    const clickedGridCoords = toGridCoords(clickedCoords);
+    revealTreasureMapTile(state, clickedGridCoords[0], clickedGridCoords[1]);
+}
+
+function getTreasureMapButtons(): HudButton[] {
+    return [
+        getEnterExitButton(),
+        getTreasureMapButton(),
+    ];
+}
+// Update the targets for skill buttons for the current display settings.
+// This should be called each frame before checking for user clicks or rendering the buttons.
+let lastCanvasSize: {w: number, h: number} = null;
+function updateAllTreasureMapButtonTargets(state: GameState): void {
+    const { canvas } = state.display;
+    if (lastCanvasSize?.w === canvas.width && lastCanvasSize?.h === canvas.height) {
+        return;
+    }
+    lastCanvasSize = {w: canvas.width, h: canvas.height};
+    for (const button of getTreasureMapButtons()) {
+        button.updateTarget(state);
+    }
 }
 
 export function drawTreasureMapScene(context: CanvasRenderingContext2D, state: GameState) {
-    var scaleToUse = getActualScale();
+    const { canvas } = state.display;
+    const scaleToUse = getActualScale(state);
     context.fillStyle = context.createPattern(darkStoneImage, 'repeat');
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = 'bold ' + Math.floor(gridLength * scaleToUse) + 'px sans-serif';
-    var border = 3;
-    var mapPattern = context.createPattern(oldMapImage, 'repeat');
-    for (var y = 0; y < currentMap.size; y++) {
-        for (var x = 0; x < currentMap.size; x++) {
-            var tile = currentMap.grid[x + 'x' + y];
-            tile.target = getGridRectangle([tile.x, tile.y]);
-            if (!currentMap.revealed || !currentMap.revealed[y][x]) {
-                var canReveal = tile.revealable && tile.guards <= 0;
-                context.fillStyle = mapPattern;
-                fillRectangle(context, tile.target);
+    const mapPattern = context.createPattern(oldMapImage, 'repeat');
+    const savedMap = state.saved.treasureHunt.currentMap;
+    const currentMap = state.treasureHunt.currentMap;
+    const [tx, ty] = getTreasureLocation(savedMap);
+    for (let y = 0; y < currentMap.tiles.length; y++) {
+        for (let x = 0; x < currentMap.tiles[y].length; x++) {
+            const tile = currentMap.tiles[y][x];
+            const target = getGridRectangle(state, [x, y]);
+            const distance = Math.abs(y - ty) + Math.abs(x - tx);
+            const isRevealed = tile.isRevealed || distance < currentMap.revealAnimationTime / 200;
+            if (!isRevealed) {
+                fillRectangle(context, mapPattern, target);
                 context.beginPath();
-                drawRectangle(context, tile.target);
-                drawRectangle(context, pad(tile.target, -2));
+                drawRectangle(context, target);
+                drawRectangle(context, pad(target, -2));
                 context.fillStyle = '#444';
                 context.fill('evenodd');
                 context.fillStyle = '#666';
-                context.fillText('?', tile.target.left + tile.target.width / 2,tile.target.top + tile.target.height / 2);
+                context.fillText('?', target.x + target.w / 2,target.y + target.h / 2);
                 continue;
             }
-            var distance = Math.abs(y - currentMap.treasureY) + Math.abs(x - currentMap.treasureX);
-            var source = grassSource;
+            let frame = grassSource;
             if (distance > 6) {
-                source = oceanSource;
+                frame = oceanSource;
             } else if (distance > 3) {
-                source = shallowSource;
-            } else if (distance > 0) {
-                source = sandSource;
+                frame = shallowSource;
+            } else if (distance > 1) {
+                frame = sandSource;
             }
-            drawFrame(context, source, tile.target);
-            if (tile.dungeon) {
-                drawOutlinedImage(context, tile.dungeon.source.image, 'red', 1, tile.dungeon.source, tile.target);
-            } else if (tile.contents === 'T') {
-                drawFrame(context, chestSource, tile.target);
-            } /*else if (tile.contents) {
+            drawFrame(context, frame, target);
+            if (x === tx && y === ty) {
+                drawOutlinedImage(context, 'red', 1, currentMap.dungeon.frame, target);
+            }
+            // Experimental rendering logic for indicating which squares the user has not manually explored
+            // after the entire treasure map is revealed. Allows players to review their guesses
+            // and brag if they find the dungeon in only a few guesses.
+            if (!tile.isRevealed) {
                 context.save();
-                context.fillStyle = '#040';
-                context.globalAlpha = .3
-                context.translate(tile.target.left + tile.target.width / 2, tile.target.top + tile.target.height / 2)
-                if (tile.contents === '^') {
-                    context.rotate(Math.PI);
-                } else if (tile.contents === '<') {
-                    context.rotate(Math.PI / 2);
-                } else if (tile.contents === '>') {
-                    context.rotate(- Math.PI / 2);
-                }
-                context.fillText('v', 0, 0);
+                    context.globalAlpha *= 0.3;
+                    fillRectangle(context, 'black', target);
                 context.restore();
-            }*/
+            }
         }
     }
-    const { selectedTile } = state;
-    if (selectedTile && selectedTile.dungeonMarker) {
-        drawDungeonStats();
+    if (savedMap.dungeonLevel) {
+        drawDungeonStats(context, state, currentMap.dungeon);
     }
-    drawTreasureMapButton();
     drawCoinsIndicator(context, state);
-    drawLootTotals(1000);
+    drawLootTotals(context, state, 1000);
     drawLifeIndicator(context, state);
-    if (selectedTile) drawEnterExitButton();
+    updateAllTreasureMapButtonTargets(state);
+    renderHudButtons(context, state, getTreasureMapButtons());
 }
 
-var treasureMapButton = {'target': {}};
+const treasureMapButton: HudButton = {
+    onClick(state: GameState): void {
+        if (state.currentScene === 'treasureMap') {
+            hideTreasureMap(state);
+        } else {
+            showTreasureMapScene(state);
+        }
+    },
+    isDisabled(state: GameState) {
+        return state.battle.engagedMonster && state.loot.collectingLoot.length > 0;
+    },
+    isVisible(state: GameState) {
+        return state.saved.treasureHunt.hadMap || state.saved.treasureHunt.mapCount > 0;
+    },
+    render(context: CanvasRenderingContext2D, state: GameState): void {
+        const { iconSize } = state.display;
+        context.textBaseline = 'middle';
+        context.textAlign = 'right';
+        context.font = Math.floor(iconSize / 3) + 'px sans-serif';
+        drawFrame(context, treasureMapSource, this.target);
+        drawEmbossedText(context, 'x' + state.saved.treasureHunt, 'white', 'black',
+            this.target.x + Math.floor(iconSize * .8),
+            this.target.y + 3 * this.target.h / 4
+        );
+    },
+    updateTarget(state: GameState): void {
+        const { canvas, iconSize } = state.display;
+        this.target = {
+            x: 10,
+            y: canvas.height - 10 - iconSize,
+            w: iconSize,
+            h: iconSize,
+        };
+    },
+    target: { x: 0, y: 0, w: 0, h: 0},
+};
 export function getTreasureMapButton(): HudButton {
     return treasureMapButton;
-}
-function isTreasureMapButtonVisible() {
-    return hadTreasureMaps || treasureMaps;
-}
-function isTreasureMapButtonClickable() {
-    return !state.battle.engagedMonster && !collectingLoot.length && (hadTreasureMaps || treasureMaps);
-}
-function handleTreasureMapButtonClick(x, y) {
-    if (!isTreasureMapButtonVisible()) return false;
-    if (!isTreasureMapButtonClickable()) return false;
-    if (!isPointInRectObject(x, y, treasureMapButton.target)) return false;
-    if (currentScene === 'treasureMap') hideTreasureMap();
-    else displayTreasureMap();
-    return true;
-}
-function drawTreasureMapButton() {
-    if (!isTreasureMapButtonVisible()) return;
-    context.textBaseline = 'middle';
-    context.textAlign = 'right';
-    context.font = Math.floor(iconSize / 3) + 'px sans-serif';
-    var metrics = context.measureText('x' + treasureMaps);
-
-    var target = treasureMapButton.target;
-    target.width = iconSize;
-    target.left = 10;
-    target.top = canvas.height - 10 - iconSize;
-    target.height = iconSize;
-
-    drawImage(context, treasureMapSource.image, treasureMapSource,
-        {y: target.left, y: target.top, w: iconSize, h: iconSize});
-
-    drawEmbossedText(context, 'x' + treasureMaps, 'white', 'black', target.left + Math.floor(iconSize * .8) , target.top + 3 * target.height / 4);
 }

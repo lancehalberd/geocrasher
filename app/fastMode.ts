@@ -1,4 +1,5 @@
 import { isTestMode } from 'app/context';
+import { maxRadius } from 'app/gameConstants';
 import { clearAllGems } from 'app/gems';
 import { resetLootTotals } from 'app/loot';
 import { GameState } from 'app/types';
@@ -22,14 +23,14 @@ export function updateFastMode(state: GameState, millisecondsBetweenUpdates: num
         }
         state.globalPosition.isFastMode = true;
         resetLootTotals(state);
-        clearAllGems();
-        radius = maxRadius;
-        selectedTile = null;
+        clearAllGems(state);
+        state.saved.radius = maxRadius;
+        state.selectedTile = null;
         state.battle.engagedMonster = null;
-        endFastModeTime = state.time + 10000;
+        state.globalPosition.endFastModeTime = state.time + 10000;
         return;
     }
     if (millisecondsBetweenUpdates <= maxThreshold) {
-        endFastModeTime = state.time + 5000;
+        state.globalPosition.endFastModeTime = state.time + 5000;
     }
 }

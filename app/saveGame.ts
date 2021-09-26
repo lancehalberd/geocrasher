@@ -1,24 +1,33 @@
 import { skills } from 'app/scenes/skillsScene';
-import { getDefaultSavedState, getState, pushScene, resetState } from 'app/state';
+import { initializeTreasureMapStateFromSave } from 'app/scenes/treasureMapScene';
+import { getDefaultSavedState, pushScene } from 'app/state';
 import { initializeWorldMapTile } from 'app/world';
 
 import { GameState, SavedGameState } from 'app/types';
 
-const importedSaveDataString = window.localStorage.getItem('geocrasher2Saves');
-const importedSaveData: {
-    saveSlots?: SavedGameState[]
-} = importedSaveDataString ? JSON.parse(importedSaveDataString) : {};
-let { saveSlots } = importedSaveData;
-if (!saveSlots) saveSlots = [];
-for (let i = 0; i < 3; i++) {
-    saveSlots[i] = fixSavedData(saveSlots[i] ?? {});
+export function initializeSaveSlots(state: GameState): void {
+    const importedSaveDataString = window.localStorage.getItem('geocrasher2Saves');
+    const importedSaveData: {
+        saveSlots?: SavedGameState[]
+    } = importedSaveDataString ? JSON.parse(importedSaveDataString) : {};
+    let { saveSlots } = importedSaveData;
+    if (!saveSlots) saveSlots = [];
+    for (let i = 0; i < 3; i++) {
+        saveSlots[i] = fixSavedData(saveSlots[i] ?? {});
+    }
+    state.saveSlots = saveSlots;
 }
 
-export function loadSaveSlot(saveSlotIndex: number) {
-    resetState();
-    const state = getState();
+export function deleteSaveSlot(state: GameState, saveSlotIndex: number): void {
+    if (confirm('Are you sure you want to delete this save data? This cannot be undone.')) {
+        state.saveSlots[this.index] = getDefaultSavedState();
+        window.localStorage.setItem('geocrasher2Saves', JSON.stringify(state.saveSlots));
+    }
+}
+
+export function loadSaveSlot(state: GameState, saveSlotIndex: number): void {
     state.saveSlotIndex = saveSlotIndex;
-    state.saved = fixSavedData(saveSlots[saveSlotIndex]);
+    state.saved = fixSavedData(state.saveSlots[saveSlotIndex]);
     state.world.levelSums = [];
     state.world.tileGrid = [];
     for (const tile of state.saved.world.tiles) {
@@ -39,7 +48,7 @@ export function loadSaveSlot(saveSlotIndex: number) {
         state.avatar.usedSkillPoints += pointsUsed;
         state.avatar.affinityBonuses[skill.affinity] += pointsUsed;
     }
-    importTreasureMapsData(saveSlot);
+    initializeTreasureMapStateFromSave(state);
     updatePlayerStats();
     currentGridCoords = null;
     state.selectedTile = state.lastGoalPoint = null;
@@ -52,7 +61,7 @@ export function loadSaveSlot(saveSlotIndex: number) {
 export function saveGame(state: GameState) {
     prepareSavedData(state);
     saveSlots[state.saveSlotIndex] = state.saved;
-    window.localStorage.setItem('geocrasher2Saves', JSON.stringify(saveSlots));
+    window.localStorage.setItem('geocrasher2Saves', JSON.stringify(state.saveSlots));
 }
 
 function prepareSavedData(state: GameState): void {

@@ -1,12 +1,15 @@
+import { maxScale, minScale } from 'app/gameConstants';
 import { handleDungeonClick } from 'app/scenes/dungeonScene';
 import { handleMapClick } from 'app/scenes/mapScene';
+import { handleSkillsClick } from 'app/scenes/skillsScene';
 import { handleTitleClick } from 'app/scenes/titleScene';
+import { handleTreasureMapClick } from 'app/scenes/treasureMapScene';
 import { getState } from 'app/state';
 import { getActualScale } from 'app/world';
 
-let lastTouchEvent = null, firstTouchEvent = null;
-let lastClick = [0,0];
-let touchMoved = false;
+let lastTouchEvent: TouchEvent = null, firstTouchEvent: TouchEvent = null;
+let lastMouseEvent: MouseEvent = null, firstMouseEvent: MouseEvent = null;
+let touchMoved = false, mouseMoved = false;
 
 function handleTouchStart(event: TouchEvent) {
     event.preventDefault();
@@ -40,13 +43,13 @@ function handleTouchMove(event: TouchEvent) {
         let touchScale = getTouchEventDistance(event) / getTouchEventDistance(lastTouchEvent);
         //if (isDebugMode) alert([getTouchEventDistance(event), getTouchEventDistance(lastTouchEvent)]);
         touchScale = Math.max(.8, Math.min(1.2, isNaN(touchScale) ? 1 : touchScale));
-        scale = Math.min(maxScale, Math.max(minScale, scale * touchScale));
-        actualScale = Math.round(gridLength * scale) / gridLength;
+        state.world.displayScale = Math.min(maxScale, Math.max(minScale, state.world.displayScale * touchScale));
         lastTouchEvent = event;
         return;
     }
 }
 function handleTouchEnd(event: TouchEvent) {
+    const state = getState();
     event.preventDefault();
     /*if (isDebugMode) {
         alert('end');
@@ -60,8 +63,7 @@ function handleTouchEnd(event: TouchEvent) {
         var x = lastTouchEvent.touches[0].pageX;
         var y = lastTouchEvent.touches[0].pageY;
         //if (isDebugMode) alert([x, y]);
-        lastClick = [x, y];
-        switch (currentScene) {
+        switch (state.currentScene) {
             case 'title':
                 handleTitleClick(state, x, y);
                 break;
@@ -83,29 +85,29 @@ function handleTouchEnd(event: TouchEvent) {
     firstTouchEvent = null;
     touchMoved = false;
 }
+
 function handleMouseDown(event: MouseEvent) {
-        lastTouchEvent = event;
-        firstTouchEvent = event;
-        touchMoved = false;
+    lastMouseEvent = event;
+    firstMouseEvent = event;
+    mouseMoved = false;
 }
 function handleMouseMove(event: MouseEvent) {
     const state = getState();
     if (state.currentScene !== 'map') return;
-    if (!lastTouchEvent) return;
-    var dx = event.pageX - lastTouchEvent.pageX;
-    var dy = event.pageY - lastTouchEvent.pageY;
+    if (!lastMouseEvent) return;
+    var dx = event.pageX - lastMouseEvent.pageX;
+    var dy = event.pageY - firstMouseEvent.pageY;
     state.world.origin[0] -= dx / getActualScale(state);
     state.world.origin[1] += dy / getActualScale(state);
-    lastTouchEvent = event;
-    touchMoved = true;
+    lastMouseEvent = event;
+    mouseMoved = true;
 }
 function handleMouseUp(event: MouseEvent) {
     const state = getState();
-    if (!touchMoved) {
-        var x = lastTouchEvent.pageX;
-        var y = lastTouchEvent.pageY;
-        lastClick = [x, y];
-        switch (currentScene) {
+    if (!mouseMoved) {
+        var x = lastMouseEvent.pageX;
+        var y = lastMouseEvent.pageY;
+        switch (state.currentScene) {
             case 'title':
                 handleTitleClick(state, x, y);
                 break;
@@ -123,9 +125,9 @@ function handleMouseUp(event: MouseEvent) {
                 break;
         }
     }
-    lastTouchEvent = null;
-    firstTouchEvent = null;
-    touchMoved = false;
+    lastMouseEvent = null;
+    firstMouseEvent = null;
+    mouseMoved = false;
 }
 
 export function registerTouchEvents() {
@@ -140,8 +142,8 @@ export function registerMouseEvents() {
     document.addEventListener('mouseup', handleMouseUp);
 }
 
-function getTouchEventDistance(touchEvent) {
-    var dx = touchEvent.touches[0].pageX - touchEvent.touches[1].pageX;
-    var dy = touchEvent.touches[0].pageY - touchEvent.touches[1].pageY;
+function getTouchEventDistance(touchEvent: TouchEvent) {
+    const dx = touchEvent.touches[0].pageX - touchEvent.touches[1].pageX;
+    const dy = touchEvent.touches[0].pageY - touchEvent.touches[1].pageY;
     return Math.sqrt(dx * dx + dy * dy);
 }

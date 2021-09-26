@@ -15,12 +15,6 @@ export function isPointInRectangle(x: number, y: number, r: Rectangle): boolean 
 export function rectanglesOverlap(A: Rectangle, B: Rectangle): boolean {
     return !(A.y + A.h <= B.y || A.y >= B.y + B.h || A.x + A.w <= B.x || A.x >= B.x + B.w);
 }
-export function r(x, y, w, h): Rectangle {
-    return {x, y, w, h};
-}
-export function rectangleCenter({x, y, w, h}: Rectangle): number[] {
-    return [x + w / 2, y + h / 2];
-}
 
 export function abbreviateNumber(this: void, number: number): string {
     if (number >= 1000000000000) {

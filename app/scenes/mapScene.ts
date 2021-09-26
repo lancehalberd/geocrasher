@@ -186,8 +186,8 @@ export function drawMapScene(context: CanvasRenderingContext2D, state: GameState
         state.loot.hideStatsAt = state.time + 1500;
     }
     drawMonsterStats(context, state);
-    if (selectedTile && selectedTile.dungeonMarker) {
-        drawDungeonStats(context, state);
+    if (selectedTile?.dungeonMarker) {
+        drawDungeonStats(context, state, selectedTile.dungeonMarker.dungeon);
     }
     // collect coins button is replaced by 'Fight!' button when a monster is selected.
     if (state.globalPosition.isFixingGPS) {

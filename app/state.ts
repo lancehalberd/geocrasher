@@ -1,5 +1,6 @@
 import { mainCanvas, mainContext } from 'app/dom';
 import { minRadius, minScale } from 'app/gameConstants';
+import { initializeSaveSlots } from 'app/saveGame';
 
 import { GameState, SavedGameState, Scene } from 'app/types';
 
@@ -38,7 +39,6 @@ export function getDefaultState(): GameState {
             iconSize: 16,
         },
         dungeon: {
-            activeDungeons: [],
             dungeonLevelCap: 2
         },
         levelSums: [],
@@ -77,8 +77,9 @@ export function getState() {
     return state;
 }
 
-export function resetState() {
+export function initializeState() {
     state = getDefaultState();
+    initializeSaveSlots(state);
 }
 
 export function pushScene(state: GameState, newScene: Scene) {

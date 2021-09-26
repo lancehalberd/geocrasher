@@ -136,47 +136,16 @@ export function getFrameHitBox({content, w, h}: Frame, {x, y}: {x: number, y: nu
     };
 }
 
-/*export function drawFrameCenteredInTarget(
-    context: CanvasRenderingContext2D,
-    {image, x, y, w, h}: Frame,
-    {x: tx, y: ty, w: tw, h: th}: Rectangle
-): void {
-    tx += Math.ceil((tw - w) / 2);
-    ty += Math.ceil((th - h) / 2);
-    // (x | 0) is faster than Math.floor(x)
-    context.drawImage(image, x | 0, y | 0, w | 0, h | 0, tx | 0, ty | 0, w | 0, h | 0);
-}*/
-
-
-function drawImage(context: CanvasRenderingContext2D, image, source, target) {
-    context.save();
-    context.translate(
-        target.left + target.width / 2,
-        target.top + target.height / 2
-    );
-    if (target.xScale || target.yScale) {
-        context.scale(target.xScale ?? 1, target.yScale ?? 1);
-    }
-    context.drawImage(image,
-        (source.left),
-        (source.top),
-        (source.width),
-        (source.height),
-        (-target.width / 2), (-target.height / 2),
-        (target.width), (target.height));
-    context.restore();
-}
-
 export function drawSolidTintedImage(context: CanvasRenderingContext2D, tint: string, frame: Frame, target: Rectangle) {
     // First make a solid color in the shape of the image to tint.
     globalTintContext.save();
     globalTintContext.fillStyle = tint;
     globalTintContext.clearRect(0, 0, frame.w, frame.h);
     const tintRectangle = {x: 0, y: 0, w: frame.w, h: frame.h};
-    drawImage(globalTintContext, frame.image, frame, tintRectangle);
+    drawFrame(globalTintContext, frame, tintRectangle);
     globalTintContext.globalCompositeOperation = "source-in";
     globalTintContext.fillRect(0, 0, frame.w, frame.h);
-    drawImage(context, globalTintCanvas, tintRectangle, target);
+    drawFrame(context, { image: globalTintCanvas, ...tintRectangle}, target);
     globalTintContext.restore();
 }
 
@@ -241,7 +210,7 @@ export function pad({x, y, w, h}: Rectangle, m: number): Rectangle {
     return {x: x - m, w: w + 2 * m, y: y - m, h: h + 2 * m};
 }
 
-export function fillRectangle(context: CanvasRenderingContext2D, color: string, {x, y, w, h}: Rectangle): void {
+export function fillRectangle(context: CanvasRenderingContext2D, color: string | CanvasPattern, {x, y, w, h}: Rectangle): void {
     context.fillStyle = color;
     context.fillRect(x, y, w, h);
 }

@@ -5,7 +5,7 @@ import { abbreviateNumber } from 'app/utils/index';
 
 import { GameState } from 'app/types';
 
-export function getStatsBoxSize(state: GameState): {w: number, h: number} {
+function getStatsBoxSize(state: GameState): {w: number, h: number} {
     const { iconSize } = state.display;
     const localIconSize = Math.floor(iconSize / 2);
     return { w: localIconSize * 8, h: localIconSize * 4 };

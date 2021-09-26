@@ -75,8 +75,8 @@ export function makeMonster(state: GameState, monsterPower: number): Monster {
 }
 
 export function checkToGenerateMonster(state: GameState, tile: MapTile, baseChance: number = 0.05) {
-    // Monsters cannot spawn in shallows.
-    if (tile.level < 1 || tile.dungeon) {
+    // Monsters cannot spawn in shallows or on top of dungeons.
+    if (tile.level < 1 || tile.dungeonMarker) {
         return;
     }
     // Prevent monster from spawning within 2 tiles of another monster

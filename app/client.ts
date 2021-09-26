@@ -7,9 +7,11 @@ import { registerBackAction } from 'app/handleBackAction';
 import { registerMouseEvents, registerTouchEvents } from 'app/handleTouchEvents';
 import { startMainLoop } from 'app/mainLoop';
 
-import { getState } from 'app/state';
+import { getState, initializeState } from 'app/state';
 
 setTimeout(startMainLoop, 400);
+
+initializeState();
 
 let lastRenderedTime = 0;
 function animate() {
@@ -54,7 +56,6 @@ if (isTestMode) {
         if (event.which === 39) state.globalPosition.lastPosition.coords.longitude += stepSize;
         if (event.which === 38) state.globalPosition.lastPosition.coords.latitude += stepSize;
         if (event.which === 40) state.globalPosition.lastPosition.coords.latitude -= stepSize;
-        // setFixingGPS();
     });
 }
 registerBackAction();

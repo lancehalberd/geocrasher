@@ -6,7 +6,6 @@
     "module": "esnext",
     "noImplicitAny": true,
     "noUnusedLocals": true,
-    "outDir": "./public/",
     "target": "ES2019"
   }
 }

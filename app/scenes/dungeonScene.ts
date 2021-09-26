@@ -20,32 +20,45 @@ import { popScene, pushScene } from 'app/state';
 import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
 import Random from 'app/utils/Random';
 import { getActualScale, getGridRectangle, refreshActiveTiles, toGridCoords, toRealCoords, unproject } from 'app/world';
-import { DungeonFloor, DungeonMarker, DungeonTileContent, GameState, HudButton, MapTile } from 'app/types';
+import { Dungeon, DungeonFloor, DungeonMarker, DungeonTileContent, Frame, GameState, HudButton, MapTile } from 'app/types';
 
 
-export function addDungeonToTile(state: GameState, tile: MapTile, rawLevel: number): void {
-    const level = Math.min(state.dungeon.dungeonLevelCap, rawLevel);
+export function getDungeonLevel(state: GameState, rawLevel: number): number {
+    return Math.min(state.dungeon.dungeonLevelCap, rawLevel);
+}
+export function getDungeonFrame(state: GameState, dungeonLevel: number): Frame {
+    const isQuestDungeon = dungeonLevel >= state.dungeon.dungeonLevelCap;
+    return isQuestDungeon ? portalSource : shellSource;
+}
+
+export function createDungeon(state: GameState, rawLevel: number): Dungeon {
+    const level = getDungeonLevel(state, rawLevel);
     const isQuestDungeon = level >= state.dungeon.dungeonLevelCap;
-    const dungeonMarker: DungeonMarker = {
+    const dungeon: Dungeon = {
         level,
         isQuestDungeon,
         name: isQuestDungeon ? 'Portal' : 'Hollow Shell',
         numberOfFloors: Math.max(1, Math.floor(Math.sqrt(level) / 2)),
-        tile,
-        frame: isQuestDungeon ? portalSource : shellSource,
-        x: tile.x,
-        y: tile.y
+        frame: getDungeonFrame(state, level),
     }
     if (isQuestDungeon) {
-        dungeonMarker.numberOfFloors++;
+        dungeon.numberOfFloors++;
+    }
+    return dungeon;
+}
+
+export function addDungeonToTile(state: GameState, tile: MapTile, rawLevel: number): void {
+    const dungeonMarker: DungeonMarker = {
+        dungeon: createDungeon(state, rawLevel),
+        tile,
+        x: tile.x,
+        y: tile.y
     }
     tile.dungeonMarker = dungeonMarker;
 }
 
-function enterDungeon(state: GameState, dungeonMarker: DungeonMarker) {
-    // A dungeon is consumed when it is visited.
-    dungeonMarker.tile.dungeonMarker = null;
-    state.dungeon.currentDungeon = dungeonMarker;
+export function startDungeon(state: GameState, dungeon: Dungeon) {
+    state.dungeon.currentDungeon = dungeon;
     pushScene(state, 'dungeon');
     state.dungeon.allFloors = [];
     startNewFloor(state);
@@ -353,16 +366,15 @@ export function drawDungeonScene(context: CanvasRenderingContext2D, state: GameS
 const enterExitButton: HudButton = {
     onClick(state: GameState): void {
         const { selectedTile } = state;
+        if (state.currentScene === 'treasureMap') {
+            state.saved.treasureHunt.currentMap = null;
+            hideTreasureMap(state);
+        }
         // This is used on the world map for entering a dungeon.
         if (selectedTile.dungeonMarker) {
-            // Treasure map also has dungeon entrances, but once they are used, we
-            // should consume the map and also return to the main map and not the
-            // treasure map.
-            if (state.currentScene === 'treasureMap') {
-                state.saved.treasureHunt.currentMap = null;
-                hideTreasureMap(state);
-            }
-            enterDungeon(state, selectedTile.dungeonMarker);
+            startDungeon(state, selectedTile.dungeonMarker.dungeon);
+            // The dungeon marker is consumed after entering the dungeon.
+            selectedTile.dungeonMarker = null;
             return;
         }
         if (selectedTile.dungeonContents?.type === 'downstairs') {
@@ -378,6 +390,9 @@ const enterExitButton: HudButton = {
     },
     isVisible(state: GameState) {
         const { selectedTile } = state;
+        if (state.currentScene === 'treasureMap') {
+            return state.saved.treasureHunt.currentMap?.dungeonLevel > 0;
+        }
         if (!selectedTile) {
             return false;
         }
@@ -419,10 +434,10 @@ export function drawEnterExitButton(context: CanvasRenderingContext2D, state: Ga
     enterExitButton.render(context, state);
 }
 
-export function drawDungeonStats(context: CanvasRenderingContext2D, state: GameState) {
+export function drawDungeonStats(context: CanvasRenderingContext2D, state: GameState, dungeon: Dungeon) {
     const { canvas, iconSize } = state.display;
     const { selectedTile } = state;
-    const dungeon = selectedTile?.dungeonMarker;
+    dungeon = dungeon || selectedTile?.dungeonMarker;
     if (!dungeon) {
         return;
     }

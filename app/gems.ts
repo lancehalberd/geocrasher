@@ -108,13 +108,12 @@ export function drawGemIndicators(context: CanvasRenderingContext2D, state: Game
             continue;
         }
         if (!gem.loot || collectingLoot.indexOf(gem.loot) >= 0) continue;
-        var screenCoords = project([gem.loot.x, gem.loot.y]);
-        var distance = getDistance([gem.loot.x, gem.loot.y], currentPosition);
-        var pixelDistance = distance * scaleToUse;
-        var indicatorScreenCoords;
-        var distanceFactor = (pixelDistance - 40) / pixelDistance;
-        var dx = (gem.loot.x - currentPosition[0]);
-        var dy = (gem.loot.y - currentPosition[1]);
+        const distance = getDistance([gem.loot.x, gem.loot.y], currentPosition);
+        const pixelDistance = distance * scaleToUse;
+        const indicatorScreenCoords;
+        const distanceFactor = (pixelDistance - 40) / pixelDistance;
+        const dx = (gem.loot.x - currentPosition[0]);
+        const dy = (gem.loot.y - currentPosition[1]);
         //console.log(distanceFactor);
         if (currentPosition[0] < gem.loot.x) distanceFactor = Math.min(distanceFactor, (canvas.width - playerScreenCoords[0] - 20) / (dx * scaleToUse));
         if (currentPosition[0] > gem.loot.x) distanceFactor = Math.min(distanceFactor, (playerScreenCoords[0] - 20) / (-dx * scaleToUse));

@@ -28,7 +28,7 @@ export const skills: Skill[] = [
         requires: 'regeneration',
         affinity: 'health',
         name: 'Vitality', description: '% increased value of health power ups.',
-        value: 0.1, type: '+',
+        value: 0.1, type: '*',
         x: 0, y: -2,
         source: heartSource,
     },
@@ -55,7 +55,7 @@ export const skills: Skill[] = [
         key: 'attackSpeed',
         affinity: 'attack',
         name: 'Ferocity', description: '% increased attack speed.',
-        value: 0.1, type: '+',
+        value: 0.1, type: '*',
         x: -1, y: 0,
         source: shoeSource, secondSource: swordSource,
     },
@@ -64,7 +64,7 @@ export const skills: Skill[] = [
         requires: 'attackSpeed',
         affinity: 'attack',
         name: 'Strength', description: '% increased value of attack power ups.',
-        value: 0.1, type: '+',
+        value: 0.1, type: '*',
         x: -2, y: 0,
         source: swordSource,
     },
@@ -91,7 +91,7 @@ export const skills: Skill[] = [
         key: 'dodge',
         affinity: 'defense',
         name: 'Acrobat', description: '% chance to dodge attacks.',
-        value: 0.05, type: '*',
+        value: 0.05, type: '/',
         x: 1, y: 0,
         source: shoeSource, secondSource: shieldSource,
     },
@@ -100,7 +100,7 @@ export const skills: Skill[] = [
         requires: 'dodge',
         affinity: 'defense',
         name: 'Toughness', description: '% increased value of defense power ups.',
-        value: 0.1, type: '+',
+        value: 0.1, type: '*',
         x: 2, y: 0,
         source: shieldSource,
     },
@@ -109,7 +109,7 @@ export const skills: Skill[] = [
         requires: 'defensePower',
         affinity: 'defense',
         name: 'Urchin', description: 'Attackers take % of damage blocked as damage.',
-        value: 0.1, type: '+',
+        value: 0.5, type: '+',
         x: 2, y: -1,
         source: shieldSource, secondSource: crabSource,
     },
@@ -127,7 +127,7 @@ export const skills: Skill[] = [
         key: 'radius',
         affinity: 'money',
         name: 'Adventurer', description: '% increased collection area.',
-        value: 0.1, type: '+',
+        value: 0.1, type: '*',
         x: 0, y: 1,
         source: shoeSource,
     },
@@ -136,7 +136,7 @@ export const skills: Skill[] = [
         requires: 'radius',
         affinity: 'money',
         name: 'Wisdom', description: '% increased experience gained.',
-        value: 0.1, type: '+',
+        value: 0.1, type: '*',
         x: 0, y: 2,
         source: scrollSource,
     },
@@ -145,7 +145,7 @@ export const skills: Skill[] = [
         requires: 'experiencePower',
         affinity: 'money',
         name: 'Explorer', description: '% reduced cost to upgrade islands.',
-        value: 0.05, type: '*',
+        value: 0.1, type: '/',
         x: -1, y: 2,
         source: shoeSource, secondSource: outlinedMoneySource
     },
@@ -154,7 +154,7 @@ export const skills: Skill[] = [
         requires: 'experiencePower',
         affinity: 'money',
         name: 'Conquerer', description: '% reduced power of discovered monsters.',
-        value: 0.05, type: '*',
+        value: 0.1, type: '/',
         x: 1, y: 2,
         source: shoeSource, secondSource: outlinedMoneySource
     },
@@ -193,7 +193,8 @@ export function getSkillValue(state: GameState, skillKey: SkillKey, level?: numb
     level = level ?? skillLevels[skill.key];
     if (level === 0) return 0;
     if (skill.type === '+') return level * skill.value;
-    if (skill.type === '*') return 1 - Math.pow(1 - skill.value, level);
+    if (skill.type === '*') return Math.pow(1 + skill.value, level);
+    if (skill.type === '/') return 1 - Math.pow(1 - skill.value, level);
     throw new Error('Unknown skill type: ' + skill.type);
 }
 

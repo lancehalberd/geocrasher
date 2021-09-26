@@ -266,9 +266,8 @@ function isLootInRadius(state: GameState, loot: LootMarker): boolean {
 }
 
 export function getCollectionRadius(state: GameState) {
-    return Math.sqrt((1 + getSkillValue(state, 'radius')) * state.saved.radius * state.saved.radius);
+    return state.saved.radius * Math.sqrt((1 + getSkillValue(state, 'radius')));
 }
-
 
 export function updateLootCollection(state: GameState) {
     const avatarPosition = getAvatarPosition(state);

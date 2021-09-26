@@ -27,6 +27,7 @@ export function getActualScale(state: GameState): number {
     if (state.dungeon.currentDungeon) {
         return Math.min((canvas.height - 20) / (5 * gridLength), (canvas.width - 20) / (5 * gridLength));
     }
+    // Math.round(gridLength * state.world.displayScale) / gridLength;
     return state.world.displayScale;
 }
 

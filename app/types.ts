@@ -129,19 +129,17 @@ export interface MapTile extends SavedMapTile {
     isVisible?: boolean
 }
 
-export interface TreasureHuntMap {
-    size: number
-}
-
-
-
-export interface DungeonMarker {
+export interface Dungeon {
     level: number
     isQuestDungeon?: boolean
     name: string
     numberOfFloors: number
-    tile: MapTile
     frame: Frame
+}
+
+export interface DungeonMarker {
+    dungeon: Dungeon
+    tile: MapTile
     x: number
     y: number
 }
@@ -227,9 +225,30 @@ interface BattleState {
     playerAttackTime?: number
 }
 
+
+export interface SavedTreasureHuntMap {
+    size: number
+    seed: number
+    revealedCoordinates: number[][]
+    // This isn't set until the entrance to the dungeon is discovered.
+    dungeonLevel?: number
+}
+export interface TreasureHuntMap {
+    dungeon?: Dungeon
+    tiles: TreasureMapTile[][]
+    revealAnimationTime: number
+}
+interface TreasureMapTile {
+    isGoal?: boolean
+    isRevealed?: boolean
+}
+
 export interface SavedTreasureHuntState {
     hadMap: boolean
     mapCount: number
+    currentMap: SavedTreasureHuntMap
+}
+export interface TreasureHuntState {
     currentMap: TreasureHuntMap
 }
 
@@ -250,6 +269,7 @@ export interface DungeonFloor {
 }
 
 export interface GameState {
+    saveSlots?: SavedGameState[]
     saveSlotIndex?: number
     battle: BattleState
     display: {
@@ -259,9 +279,8 @@ export interface GameState {
         dungeonScale: number
     }
     dungeon: {
-        currentDungeon?: DungeonMarker
+        currentDungeon?: Dungeon
         dungeonPosition?: number[]
-        activeDungeons: DungeonMarker[]
         allFloors?: DungeonFloor[]
         currentFloor?: DungeonFloor
         dungeonLevelCap: number
@@ -275,6 +294,7 @@ export interface GameState {
     saved?: SavedGameState
     avatar: AvatarState
     time: number
+    treasureHunt: TreasureHuntState
     world: WorldState
     globalPosition: {
         direction: 'up' | 'down' | 'left' | 'right',
@@ -318,7 +338,7 @@ export interface Skill {
     key: string
     value: number
     requires?: string
-    type: '+' | '*'
+    type: '+' | '*' | '/'
     x: number
     y: number
     source: Frame
@@ -333,7 +353,7 @@ export interface HudButton {
     // Button is visible and blocks clicks but does nothing.
     isDisabled?: (this: HudButton, state: GameState) => boolean
     isVisible?: (this: HudButton, state: GameState) => boolean
-    onClick: (this: HudButton, state: GameState) => void
+    onClick: (this: HudButton, state: GameState, x: number, y: number) => void
     updateTarget(this: HudButton, state: GameState): void
     render: (this: HudButton, context: CanvasRenderingContext2D, state: GameState) => void
 }

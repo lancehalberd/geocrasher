@@ -5,20 +5,8 @@ import { getState } from 'app/state';
 
 function handlePopState(event: PopStateEvent): void {
     const state = getState();
-    if (state.ignoreNextPop) {
-        state.ignoreNextPop = false;
-        return;
-    }
     const { currentScene, sceneStack } = state;
     if (sceneStack.length) {
-        /*
-         * This code prevents the forward button from acting like the back button, but
-         * it isn't clear it works in all cases.
-        if (history.state && history.state.scene !== sceneStack[sceneStack.length - 1]) {
-            ignoreNextPop = true;
-            history.back();
-            return;
-        }*/
         if (currentScene === 'skills') {
             state.currentScene = sceneStack.pop();
         } else if (currentScene === 'treasureMap') {
