@@ -22,11 +22,11 @@ function getTitleDisplayValues(state: GameState) {
     const padding = 10;
     let x, y;
     if (narrow) {
-        x = 2 * titleFontSize + Math.max(0, ((canvas.height - 2 * titleFontSize) - buttonHeight * 3 - padding * 2) / 2);
-        y = Math.floor((canvas.width - totalButtonWidth) / 2);
+        y = 2 * titleFontSize + Math.max(0, ((canvas.height - 2 * titleFontSize) - buttonHeight * 3 - padding * 2) / 2);
+        x = Math.floor((canvas.width - totalButtonWidth) / 2);
     } else {
-        x = 2 * titleFontSize + Math.max(0, ((canvas.height - 2 * titleFontSize) - buttonHeight) / 2);
-        y = Math.floor((canvas.width - totalButtonWidth * 3 - 2 *padding) / 2);
+        y = 2 * titleFontSize + Math.max(0, ((canvas.height - 2 * titleFontSize) - buttonHeight) / 2);
+        x = Math.floor((canvas.width - totalButtonWidth * 3 - 2 *padding) / 2);
     }
     const border = 4;
     return {
@@ -69,13 +69,13 @@ class LoadSaveSlotButton implements HudButton {
         context.fillRect(this.target.x, this.target.y, this.target.w, this.target.h);
         context.fillStyle = 'white';
         context.fillRect(this.target.x + border, this.target.y + border, this.target.w - 2 * border, this.target.h - 2 * border);
-        context.fillStyle = saveColors.shift();
+        context.fillStyle = saveColors[this.index];
         context.fillRect(this.target.x + border, this.target.y + border, slotLabelWidth, this.target.h - 2 * border);
         context.font = Math.floor(buttonHeight / 4) + 'px sans-serif';
         context.fillStyle = 'white';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(saveLabels.shift(), this.target.x + border + Math.round(slotLabelWidth / 2), this.target.y + Math.round(buttonHeight / 2));
+        context.fillText(saveLabels[this.index], this.target.x + border + Math.round(slotLabelWidth / 2), this.target.y + Math.round(buttonHeight / 2));
         let statsTop = this.target.y + border + statsPadding;
         const statsLeft = this.target.x + border + statsPadding + slotLabelWidth;
         const statsWidth = this.target.w - slotLabelWidth;
@@ -84,7 +84,7 @@ class LoadSaveSlotButton implements HudButton {
         context.textBaseline = 'middle';
         context.fillStyle = 'black';
         const level = abbreviateNumber(saveSlot.avatar.level);
-        const levelBonus = getLevelBonus(state);
+        const levelBonus = getLevelBonus(state, saveSlot.avatar.level);
         // Level
         const levelText = 'Lv ' + level;
         context.fillText(levelText, statsLeft + statsPadding, statsTop + Math.round(localIconSize / 2));
@@ -138,10 +138,10 @@ class DeleteSaveSlotButton implements HudButton {
     constructor(index: number) {
         this.index = index;
     }
-    onClick(state: GameState) {
+    onClick(this: DeleteSaveSlotButton, state: GameState) {
         deleteSaveSlot(state, this.index);
     }
-    render(context: CanvasRenderingContext2D, state: GameState) {
+    render(this: DeleteSaveSlotButton, context: CanvasRenderingContext2D, state: GameState) {
         const { border, buttonHeight } = getTitleDisplayValues(state);
         context.fillStyle = 'black';
         context.fillRect(this.target.x, this.target.y, this.target.w, this.target.h);
@@ -151,7 +151,7 @@ class DeleteSaveSlotButton implements HudButton {
         const trashTarget = {x: this.target.x - Math.round(border / 2), y: this.target.y + (buttonHeight - trashSize) / 2, w: trashSize, h: trashSize};
         drawFrame(context, trashSource, trashTarget);
     }
-    updateTarget(state: GameState): void {
+    updateTarget(this: DeleteSaveSlotButton, state: GameState): void {
         const { buttonHeight, deleteButtonWidth, loadButtonWidth, narrow, padding, totalButtonWidth, x, y } = getTitleDisplayValues(state);
         if (narrow) {
             this.target = {
@@ -179,7 +179,7 @@ function getTitleButtons(): HudButton[] {
     return titleButtons;
 }
 
-let lastCanvasSize: {w: number, h: number} = null;
+let lastCanvasSize: {w: number, h: number};
 function updateAllTitleButtonTargets(state: GameState): void {
     const { canvas } = state.display;
     if (lastCanvasSize?.w === canvas.width && lastCanvasSize?.h === canvas.height) {

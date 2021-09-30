@@ -25,8 +25,8 @@ export function updateFastMode(state: GameState, millisecondsBetweenUpdates: num
         resetLootTotals(state);
         clearAllGems(state);
         state.saved.radius = maxRadius;
-        state.selectedTile = null;
-        state.battle.engagedMonster = null;
+        delete state.selectedTile;
+        delete state.battle.engagedMonster;
         state.globalPosition.endFastModeTime = state.time + 10000;
         return;
     }

@@ -20,7 +20,7 @@ import { exhaustTile, project, toRealCoords } from 'app/world';
 import { GameState, HudButton, Loot } from 'app/types';
 
 function getAttackTime(level: number): number {
-    return 800 - Math.min(400, (level - 1) * 50);
+    return 600 - Math.min(200, (level - 1) * 50);
 }
 function getPlayerAttackTime(state: GameState) {
     return getAttackTime(state.saved.avatar.level) / (1 + getSkillValue(state, 'attackSpeed'));
@@ -29,16 +29,20 @@ function getPlayerAttackTime(state: GameState) {
 export function updateBattle(state: GameState) {
     // End battle if the player is too far from the monster marker.
     const monster = state.battle.engagedMonster;
-    const { marker } = state.battle.engagedMonster;
+    const marker = state.battle.engagedMonster?.marker;
     if (state.battle.damageIndicators.length) {
         updateDamageIndicators(state);
     }
-    if (state.world.activeMonsterMarkers.indexOf(marker) <= 0) {
-        state.battle.engagedMonster = null;
+    // End battle if the monster marker is no longer active.
+    if (marker && state.world.activeMonsterMarkers.indexOf(marker) < 0) {
+        delete state.battle.engagedMonster;
         return;
     }
-    const currentBattlePosition = getAvatarPosition(state);
-    if (state.time > state.battle.monsterAttackTime) {
+    if (!monster || !marker) {
+        return;
+    }
+    const currentBattlePosition = getAvatarPosition(state) ?? [];
+    if (state.battle.monsterAttackTime && state.time > state.battle.monsterAttackTime) {
         if (Math.random() < getSkillValue(state, 'dodge')) {
             pushDamageIndicator(state, currentBattlePosition, [marker.tile.centerX, marker.tile.centerY], 'Dodge', 'blue');
         } else {
@@ -57,7 +61,7 @@ export function updateBattle(state: GameState) {
         }
         state.battle.monsterAttackTime += getAttackTime(monster.level);
     }
-    if (state.time > state.battle.playerAttackTime) {
+    if (state.battle.playerAttackTime && state.time > state.battle.playerAttackTime) {
         var damage = calculateDamage(getAttackRoll(state.avatar.attack), getDefenseRoll(monster.defense));
         pushDamageIndicator(state, [marker.tile.centerX, marker.tile.centerY], currentBattlePosition, abbreviateNumber(damage));
         monster.currentHealth = Math.max(0, monster.currentHealth - damage);
@@ -72,8 +76,8 @@ export function updateBattle(state: GameState) {
             advanceGameState(state);
             exhaustTile(marker.tile);
         }
-        marker.tile.monsterMarker = null;
-        defeatedMonster.marker = null;
+        delete marker.tile.monsterMarker;
+        delete defeatedMonster.marker;
 
         // Primarily you are supposed to access dungeons through treasure maps now, but there
         // is still a 1/50 chance a monster will drop a dungeon entrance.
@@ -86,11 +90,10 @@ export function updateBattle(state: GameState) {
             addLootToTile(marker.tile, makeTreasureMapLoot(state, value));
         }
         const monsterTile = marker.tile;
-        marker.tile = null;
-        state.world.activeMonsterMarkers.splice(state.world.activeMonsterMarkers.indexOf(monster.marker), 1);
+        state.world.activeMonsterMarkers.splice(state.world.activeMonsterMarkers.indexOf(marker), 1);
         const currentLootInMonsterRadius = state.loot.lootInMonsterRadius;
-        state.battle.engagedMonster = null;
-        state.selectedTile = null;
+        delete state.battle.engagedMonster;
+        delete state.selectedTile;
         // Outside of dungeons, you get nearby treasure for fighting monsters.
         if (!state.dungeon.currentDungeon) {
             updateMap(state);
@@ -130,8 +133,8 @@ export function updateBattle(state: GameState) {
         gainExperience(state, defeatedMonster.experience);
     }
     if (state.saved.avatar.currentHealth <= 0) {
-        state.battle.engagedMonster = null;
-        state.selectedTile = null;
+        delete state.battle.engagedMonster;
+        delete state.selectedTile;
     }
 }
 
@@ -156,13 +159,15 @@ const fightOrFleeButton: HudButton = {
     onClick(state: GameState): void {
         // If not in battle, engage the selected monster in battle:
         if (!state.battle.engagedMonster) {
+            if (!state.selectedTile?.monsterMarker) {
+                return;
+            }
             state.battle.engagedMonster = state.selectedTile.monsterMarker.monster;
             // Monster always attacks first.
             state.battle.monsterAttackTime = state.time + 300;
             state.battle.playerAttackTime = state.time + 300 + getPlayerAttackTime(state) / 2;
-            return;
         } else {
-            state.battle.engagedMonster = null;
+            delete state.battle.engagedMonster;
         }
     },
     isDisabled(state: GameState) {
@@ -183,11 +188,11 @@ const fightOrFleeButton: HudButton = {
             drawFrame(context, shoeSource, {x: this.target.x, y: this.target.y, w: iconSize, h: iconSize});
         } else {
             context.save();
-            context.translate(this.target.x + halfIconSize, this.target.y + halfIconSize);
-            context.scale(-1, 1);
-            drawFrame(context, swordSource, {x: -halfIconSize + 6, y: -halfIconSize, w: iconSize, h: iconSize});
-            context.scale(-1, 1);
-            drawFrame(context, swordSource, {x: -halfIconSize + 6, y: -halfIconSize, w: iconSize, h: iconSize});
+                context.translate(this.target.x + halfIconSize, this.target.y + halfIconSize);
+                context.scale(-1, 1);
+                drawFrame(context, swordSource, {x: -halfIconSize + 6, y: -halfIconSize, w: iconSize, h: iconSize});
+                context.scale(-1, 1);
+                drawFrame(context, swordSource, {x: -halfIconSize + 6, y: -halfIconSize, w: iconSize, h: iconSize});
             context.restore();
         }
 
@@ -195,7 +200,7 @@ const fightOrFleeButton: HudButton = {
     },
     updateTarget(state: GameState): void {
         const { canvas, iconSize } = state.display;
-        const w = iconSize * 5;
+        const w = iconSize;
         // Fight or Flee button is shown in the bottom center of the screen,
         // just like the collect treasure or upgrade tile button.
         this.target = {
@@ -247,7 +252,7 @@ export function drawDamageIndicators(context: CanvasRenderingContext2D, state: G
     context.textBaseline = 'middle';
     for (const damage of state.battle.damageIndicators) {
         context.font = Math.round(iconSize / 8 * (1 + 4 * damage.position[2] / gridLength)) + 'px sans-serif';
-        var coords = project(state, [damage.position[0], damage.position[1] + damage.position[2]]);
+        var coords = project(state, [damage.position[0], damage.position[1] - damage.position[2]]);
         drawEmbossedText(context, damage.value, damage.color, 'white', coords[0], coords[1]);
     }
 }

@@ -44,7 +44,7 @@ function makeMap(size: number): TreasureHuntMap {
 export function initializeTreasureMapStateFromSave(state: GameState) {
     const savedMap = state.saved.treasureHunt.currentMap;
     if (!savedMap) {
-        state.treasureHunt.currentMap = null;
+        delete state.treasureHunt.currentMap;
         return;
     }
     const [tx, ty] = getTreasureLocation(savedMap);
@@ -73,15 +73,15 @@ function getTreasureLocation(savedMap: SavedTreasureHuntMap): number[] {
     ];
 }
 function showTreasureMapScene(state: GameState) {
-    state.selectedTile = null;
-    state.battle.engagedMonster = null;
+    delete state.selectedTile;
+    delete state.battle.engagedMonster;
     if (!state.saved.treasureHunt.currentMap) {
         startNewTreasureMap(state);
     }
     pushScene(state, 'treasureMap');
 }
 export function hideTreasureMap(state: GameState) {
-    state.selectedTile = null;
+    delete state.selectedTile;
     state.world.origin = state.world.currentPosition;
     popScene(state);
     refreshActiveTiles(state);
@@ -89,17 +89,17 @@ export function hideTreasureMap(state: GameState) {
 export function updateTreasureMap(state: GameState): void {
     const savedMap = state.saved.treasureHunt.currentMap;
     // Advance the reveal animation time once the dungeon is discovered.
-    if (savedMap?.dungeonLevel) {
+    if (state.treasureHunt.currentMap && savedMap?.dungeonLevel) {
         state.treasureHunt.currentMap.revealAnimationTime += frameLength;
     }
 }
 
 function revealTreasureMapTile(state: GameState, x: number, y: number) {
-    if (!state.saved.treasureHunt.mapCount) {
-        return;
-    }
     const savedMap = state.saved.treasureHunt.currentMap;
     const currentMap = state.treasureHunt.currentMap;
+    if (!state.saved.treasureHunt.mapCount || !savedMap || !currentMap) {
+        return;
+    }
     if (x < 0 || y < 0 || x >= savedMap.size || y >= savedMap.size) {
         return;
     }
@@ -108,7 +108,7 @@ function revealTreasureMapTile(state: GameState, x: number, y: number) {
     }
     savedMap.revealedCoordinates.push([x, y]);
     currentMap.tiles[y][x].isRevealed = true;
-    state.saved.treasureHunt.mapCount--;
+    state.saved.treasureHunt.mapCount++;
     const [tx, ty] = getTreasureLocation(savedMap);
     if (tx === x && ty === y) {
         savedMap.dungeonLevel = getDungeonLevel(state, state.saved.avatar.level);
@@ -140,7 +140,7 @@ function getTreasureMapButtons(): HudButton[] {
 }
 // Update the targets for skill buttons for the current display settings.
 // This should be called each frame before checking for user clicks or rendering the buttons.
-let lastCanvasSize: {w: number, h: number} = null;
+let lastCanvasSize: {w: number, h: number};
 function updateAllTreasureMapButtonTargets(state: GameState): void {
     const { canvas } = state.display;
     if (lastCanvasSize?.w === canvas.width && lastCanvasSize?.h === canvas.height) {
@@ -153,23 +153,26 @@ function updateAllTreasureMapButtonTargets(state: GameState): void {
 }
 
 export function drawTreasureMapScene(context: CanvasRenderingContext2D, state: GameState) {
+    const savedMap = state.saved.treasureHunt.currentMap;
+    const currentMap = state.treasureHunt.currentMap;
+    if (!savedMap || !currentMap) {
+        return;
+    }
     const { canvas } = state.display;
     const scaleToUse = getActualScale(state);
-    context.fillStyle = context.createPattern(darkStoneImage, 'repeat');
+    context.fillStyle = context.createPattern(darkStoneImage, 'repeat') as CanvasPattern;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = 'bold ' + Math.floor(gridLength * scaleToUse) + 'px sans-serif';
-    const mapPattern = context.createPattern(oldMapImage, 'repeat');
-    const savedMap = state.saved.treasureHunt.currentMap;
-    const currentMap = state.treasureHunt.currentMap;
+    const mapPattern = context.createPattern(oldMapImage, 'repeat') as CanvasPattern;
     const [tx, ty] = getTreasureLocation(savedMap);
     for (let y = 0; y < currentMap.tiles.length; y++) {
         for (let x = 0; x < currentMap.tiles[y].length; x++) {
             const tile = currentMap.tiles[y][x];
             const target = getGridRectangle(state, [x, y]);
             const distance = Math.abs(y - ty) + Math.abs(x - tx);
-            const isRevealed = tile.isRevealed || distance < currentMap.revealAnimationTime / 200;
+            const isRevealed = tile.isRevealed || distance < currentMap.revealAnimationTime / 100;
             if (!isRevealed) {
                 fillRectangle(context, mapPattern, target);
                 context.beginPath();
@@ -190,7 +193,7 @@ export function drawTreasureMapScene(context: CanvasRenderingContext2D, state: G
                 frame = sandSource;
             }
             drawFrame(context, frame, target);
-            if (x === tx && y === ty) {
+            if (x === tx && y === ty && currentMap.dungeon) {
                 drawOutlinedImage(context, 'red', 1, currentMap.dungeon.frame, target);
             }
             // Experimental rendering logic for indicating which squares the user has not manually explored
@@ -204,7 +207,7 @@ export function drawTreasureMapScene(context: CanvasRenderingContext2D, state: G
             }
         }
     }
-    if (savedMap.dungeonLevel) {
+    if (currentMap.dungeon) {
         drawDungeonStats(context, state, currentMap.dungeon);
     }
     drawCoinsIndicator(context, state);
@@ -223,7 +226,7 @@ const treasureMapButton: HudButton = {
         }
     },
     isDisabled(state: GameState) {
-        return state.battle.engagedMonster && state.loot.collectingLoot.length > 0;
+        return !!state.battle.engagedMonster && state.loot.collectingLoot.length > 0;
     },
     isVisible(state: GameState) {
         return state.saved.treasureHunt.hadMap || state.saved.treasureHunt.mapCount > 0;
@@ -234,7 +237,7 @@ const treasureMapButton: HudButton = {
         context.textAlign = 'right';
         context.font = Math.floor(iconSize / 3) + 'px sans-serif';
         drawFrame(context, treasureMapSource, this.target);
-        drawEmbossedText(context, 'x' + state.saved.treasureHunt, 'white', 'black',
+        drawEmbossedText(context, 'x' + state.saved.treasureHunt.mapCount, 'white', 'black',
             this.target.x + Math.floor(iconSize * .8),
             this.target.y + 3 * this.target.h / 4
         );

@@ -1,4 +1,4 @@
-import { createCanvasAndContext } from 'app/dom';
+import { createCanvasAndContext, debugCanvas } from 'app/dom';
 import { createAnimation, drawOutlinedImage } from 'app/draw';
 
 import { Frame, Rectangle } from 'app/types';
@@ -30,42 +30,36 @@ export function requireFrame(imageFile: string, {x, y, w, h}: Rectangle, callbac
     return { image, x, y, w, h };
 }
 export function finishedLoadingImages(): boolean {
+    console.log(numberOfImagesLeftToLoad);
     return numberOfImagesLeftToLoad === 0;
 }
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
 // const shallowSource = {image: requireImage('gfx/map/shallow.png'), x: 0, y: 0, w: 64, h: 64};
-export const shallowSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 35, y: 18, w: 16, h: 16};
-
-// Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
-// const sandSource = {image: requireImage('gfx/map/sand.png'), x: 0, y: 0, w: 64, h: 64};
-export const sandSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 86, y: 18, w: 16, h: 16};
-
-// Modified from https://pixabay.com/en/seamless-tileable-texture-ground-1807373/
-// const dirtSource = {image: requireImage('gfx/map/dirt2.png'), x: 0, y: 0, w: 72, h: 72};
-export const dirtSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 137, y: 18, w: 16, h: 16};
-
-// Modified from https://pixabay.com/en/retro-flower-pattern-design-batik-1422325/
-//const grassSource = {image: requireImage('gfx/map/grass.png'), x: 0, y: 0, w: 72, h: 72};
-//const forestSource = {image: requireImage('gfx/map/forest.png'),x: 0, y: 0, w: 72, h: 72};
-
-export const grassSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 188, y: 18, w: 16, h: 16};
-export const forestSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 239, y: 18, w: 16, h: 16};
-
 // Modified from http://maxpixel.freegreatpicture.com/Background-Texture-Seamless-Stone-Rocks-1657467
-//const hillSource = {image: requireImage('gfx/map/hill.png'), x: 0, y: 0, w: 64, h: 64};
-//const mountainSource = {image: requireImage('gfx/map/mountain.png'), x: 0, y: 0, w: 64, h: 64};
-//const peakSource = {image: requireImage('gfx/map/peak.png'), x: 0, y: 0, w: 64, h: 64};
+// Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465
+// const sandSource = {image: requireImage('gfx/map/sand.png'), y: 0, y: 0, w: 64, h: 64};
+// Modified from https://pixabay.com/en/seamless-tileable-texture-ground-1807373/
+// const dirtSource = {image: requireImage('gfx/map/dirt2.png'), y: 0, y: 0, w: 72, h: 72};
+// Modified from https://pixabay.com/en/retro-flower-pattern-design-batik-1422325/
+//const grassSource = {image: requireImage('gfx/map/grass.png'), y: 0, y: 0, w: 72, h: 72};
+//const forestSource = {image: requireImage('gfx/map/forest.png'),y: 0, y: 0, w: 72, h: 72};
+// Modified from https://pixabay.com/en/seamless-texture-texture-ice-cold-219909/
+//export const iceSource = {image: requireImage('gfx/map/ice.png'), x: 0, y: 0, w: 64, h: 64};
+
+
+// Think this is FF1 ocean, will need to replace this at some point.
 export const oceanImage = requireImage('gfx/map/landscapeTiles.png');
 export const oceanSource: Frame = {image: oceanImage, x: 1, y: 1, w: 16, h: 16};
-//const oceanImage = requireImage('gfx/map/ocean.png');
-//const oceanSource = {image: oceanImage, x: 1, y: 1, w: 16, h: 16};
 
-export const hillSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 290, y: 18, w: 16, h: 16};
-export const mountainSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 317, y: 18, w: 16, h: 16};
-export const peakSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), x: 341, y: 18, w: 16, h: 16};
+export const shallowSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 35, x: 18, w: 16, h: 16};
+export const sandSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 86, x: 18, w: 16, h: 16};
+export const dirtSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 137, x: 18, w: 16, h: 16};
+export const grassSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 188, x: 18, w: 16, h: 16};
+export const forestSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 239, x: 18, w: 16, h: 16};
+export const hillSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 290, x: 18, w: 16, h: 16};
+export const mountainSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 341, x: 18, w: 16, h: 16};
+export const iceSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 392, x: 18, w: 64, h: 64};
 
-// Modified from https://pixabay.com/en/seamless-texture-texture-ice-cold-219909/
-export const iceSource = {image: requireImage('gfx/map/ice.png'), x: 0, y: 0, w: 64, h: 64};
 
 // Might use this for a new round of tiles: http://alucus.deviantart.com/art/Pallet-town-tiles-157214973
 
@@ -80,8 +74,9 @@ export const coinImage = requireImage('gfx/loot/moneyIcon.png', () => {
 });
 export const moneySource: Frame = {image: coinImage, x: 64, y: 64, w: 24, h: 24};
 // Original images by Hillary created for Geo Crasher
-export const personSource: Frame = requireFrame('gfx/person.png', {x: 0, y: 0, w: 48, h: 48}, () => {
+export const personSource: Frame = requireFrame('gfx/person.png', {x: 0, y: 0, w: 144, h: 192}, () => {
     drawOutlinedImage(outlinedPersonContext, 'white', 1, personSource, {x: 0, y: 0, w: 144, h: 192});
+    debugCanvas(outlinedPersonImage);
 });
 // The person image has enough room between cells for the outline, except at the bottom of the image.
 export const [outlinedPersonImage, outlinedPersonContext] = createCanvasAndContext(144, 194);

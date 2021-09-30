@@ -35,7 +35,7 @@ function resizeCanvas() {
 }
 window.onresize = resizeCanvas;
 
-if (isTestMode) {
+if (!isTestMode) {
     // Regular play assumes you are walking around playing on a touch device.
     registerTouchEvents();
     if (navigator.geolocation) {
@@ -51,11 +51,22 @@ if (isTestMode) {
     state.globalPosition.lastPosition = {coords: {longitude: gridLength / 2, latitude: gridLength / 2}};
     document.addEventListener('keydown', function(event) {
         const state = getState();
+        if (!state.globalPosition.lastPosition) {
+            throw new Error('Expeceted `state.globalPosition.lastPosition` to be defined.');
+        }
         //console.log(event.which)
-        if (event.which === 37) state.globalPosition.lastPosition.coords.longitude -= stepSize;
-        if (event.which === 39) state.globalPosition.lastPosition.coords.longitude += stepSize;
-        if (event.which === 38) state.globalPosition.lastPosition.coords.latitude += stepSize;
-        if (event.which === 40) state.globalPosition.lastPosition.coords.latitude -= stepSize;
+        if (event.which === 37 || event.which === 'A'.charCodeAt(0)) {
+            state.globalPosition.lastPosition.coords.longitude -= stepSize;
+        }
+        if (event.which === 39 || event.which === 'D'.charCodeAt(0)) {
+            state.globalPosition.lastPosition.coords.longitude += stepSize;
+        }
+        if (event.which === 38 || event.which === 'W'.charCodeAt(0)) {
+            state.globalPosition.lastPosition.coords.latitude -= stepSize;
+        }
+        if (event.which === 40 || event.which === 'S'.charCodeAt(0)) {
+            state.globalPosition.lastPosition.coords.latitude += stepSize;
+        }
     });
 }
 registerBackAction();

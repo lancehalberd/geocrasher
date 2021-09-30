@@ -16,7 +16,7 @@ export function drawStatsBox(context: CanvasRenderingContext2D, state: GameState
     level: number, name: string,
     currentHealth: number, maxHealth: number,
     attack: number, defense: number,
-    experience?: number, nextLevel?: number
+    experience: number = 0, nextLevel: number = 0
 ): void {
     const { iconSize } = state.display;
     const localIconSize = Math.floor(iconSize / 2);

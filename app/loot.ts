@@ -176,13 +176,13 @@ export function getWeightedPowerup(state: GameState, value: number, additionalLo
 }
 
 function makeHealthLoot(state: GameState, value: number): Loot {
-    return new HealthLootClass(Math.ceil(4 * value * (1 + getSkillValue(state, 'healthPowerups'))));
+    return new HealthLootClass(Math.ceil(4 * value * (1 + getSkillValue(state, 'healthPower'))));
 }
 function makeAttackLoot(state: GameState, value: number): Loot  {
-    return new AttackLootClass(Math.ceil(value * (1 + getSkillValue(state, 'attackPowerups'))));
+    return new AttackLootClass(Math.ceil(value * (1 + getSkillValue(state, 'attackPower'))));
 }
 function makeDefenseLoot(state: GameState, value: number): Loot {
-    return new DefenseLootClass(Math.ceil(value * (1 + getSkillValue(state, 'defensePowerups'))));
+    return new DefenseLootClass(Math.ceil(value * (1 + getSkillValue(state, 'defensePower'))));
 }
 const magicStoneLoot = new MagicStoneLootClass();
 export function makeMagicStoneLoot() {
@@ -211,19 +211,19 @@ export function updateTileLoot(state: GameState, tile: MapTile): void {
         const lootMarker = tile.lootMarkers[i];
         // Remove all non coin loot during state.globalPosition.isFastMode.
         if (state.globalPosition.isFastMode && lootMarker === tile.powerupMarker) {
-            tile.powerupMarker = null;
+            delete tile.powerupMarker;
             tile.lootMarkers.splice(i--, 1);
             continue;
         }
         if (state.globalPosition.isFastMode && lootMarker === tile.gemMarker) {
-            tile.gemMarker = null;
+            delete tile.gemMarker;
             tile.lootMarkers.splice(i--, 1);
             continue;
         }
         lootMarker.x = (lootMarker.x + lootMarker.tx) / 2;
         lootMarker.y = (lootMarker.y + lootMarker.ty) / 2;
         lootMarker.isInAvatarRadius = isLootInRadius(state, lootMarker);
-        lootMarker.isInMonsterRadius = !state.globalPosition.isFastMode && !lootMarker.loot.type !== 'gem' && isPointInMonsterRadius(state, lootMarker.x, lootMarker.y);
+        lootMarker.isInMonsterRadius = !state.globalPosition.isFastMode && lootMarker.loot.type !== 'gem' && isPointInMonsterRadius(state, lootMarker.x, lootMarker.y);
         if (state.globalPosition.isFastMode && lootMarker.isInAvatarRadius) {
             if (state.loot.collectingLoot.indexOf(lootMarker) < 0) {
                 state.loot.collectingLoot.push(lootMarker);
@@ -240,7 +240,7 @@ export function updateTileLoot(state: GameState, tile: MapTile): void {
 
 function isPointInMonsterRadius(state: GameState, x: number, y: number): boolean {
     for (const monster of state.world.activeMonsterMarkers) {
-        if (getDistance([monster.tile.centerX, monster.tile.centerY], [x, y]) <= monster.radius) {
+        if (getDistance([monster.tile.centerX, monster.tile.centerY], [x, y]) <= monster.monster.radius) {
             return true;
         }
     }
@@ -259,6 +259,9 @@ export function collectLoot(state: GameState) {
     }
 }
 function isLootInRadius(state: GameState, loot: LootMarker): boolean {
+    if (!state.world.currentPosition) {
+        return false;
+    }
     const actualRadius = getCollectionRadius(state);
     const dx = state.world.currentPosition[0] - loot.x;
     const dy = state.world.currentPosition[1] - loot.y;
@@ -272,7 +275,7 @@ export function getCollectionRadius(state: GameState) {
 export function updateLootCollection(state: GameState) {
     const avatarPosition = getAvatarPosition(state);
     const { collectingLoot } = state.loot
-    if (!collectingLoot.length) {
+    if (!avatarPosition || !collectingLoot.length) {
         return;
     }
     // Move all loot towards the player
@@ -317,10 +320,14 @@ function obtainloot(state: GameState, lootMarker: LootMarker): void {
     }
     const tile = lootMarker.tile;
     if (tile.powerupMarker === lootMarker) {
-        tile.powerupMarker = null;
+        delete tile.powerupMarker;
     }
     if (tile.gemMarker === lootMarker) {
-        tile.gemMarker = null;
+        delete tile.gemMarker;
+    }
+    const markerIndex = state.gems.gemMarkers.indexOf(lootMarker);
+    if (markerIndex >= 0) {
+        state.gems.gemMarkers.splice(markerIndex, 1);
     }
     state.loot.activePowerupMarkers.delete(lootMarker);
     if (lootMarker.loot.onObtain) {
@@ -372,10 +379,11 @@ const collectButton: HudButton = {
         if (state.currentScene === 'dungeon') {
             return state.loot.collectingLoot.length > 0;
         }
+        return false;
     },
     isVisible(state: GameState) {
         if (state.currentScene === 'dungeon') {
-            return state.selectedTile?.lootMarkers?.length > 0;
+            return !!state.selectedTile?.lootMarkers?.length;
         }
         if (state.currentScene === 'map') {
             return !state.selectedTile;
@@ -383,36 +391,36 @@ const collectButton: HudButton = {
         return false;
     },
     render(context: CanvasRenderingContext2D, state: GameState): void {
-        const { canvas, iconSize } = state.display;
+        const { iconSize } = state.display;
         context.save();
             let lootCount = 0;
             if (state.dungeon.currentDungeon) {
-                lootCount = state.selectedTile.lootMarkers.length;
+                lootCount = state.selectedTile?.lootMarkers?.length || 0;
             } else {
                 lootCount = state.loot.lootInRadius.length;
             }
             if (!lootCount) {
                 context.globalAlpha *= .6;
             }
-            context.textBaseline = 'middle';
+            context.textBaseline = 'bottom';
             context.textAlign = 'left';
             context.font = Math.floor(3 * iconSize / 4) + 'px sans-serif';
-            var metrics = context.measureText('x' + lootCount);
             drawFrame(context, chestSource, {x: this.target.x, y: this.target.y, w: iconSize, h: iconSize});
 
             drawEmbossedText(context, 'x' + lootCount, 'white', 'black',
-                this.target.x + this.target.w - metrics.width,
-                canvas.height - 10 - iconSize / 2
+                this.target.x + this.target.w / 2,
+                this.target.y + this.target.h
             );
         context.restore();
     },
     updateTarget(state: GameState): void {
         const { canvas, iconSize } = state.display;
+        const w = iconSize;
         // Upgrade Button is in the bottom center.
         this.target = {
-            x: Math.floor((canvas.width - iconSize * 1.5) / 2),
+            x: Math.floor((canvas.width - w) / 2),
             y: canvas.height - 10 - iconSize,
-            w: iconSize * 1.5,
+            w,
             h: iconSize,
         };
     },
@@ -442,68 +450,68 @@ export function drawLootTotals(context: CanvasRenderingContext2D, state: GameSta
     }
     const { canvas, iconSize } = state.display;
     context.save();
-    context.globalAlpha = state.globalPosition.isFastMode ? 1 : Math.min(1, 2 - (state.time - lootCollectedTime) / (fadeTime / 2));
-    const fontSize = Math.floor(3 * iconSize / 4);
-    context.font = fontSize + 'px sans-serif';
-    context.textAlign = 'center';
-    context.textBaseline = 'bottom';
-    let top = canvas.height / 2 + 2;
-    if (coinsCollected > 0) {
-        if (collectionBonus > 1) {
-            drawEmbossedText(context,
-                abbreviateNumber(coinsCollected) + 'x' + collectionBonus.toFixed(2), 'gold', 'black',
-                canvas.width / 2,
-                canvas.height / 2 - 2
-            );
-        } else {
-            top = Math.floor((canvas.height - iconSize) / 2);
-        }
-        context.textBaseline = 'middle';
-        context.textAlign = 'left';
-        const totalCoinsText = '+' + abbreviateNumber(Math.round(coinsCollected * collectionBonus));
-        const left = Math.floor(canvas.width / 2 - (context.measureText(totalCoinsText).width + iconSize) / 2);
-        drawEmbossedText(context, totalCoinsText, 'gold', 'black', left + iconSize, top + iconSize / 2);
-        drawFrame(context, outlinedMoneySource, {x: left, y: top, w: iconSize, h: iconSize});
-    }
-    const powerUpFontSize = Math.floor(iconSize / 2);
-    let powerUpWidth = 0;
-    const currentAttack = getAttackWithoutHealthBonuses(state);
-    const currentDefense = getDefenseWithoutHealthBonuses(state);
-    const healthBonusText = '+' + abbreviateNumber(state.avatar.maxHealth - state.loot.initialMaxHealth);
-    const attackBonusText = '+' + abbreviateNumber(currentAttack - initialAttack);
-    const defenseBonusText = '+' + abbreviateNumber(currentDefense - initialDefense);
-    context.font = powerUpFontSize + 'px sans-serif';
-    if (state.avatar.maxHealth !== initialMaxHealth) powerUpWidth += powerUpFontSize + context.measureText(healthBonusText).width;
-    if (currentAttack !== initialAttack) powerUpWidth += powerUpFontSize + context.measureText(attackBonusText).width;
-    if (currentDefense !== initialDefense) powerUpWidth += powerUpFontSize + context.measureText(defenseBonusText).width;
-    if (state.saved.avatar.level !== initialLevel) {
+        context.globalAlpha = state.globalPosition.isFastMode ? 1 : Math.min(1, 2 - (state.time - lootCollectedTime) / (fadeTime / 2));
+        const fontSize = Math.floor(3 * iconSize / 4);
+        context.font = fontSize + 'px sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'bottom';
-        drawEmbossedText(context, 'LEVEL UP', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
-    } else if (getTotalSkillPoints(state) !== initialSkillPoints) {
-        context.textAlign = 'center';
-        context.textBaseline = 'bottom';
-        drawEmbossedText(context, '+1 Skill Point', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
-    }
-    if (powerUpWidth > 0) {
-        let left = (canvas.width - powerUpWidth) / 2;
-        context.textAlign = 'left';
-        context.textBaseline = 'middle';
-        const bottom = canvas.height / 2 - fontSize - 4;
-        if (state.avatar.maxHealth !== initialMaxHealth) {
-            drawOutlinedImage(context, 'white', 2, heartSource, {x: left, y: bottom - powerUpFontSize, w: powerUpFontSize, h: powerUpFontSize});
-            drawEmbossedText(context, healthBonusText, 'white', 'black', left + powerUpFontSize, bottom - powerUpFontSize / 2);
-            left += powerUpFontSize + context.measureText(healthBonusText).width;
+        let top = canvas.height / 2 + 2;
+        if (coinsCollected > 0) {
+            if (collectionBonus > 1) {
+                drawEmbossedText(context,
+                    abbreviateNumber(coinsCollected) + 'x' + collectionBonus.toFixed(2), 'gold', 'black',
+                    canvas.width / 2,
+                    canvas.height / 2 - 2
+                );
+            } else {
+                top = Math.floor((canvas.height - iconSize) / 2);
+            }
+            context.textBaseline = 'middle';
+            context.textAlign = 'left';
+            const totalCoinsText = '+' + abbreviateNumber(Math.round(coinsCollected * collectionBonus));
+            const left = Math.floor(canvas.width / 2 - (context.measureText(totalCoinsText).width + iconSize) / 2);
+            drawEmbossedText(context, totalCoinsText, 'gold', 'black', left + iconSize, top + iconSize / 2);
+            drawFrame(context, outlinedMoneySource, {x: left, y: top, w: iconSize, h: iconSize});
         }
-        if (currentAttack !== initialAttack) {
-            drawOutlinedImage(context, 'white', 2, swordSource, {x: left, y: bottom - powerUpFontSize, w: powerUpFontSize, h: powerUpFontSize});
-            drawEmbossedText(context, attackBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
-            left += powerUpFontSize + context.measureText(attackBonusText).width;
+        const powerUpFontSize = Math.floor(iconSize / 2);
+        let powerUpWidth = 0;
+        const currentAttack = getAttackWithoutHealthBonuses(state);
+        const currentDefense = getDefenseWithoutHealthBonuses(state);
+        const healthBonusText = '+' + abbreviateNumber(state.avatar.maxHealth - initialMaxHealth);
+        const attackBonusText = '+' + abbreviateNumber(currentAttack - initialAttack);
+        const defenseBonusText = '+' + abbreviateNumber(currentDefense - initialDefense);
+        context.font = powerUpFontSize + 'px sans-serif';
+        if (state.avatar.maxHealth !== initialMaxHealth) powerUpWidth += powerUpFontSize + context.measureText(healthBonusText).width;
+        if (currentAttack !== initialAttack) powerUpWidth += powerUpFontSize + context.measureText(attackBonusText).width;
+        if (currentDefense !== initialDefense) powerUpWidth += powerUpFontSize + context.measureText(defenseBonusText).width;
+        if (state.saved.avatar.level !== initialLevel) {
+            context.textAlign = 'center';
+            context.textBaseline = 'bottom';
+            drawEmbossedText(context, 'LEVEL UP', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
+        } else if (getTotalSkillPoints(state) !== initialSkillPoints) {
+            context.textAlign = 'center';
+            context.textBaseline = 'bottom';
+            drawEmbossedText(context, '+1 Skill Point', 'gold', 'black', canvas.width / 2, canvas.height / 2 - fontSize - powerUpFontSize - 8);
         }
-        if (currentDefense !== initialDefense) {
-            drawOutlinedImage(context, 'white', 2, shieldSource, {x: left, y: bottom - powerUpFontSize, w: powerUpFontSize, h: powerUpFontSize});
-            drawEmbossedText(context, defenseBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
+        if (powerUpWidth > 0) {
+            let left = (canvas.width - powerUpWidth) / 2;
+            context.textAlign = 'left';
+            context.textBaseline = 'middle';
+            const bottom = canvas.height / 2 - fontSize - 4;
+            if (state.avatar.maxHealth !== initialMaxHealth) {
+                drawOutlinedImage(context, 'white', 2, heartSource, {x: left, y: bottom - powerUpFontSize, w: powerUpFontSize, h: powerUpFontSize});
+                drawEmbossedText(context, healthBonusText, 'white', 'black', left + powerUpFontSize, bottom - powerUpFontSize / 2);
+                left += powerUpFontSize + context.measureText(healthBonusText).width;
+            }
+            if (currentAttack !== initialAttack) {
+                drawOutlinedImage(context, 'white', 2, swordSource, {x: left, y: bottom - powerUpFontSize, w: powerUpFontSize, h: powerUpFontSize});
+                drawEmbossedText(context, attackBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
+                left += powerUpFontSize + context.measureText(attackBonusText).width;
+            }
+            if (currentDefense !== initialDefense) {
+                drawOutlinedImage(context, 'white', 2, shieldSource, {x: left, y: bottom - powerUpFontSize, w: powerUpFontSize, h: powerUpFontSize});
+                drawEmbossedText(context, defenseBonusText, 'white', 'black', left + powerUpFontSize,  bottom - powerUpFontSize / 2);
+            }
         }
-    }
     context.restore();
 }

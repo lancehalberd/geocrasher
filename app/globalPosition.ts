@@ -21,6 +21,7 @@ const updatePosition: PositionCallback = (position: GeolocationPosition): void =
         }
     }
     state.globalPosition.lastPosition = position;
+    console.log(position);
 }
 
 function setFixingGPS(state: GameState): void {
@@ -46,6 +47,6 @@ export function checkToWatchPosition(state: GameState): void {
     if (watchPositionId) navigator.geolocation.clearWatch(watchPositionId);
     watchPositionId = navigator.geolocation.watchPosition(updatePosition,
         () => {
-        document.body.append('<div>There was an error getting position!</div>');
+        // document.body.innerHTML = '<div style="color: white;">There was an error getting position!</div>';
     }, { enableHighAccuracy: true, maximumAge: 100, timeout: 50000 });
 }

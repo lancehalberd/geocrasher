@@ -27,8 +27,8 @@ export function makeBossMonster(state: GameState, monsterPower: number): Monster
 }
 export function makeMonster(state: GameState, monsterPower: number): Monster {
     const monsterLevel = Math.max(1, Math.floor(monsterPower));
-    // Monsters gain 40% more power each level, and gain up to an additional 25% more power before leveling again.
-    const powerFactor = Math.pow(1.4, monsterLevel - 1) * (1 + Math.max(0, monsterPower - monsterLevel) / 4);
+    // Monsters gain 30% more power each level, and gain up to an additional 20% more power before leveling again.
+    const powerFactor = Math.pow(1.3, monsterLevel - 1) * (1 + Math.max(0, monsterPower - monsterLevel) / 5);
     //const powerFactor = Math.pow(3, tile.level - 1) * getTilePower(tile);
     const rollA = Random.range(-2, 2);
     const rollB = Random.range(-2, 2);
@@ -97,16 +97,20 @@ export function checkToGenerateMonster(state: GameState, tile: MapTile, baseChan
         monster: makeMonster(state, getMonsterPowerForTile(state, tile)),
         tile,
     };
+    tile.monsterMarker.monster.marker = tile.monsterMarker;
     state.world.activeMonsterMarkers.push(tile.monsterMarker );
     if (tile === state.selectedTile) {
-        state.selectedTile = null;
+        delete state.selectedTile;
     }
 }
 
 export function drawTileMonster(context: CanvasRenderingContext2D, state: GameState, tile: MapTile, scaleToUse: number) {
+    if (!tile.monsterMarker) {
+        return;
+    }
+    const monster = tile.monsterMarker.monster;
     const baseAvatarAttack = getAttackWithoutHealthBonuses(state);
     const baseAvatarDefense = getDefenseWithoutHealthBonuses(state);
-    const monster = tile.monsterMarker.monster;
     let monsterScale = .8;
     if (monster.maxHealth < state.avatar.maxHealth / 2
         && monster.attack < baseAvatarAttack

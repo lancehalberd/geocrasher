@@ -5,6 +5,6 @@ export const maxRadius = gridLength * 1.5;
 export const scale = 2.5e5;
 export const maxScale = 5e5;
 export const minScale = 1.5e5;
-export const frameLength = 20;
+export const frameLength = 30;
 
-export const maxTileLevel = 8;
+export const maxTileLevel = 7;

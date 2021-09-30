@@ -7,8 +7,11 @@ import { handleTreasureMapClick } from 'app/scenes/treasureMapScene';
 import { getState } from 'app/state';
 import { getActualScale } from 'app/world';
 
-let lastTouchEvent: TouchEvent = null, firstTouchEvent: TouchEvent = null;
-let lastMouseEvent: MouseEvent = null, firstMouseEvent: MouseEvent = null;
+const mouseMoveThreshold = 5;
+const touchMoveThreshold = 5;
+
+let lastTouchEvent: TouchEvent | null, firstTouchEvent: TouchEvent | null;
+let lastMouseEvent: MouseEvent | null, mouseDownEvent: MouseEvent | null;
 let touchMoved = false, mouseMoved = false;
 
 function handleTouchStart(event: TouchEvent) {
@@ -19,22 +22,29 @@ function handleTouchStart(event: TouchEvent) {
 }
 function handleTouchMove(event: TouchEvent) {
     event.preventDefault();
-    const state = getState();
-    touchMoved = true;
-    if (state.currentScene !== 'map') {
+    if (!lastTouchEvent || !firstTouchEvent) {
         return;
     }
-    if (!lastTouchEvent) {
+    if (Math.abs(firstTouchEvent.touches[0].pageX - event.touches[0].pageX) > touchMoveThreshold
+        || Math.abs(firstTouchEvent.touches[0].pageY - event.touches[0].pageY) > touchMoveThreshold
+    ) {
+        touchMoved = true;
+    }
+    // Dragging is only supported in the map scene currently.
+    const state = getState();
+    if (state.currentScene !== 'map') {
         return;
     }
     if (lastTouchEvent.touches.length === 1 && event.touches.length === 1) {
         const dx = event.touches[0].pageX - lastTouchEvent.touches[0].pageX;
         const dy = event.touches[0].pageY - lastTouchEvent.touches[0].pageY;
-        state.world.origin[0] -= dx / getActualScale(state);
-        state.world.origin[1] += dy / getActualScale(state);
+        if (state.world.origin) {
+            state.world.origin[0] -= dx / getActualScale(state);
+            state.world.origin[1] -= dy / getActualScale(state);
+        }
         lastTouchEvent = event;
         if (!state.battle.engagedMonster) {
-            state.selectedTile = null;
+            delete state.selectedTile;
         }
         return;
     }
@@ -57,11 +67,11 @@ function handleTouchEnd(event: TouchEvent) {
         alert(lastTouchEvent.touches.length);
         alert(firstTouchEvent.touches.length);
     }*/
-    if (!touchMoved && lastTouchEvent.touches.length === 1 && firstTouchEvent.touches.length === 1) {
+    if (!touchMoved && lastTouchEvent?.touches.length === 1 && firstTouchEvent?.touches.length === 1) {
         //if (isDebugMode) alert([lastTouchEvent.touches[0].pageX , lastTouchEvent.touches[0].pageY]);
         //if (isDebugMode) alert([$(this).offset().left , $(this).offset().top]);
-        var x = lastTouchEvent.touches[0].pageX;
-        var y = lastTouchEvent.touches[0].pageY;
+        const x = lastTouchEvent.touches[0].pageX;
+        const y = lastTouchEvent.touches[0].pageY;
         //if (isDebugMode) alert([x, y]);
         switch (state.currentScene) {
             case 'title':
@@ -87,26 +97,36 @@ function handleTouchEnd(event: TouchEvent) {
 }
 
 function handleMouseDown(event: MouseEvent) {
-    lastMouseEvent = event;
-    firstMouseEvent = event;
+    mouseDownEvent = lastMouseEvent = event;
     mouseMoved = false;
 }
 function handleMouseMove(event: MouseEvent) {
+    if (!lastMouseEvent || !mouseDownEvent) {
+        return;
+    }
+    if (Math.abs(event.pageX - mouseDownEvent.pageX) > mouseMoveThreshold
+        || Math.abs(event.pageY - mouseDownEvent.pageY) > mouseMoveThreshold
+    ) {
+        mouseMoved = true;
+    }
     const state = getState();
-    if (state.currentScene !== 'map') return;
-    if (!lastMouseEvent) return;
-    var dx = event.pageX - lastMouseEvent.pageX;
-    var dy = event.pageY - firstMouseEvent.pageY;
-    state.world.origin[0] -= dx / getActualScale(state);
-    state.world.origin[1] += dy / getActualScale(state);
+    // Dragging is only supported in the map scene currently.
+    if (state.currentScene !== 'map') {
+        return;
+    }
+    const dx = event.pageX - lastMouseEvent.pageX;
+    const dy = event.pageY - lastMouseEvent.pageY;
+    if (state.world.origin) {
+        state.world.origin[0] -= dx / getActualScale(state);
+        state.world.origin[1] -= dy / getActualScale(state);
+    }
     lastMouseEvent = event;
-    mouseMoved = true;
 }
 function handleMouseUp(event: MouseEvent) {
     const state = getState();
     if (!mouseMoved) {
-        var x = lastMouseEvent.pageX;
-        var y = lastMouseEvent.pageY;
+        const x = event.pageX;
+        const y = event.pageY;
         switch (state.currentScene) {
             case 'title':
                 handleTitleClick(state, x, y);
@@ -126,7 +146,6 @@ function handleMouseUp(event: MouseEvent) {
         }
     }
     lastMouseEvent = null;
-    firstMouseEvent = null;
     mouseMoved = false;
 }
 
@@ -140,6 +159,12 @@ export function registerMouseEvents() {
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+
+    document.addEventListener('wheel', (event: WheelEvent) => {
+        const state = getState();
+        const scrollScale = Math.pow(0.99, event.deltaY);
+        state.world.displayScale = Math.min(maxScale, Math.max(minScale, state.world.displayScale * scrollScale));
+    });
 }
 
 function getTouchEventDistance(touchEvent: TouchEvent) {

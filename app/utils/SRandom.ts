@@ -70,8 +70,7 @@ class SRandom {
             const keys = Object.keys(collection);
             return collection[this.element(keys)];
         }
-        console.log("Warning @ Random.element: "+ collection + " is neither Array or Object");
-        return null;
+        throw new Error("Warning @ Random.element: "+ collection + " is neither Array or Object");
     }
 
     /**
@@ -92,8 +91,7 @@ class SRandom {
             const array = collection as Array<any>;
             return array.splice(Math.floor(this.random() * (array.length - 1)), 1)[0];
         }
-        console.log("Warning @ Random.removeElement: "+ collection + " is neither Array or Object");
-        return null;
+        throw new Error("Warning @ Random.element: "+ collection + " is neither Array or Object");
     }
 
     /**
@@ -123,5 +121,4 @@ class SRandom {
     }
 };
 const instance = new SRandom(0.5);
-export var _SRandom = SRandom;
 export default instance;

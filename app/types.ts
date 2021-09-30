@@ -65,8 +65,12 @@ export interface ScalarLoot extends BaseLoot {
     type: 'coins' | 'health' | 'defense' | 'attack' | 'treasureChest' | 'treasureMap'
     value: number
 }
+export interface GemLoot extends BaseLoot {
+    type: 'gem'
+    color: GemColor
+}
 
-export type Loot = ScalarLoot | SimpleLoot;
+export type Loot = ScalarLoot | SimpleLoot | GemLoot;
 
 export interface LootMarker {
     loot: Loot
@@ -80,10 +84,6 @@ export interface LootMarker {
 }
 export type LootGenerator = (state: GameState, value: number) => Loot;
 
-
-export interface Gem extends Sprite {
-
-}
 
 interface DungeonStairs {
     type: 'upstairs' | 'downstairs'
@@ -102,25 +102,25 @@ export interface SavedMapTile {
     exhaustCounter?: number
     // How long the tile is exhausted for.
     exhaustedDuration?: number
-    level?: number
+    level: number
 }
 export interface MapTile extends SavedMapTile {
-    centerX?: number
-    centerY?: number
+    centerX: number
+    centerY: number
     scale?: number
-    target?: Rectangle
+    target: Rectangle
     dungeonMarker?: DungeonMarker
     monsterMarker?: MonsterMarker
     // The number of monsters guarding this tile in a dungeon.
     // Dungeon tiles cannot be explored when they are guarded.
-    guards?: number
+    guards: number
     // Array of 8 surrounding tiles keyed like:
     // [0, 1, 2]
     // [3, 4, 5]
     // [6, 7, 8]
     neighbors?: MapTile[]
     gemMarker?: LootMarker
-    lootMarkers?: LootMarker[]
+    lootMarkers: LootMarker[]
     powerupMarker?: LootMarker
     dungeonContents?: DungeonTileContent
     dungeonContentsRevealed?: boolean
@@ -135,6 +135,16 @@ export interface Dungeon {
     name: string
     numberOfFloors: number
     frame: Frame
+    allFloors: DungeonFloor[]
+    currentFloor: DungeonFloor
+    dungeonPosition: number[]
+}
+
+export interface DungeonFloor {
+    tiles: MapTile[][]
+}
+export interface DungeonState {
+    currentDungeon?: Dungeon
 }
 
 export interface DungeonMarker {
@@ -186,7 +196,7 @@ export interface WorldState {
     currentPosition?: number[]
     currentGridCoords?: number[]
     levelSums: number[]
-    tileGrid: MapTile[][]
+    allTiles: Record<string, MapTile>
     selectableTiles: Set<MapTile>
 }
 export interface SavedAvatarState {
@@ -219,7 +229,7 @@ interface DamageIndicator {
 }
 
 interface BattleState {
-    damageIndicators?: DamageIndicator[]
+    damageIndicators: DamageIndicator[]
     engagedMonster?: Monster
     monsterAttackTime?: number
     playerAttackTime?: number
@@ -246,10 +256,20 @@ interface TreasureMapTile {
 export interface SavedTreasureHuntState {
     hadMap: boolean
     mapCount: number
-    currentMap: SavedTreasureHuntMap
+    currentMap?: SavedTreasureHuntMap
 }
 export interface TreasureHuntState {
-    currentMap: TreasureHuntMap
+    currentMap?: TreasureHuntMap
+}
+
+export type GemColor = 'orange' | 'green' | 'blue';
+
+interface SavedGemsState {
+    recentLocations: {
+        x: number
+        y: number
+        time: number
+    }[]
 }
 
 export interface SavedGameState {
@@ -258,19 +278,17 @@ export interface SavedGameState {
     // This will be changed to 'geo' eventually.
     coins: number
     avatar: SavedAvatarState
+    gems: SavedGemsState
     treasureHunt: SavedTreasureHuntState
     world: SavedWorldState
 }
 
 export type Scene = 'dungeon' | 'loading' | 'map' | 'skills' | 'title' | 'treasureMap';
 
-export interface DungeonFloor {
-    tiles: MapTile[][]
-}
 
 export interface GameState {
-    saveSlots?: SavedGameState[]
-    saveSlotIndex?: number
+    saveSlots: SavedGameState[]
+    saveSlotIndex: number
     battle: BattleState
     display: {
         canvas: HTMLCanvasElement
@@ -278,24 +296,30 @@ export interface GameState {
         iconSize: number
         dungeonScale: number
     }
-    dungeon: {
-        currentDungeon?: Dungeon
-        dungeonPosition?: number[]
-        allFloors?: DungeonFloor[]
-        currentFloor?: DungeonFloor
-        dungeonLevelCap: number
-    }
+    dungeon: DungeonState
     lastGoalPoint?: number[]
     lastGoalTime?: number
     selectedTile?: MapTile
     currentScene: Scene
     sceneStack: Scene[]
     ignoreNextScenePop: boolean
-    saved?: SavedGameState
+    saved: SavedGameState
     avatar: AvatarState
     time: number
     treasureHunt: TreasureHuntState
     world: WorldState
+    gems: {
+        colorCounters: {
+            orange?: number,
+            green?: number,
+            blue?: number,
+        }
+        gemMarkers: LootMarker[]
+        // The next time to animate the gem collection effect.
+        // Initially it is delayed until all loot finishes collecting,
+        // then the ticks are at a constant rate.
+        nextTickTime?: number
+    }
     globalPosition: {
         direction: 'up' | 'down' | 'left' | 'right',
         lastPosition?: {
@@ -308,7 +332,7 @@ export interface GameState {
         isFixingGPS: boolean
         // The time we will wait until t
         endFixingGPSTime: number
-        endFastModeTime?: number
+        endFastModeTime: number
         // This flag is set when the user is moving too quickly for normal game play.
         // We want to discourage players from playing while riding a bicycle or driving a car.
         isFastMode: boolean
@@ -318,17 +342,17 @@ export interface GameState {
     loot: {
         activePowerupMarkers: Set<LootMarker>
         collectingLoot: LootMarker[]
-        coinsCollected?: number
-        hideStatsAt?: number
-        lootCollectedTime?: number
+        coinsCollected: number
+        hideStatsAt: number
+        lootCollectedTime: number
         lootInRadius: LootMarker[]
         lootInMonsterRadius: LootMarker[]
-        collectionBonus?: number
-        initialLevel?: number
-        initialSkillPoints?: number
-        initialMaxHealth?: number
-        initialAttack?: number
-        initialDefense?: number
+        collectionBonus: number
+        initialLevel: number
+        initialSkillPoints: number
+        initialMaxHealth: number
+        initialAttack: number
+        initialDefense: number
     }
 }
 

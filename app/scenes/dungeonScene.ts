@@ -1,4 +1,4 @@
-import { regenerateHealth } from 'app/avatar';
+import { drawAvatar, regenerateHealth } from 'app/avatar';
 import { drawDamageIndicators, getFightOrFleeButton, updateBattle } from 'app/battle';
 import { drawEmbossedText, drawFrame, drawOutlinedImage, fillRectangle, pad } from 'app/draw';
 import { gridLength } from 'app/gameConstants';
@@ -14,7 +14,7 @@ import {
 } from 'app/loot';
 import { drawTileMonster, makeBossMonster, makeMonster } from 'app/monsters';
 import { getMoneySkillBonus, getSkillButton } from 'app/scenes/skillsScene';
-import { drawCoinsIndicator, drawLifeIndicator, drawLootMarker, drawPerson } from 'app/scenes/mapScene';
+import { drawCoinsIndicator, drawLifeIndicator, drawLootMarker } from 'app/scenes/mapScene';
 import { hideTreasureMap } from 'app/scenes/treasureMapScene';
 import { popScene, pushScene } from 'app/state';
 import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
@@ -24,22 +24,27 @@ import { Dungeon, DungeonFloor, DungeonMarker, DungeonTileContent, Frame, GameSt
 
 
 export function getDungeonLevel(state: GameState, rawLevel: number): number {
-    return Math.min(state.dungeon.dungeonLevelCap, rawLevel);
+    return Math.min(state.saved.world.dungeonLevelCap, rawLevel);
 }
 export function getDungeonFrame(state: GameState, dungeonLevel: number): Frame {
-    const isQuestDungeon = dungeonLevel >= state.dungeon.dungeonLevelCap;
+    const isQuestDungeon = dungeonLevel >= state.saved.world.dungeonLevelCap;
     return isQuestDungeon ? portalSource : shellSource;
 }
 
 export function createDungeon(state: GameState, rawLevel: number): Dungeon {
     const level = getDungeonLevel(state, rawLevel);
-    const isQuestDungeon = level >= state.dungeon.dungeonLevelCap;
+    const isQuestDungeon = level >= state.saved.world.dungeonLevelCap;
     const dungeon: Dungeon = {
         level,
         isQuestDungeon,
         name: isQuestDungeon ? 'Portal' : 'Hollow Shell',
         numberOfFloors: Math.max(1, Math.floor(Math.sqrt(level) / 2)),
         frame: getDungeonFrame(state, level),
+        currentFloor: {
+            tiles: [],
+        },
+        dungeonPosition: [0, 0],
+        allFloors: []
     }
     if (isQuestDungeon) {
         dungeon.numberOfFloors++;
@@ -60,24 +65,27 @@ export function addDungeonToTile(state: GameState, tile: MapTile, rawLevel: numb
 export function startDungeon(state: GameState, dungeon: Dungeon) {
     state.dungeon.currentDungeon = dungeon;
     pushScene(state, 'dungeon');
-    state.dungeon.allFloors = [];
     startNewFloor(state);
 }
 export function exitDungeon(state: GameState) {
     state.world.origin = state.world.currentPosition;
-    state.battle.engagedMonster = null;
-    state.selectedTile = null;
-    state.dungeon.currentDungeon = null;
+    delete state.battle.engagedMonster;
+    delete state.selectedTile;
+    delete state.dungeon.currentDungeon;
     popScene(state);
     refreshActiveTiles(state);
 }
 function startNewFloor(state: GameState) {
-    state.battle.engagedMonster = null;
-    state.selectedTile = null;
+    delete state.battle.engagedMonster;
+    delete state.selectedTile;
     state.world.activeMonsterMarkers = [];
-    const { allFloors, currentDungeon } = state.dungeon;
+    const { currentDungeon } = state.dungeon;
+    if (!currentDungeon) {
+        return;
+    }
     const currentFloor: DungeonFloor = {tiles: []};
-    state.dungeon.currentFloor = currentFloor;
+    const { allFloors } = currentDungeon;
+    currentDungeon.currentFloor = currentFloor;
     allFloors.push(currentFloor);
     const tileThings: DungeonTileContent[] = [{type: 'upstairs', frame: exitSource}];
     const numberOfMonsters = Random.range(6, 8);
@@ -110,13 +118,14 @@ function startNewFloor(state: GameState) {
     while (tileThings.length < 25 && coinDrops.length) {
         tileThings.push({type: 'loot', loot: Random.removeElement(coinDrops), });
     }
-    let startingTile;
-    for (let y = 0; y <= 5; y++) {
-        currentFloor.tiles[y] = [];
-        for (let x = 0; x <= 5; x++) {
-            const realCoords = toRealCoords([x, y]);
+    let startingTile: MapTile | null = null;
+    for (let tileY = 0; tileY < 5; tileY++) {
+        currentFloor.tiles[tileY] = [];
+        for (let tileX = 0; tileX < 5; tileX++) {
+            const realCoords = toRealCoords([tileX, tileY]);
             const newTile: MapTile = {
-                x, y,
+                x: tileX, y: tileY,
+                level: 0,
                 centerX: realCoords[0] + gridLength / 2,
                 centerY: realCoords[1] + gridLength / 2,
                 dungeonContents: Random.removeElement(tileThings),
@@ -137,7 +146,7 @@ function startNewFloor(state: GameState) {
                     }];
                 }
                 if (dungeonContents.type === 'upstairs') {
-                    state.dungeon.dungeonPosition = [x, y];
+                    currentDungeon.dungeonPosition = [tileX, tileY];
                     startingTile = newTile;
                 }
                 if (dungeonContents.type === 'monster') {
@@ -147,12 +156,15 @@ function startNewFloor(state: GameState) {
                         monster: dungeonContents,
                         x, y,
                     };
+                    dungeonContents.marker = newTile.monsterMarker;
                 }
             }
-            currentFloor.tiles[y][x] = newTile;
+            currentFloor.tiles[tileY][tileX] = newTile;
         }
     }
-    revealTile(state, startingTile);
+    if (startingTile) {
+        revealTile(state, startingTile);
+    }
 }
 
 export function updateDungeon(state: GameState): void {
@@ -184,10 +196,13 @@ function revealTile(state: GameState, tile: MapTile): void {
 
 export function getAllNeighbors(state: GameState, tile: MapTile): MapTile[] {
     const neighbors: MapTile[] = [];
+    if (!state.dungeon.currentDungeon) {
+        throw new Error('Current dungeon is not defined');
+    }
     for (let y = -1; y <= 1; y++) {
         for (let x = -1; x <= 1; x++) {
             if (x === 0 && y === 0) continue;
-            const neighbor = state.dungeon.currentFloor.tiles[tile.y + y]?.[tile.x + x];
+            const neighbor = state.dungeon.currentDungeon.currentFloor.tiles[tile.y + y]?.[tile.x + x];
             if (neighbor) {
                 neighbors.push(neighbor);
             }
@@ -197,11 +212,14 @@ export function getAllNeighbors(state: GameState, tile: MapTile): MapTile[] {
 }
 function getSideNeighbors(state: GameState, tile: MapTile): MapTile[] {
     const sideNeighbors: MapTile[] = [];
+    if (!state.dungeon.currentDungeon) {
+        throw new Error('Current dungeon is not defined');
+    }
     for (let y = -1; y <= 1; y++) {
         for (let x = -1; x <= 1; x++) {
             if (x === 0 && y === 0 || (x !==0 && y !== 0)) continue;
-            const neighbor = state.dungeon.currentFloor.tiles[tile.y + y]?.[tile.x + x];
-            if (!neighbor) {
+            const neighbor = state.dungeon.currentDungeon.currentFloor.tiles[tile.y + y]?.[tile.x + x];
+            if (neighbor) {
                 sideNeighbors.push(neighbor);
             }
         }
@@ -209,7 +227,7 @@ function getSideNeighbors(state: GameState, tile: MapTile): MapTile[] {
     return sideNeighbors;
 }
 
-let lastCanvasSize: {w: number, h: number} = null;
+let lastCanvasSize: {w: number, h: number};
 function getDungeonHudButtons(): HudButton[] {
     return [
         getFightOrFleeButton(),
@@ -230,47 +248,58 @@ function updateAllDungeonButtonTargets(state: GameState): void {
         button.updateTarget(state);
     }
 }
-export function handleDungeonClick(state: GameState, x: number, y: number) {
+export function handleDungeonClick(state: GameState, x: number, y: number): boolean {
+    if (!state.dungeon.currentDungeon) {
+        return false;
+    }
     updateAllDungeonButtonTargets(state);
     if (handleHudButtonClick(state, x, y, getDungeonHudButtons())) {
         return true;
     }
     // Cannot explore tiles while fighting a monster
     if (state.battle.engagedMonster) {
-        return;
+        return false;
     }
     // Tile interactions
     const clickedCoords = unproject(state, [x, y]);
     const clickedGridCoords = toGridCoords(clickedCoords);
-    const tile = state.dungeon.currentFloor.tiles[clickedGridCoords[1]]?.[clickedGridCoords[0]];
+    const tile = state.dungeon.currentDungeon.currentFloor.tiles[clickedGridCoords[1]]?.[clickedGridCoords[0]];
     if (!tile) {
-        return;
+        return false;
     }
     const canRevealTile = tile.dungeonContentsRevealable && tile.guards <= 0;
     if (!tile.dungeonContentsRevealed && canRevealTile) {
-        state.selectedTile = null;
+        delete state.selectedTile;
         revealTile(state, tile);
-    }else if (tile === state.selectedTile) {
-        state.selectedTile = null;
+        return true;
+    } else if (tile === state.selectedTile) {
+        delete state.selectedTile;
+        return true;
     } else if (tile.dungeonContentsRevealed) {
         state.selectedTile = tile;
+        return true;
     }
+    return false;
 }
 
 export function drawDungeonScene(context: CanvasRenderingContext2D, state: GameState) {
+    if (!state.dungeon.currentDungeon) {
+        return;
+    }
     const { canvas } = state.display;
     const { selectedTile } = state;
     const scaleToUse = getActualScale(state);
-    context.fillStyle = context.createPattern(darkStoneImage, 'repeat');
+    context.fillStyle = context.createPattern(darkStoneImage, 'repeat') as CanvasPattern;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = 'bold ' + Math.floor(gridLength * scaleToUse) + 'px sans-serif';
     const border = 3;
-    const allRevealedTiles = []
-    for (let y = 0; y <= 5; y++) {
-        for (let x = 0; x <= 5; x++) {
-            const tile = state.dungeon.currentFloor.tiles[y][x];
+    const allRevealedTiles = [];
+    const currentFloor = state.dungeon.currentDungeon.currentFloor;
+    for (let y = 0; y < currentFloor.tiles.length; y++) {
+        for (let x = 0; x < currentFloor.tiles[y].length; x++) {
+            const tile = currentFloor.tiles[y][x];
             tile.target = getGridRectangle(state, [tile.x, tile.y]);
             if (!tile.dungeonContentsRevealed) {
                 const canReveal = tile.dungeonContentsRevealable && tile.guards <= 0;
@@ -293,14 +322,14 @@ export function drawDungeonScene(context: CanvasRenderingContext2D, state: GameS
             }
             allRevealedTiles.push(tile);
             context.save();
-            context.globalAlpha = 0.2;
-            // Top and left edges.
-            fillRectangle(context, '#aaa', tile.target);
-            // Bottom and right edges.
-            context.fillStyle = '#fff';
-            context.fillRect(tile.target.x, tile.target.y, tile.target.w - border, tile.target.h - border);
-            // Background.
-            fillRectangle(context, '#aaa', pad(tile.target, -border));
+                context.globalAlpha = 0.2;
+                // Top and left edges.
+                fillRectangle(context, '#aaa', tile.target);
+                // Bottom and right edges.
+                context.fillStyle = '#fff';
+                context.fillRect(tile.target.x, tile.target.y, tile.target.w - border, tile.target.h - border);
+                // Background.
+                fillRectangle(context, '#aaa', pad(tile.target, -border));
             context.restore();
             if (selectedTile === tile) {
                 context.beginPath();
@@ -332,16 +361,14 @@ export function drawDungeonScene(context: CanvasRenderingContext2D, state: GameS
             }
         }
     }
-    drawPerson(context, state);
+    drawAvatar(context, state);
     for (const tile of allRevealedTiles) {
         if (tile.lootMarkers) {
             for (const loot of tile.lootMarkers) {
                 drawLootMarker(context, state, loot, scaleToUse);
             }
         }
-        if (tile.monsterMarker) {
-            drawTileMonster(context, state, tile, scaleToUse);
-        }
+        drawTileMonster(context, state, tile, scaleToUse);
     }
     drawDamageIndicators(context, state);
     drawCoinsIndicator(context, state);
@@ -358,7 +385,9 @@ export function drawDungeonScene(context: CanvasRenderingContext2D, state: GameS
     drawMonsterStats(context, state);
     renderHudButtons(context, state, getDungeonHudButtons());
     // Force the stats box to display indefinitely if the tile the avatar is in is selected.
-    if (selectedTile?.x === state.dungeon.dungeonPosition[0] && selectedTile?.y === state.dungeon.dungeonPosition[1]) {
+    if (selectedTile?.x === state.dungeon.currentDungeon.dungeonPosition[0]
+        && selectedTile?.y === state.dungeon.currentDungeon.dungeonPosition[1]
+    ) {
         state.loot.hideStatsAt = state.time + 1500;
     }
 }
@@ -367,14 +396,21 @@ const enterExitButton: HudButton = {
     onClick(state: GameState): void {
         const { selectedTile } = state;
         if (state.currentScene === 'treasureMap') {
-            state.saved.treasureHunt.currentMap = null;
-            hideTreasureMap(state);
+            if (state.treasureHunt.currentMap?.dungeon) {
+                hideTreasureMap(state);
+                startDungeon(state, state.treasureHunt.currentMap.dungeon);
+                delete state.saved.treasureHunt.currentMap;
+            }
+            return;
+        }
+        if (!selectedTile) {
+            return;
         }
         // This is used on the world map for entering a dungeon.
         if (selectedTile.dungeonMarker) {
             startDungeon(state, selectedTile.dungeonMarker.dungeon);
             // The dungeon marker is consumed after entering the dungeon.
-            selectedTile.dungeonMarker = null;
+            delete selectedTile.dungeonMarker;
             return;
         }
         if (selectedTile.dungeonContents?.type === 'downstairs') {
@@ -391,7 +427,7 @@ const enterExitButton: HudButton = {
     isVisible(state: GameState) {
         const { selectedTile } = state;
         if (state.currentScene === 'treasureMap') {
-            return state.saved.treasureHunt.currentMap?.dungeonLevel > 0;
+            return !!state.treasureHunt.currentMap?.dungeon;
         }
         if (!selectedTile) {
             return false;
@@ -403,7 +439,11 @@ const enterExitButton: HudButton = {
     render(context: CanvasRenderingContext2D, state: GameState): void {
         const { iconSize } = state.display;
         const { selectedTile } = state;
-        const isEntrance = (selectedTile.dungeonMarker || selectedTile.dungeonContents?.type === 'downstairs');
+        const isEntrance = (
+            state.currentScene === 'treasureMap'
+            || selectedTile?.dungeonMarker
+            || selectedTile?.dungeonContents?.type === 'downstairs'
+        );
         const text = isEntrance ? 'Enter' : 'Exit';
 
         context.textBaseline = 'middle';
@@ -437,25 +477,25 @@ export function drawEnterExitButton(context: CanvasRenderingContext2D, state: Ga
 export function drawDungeonStats(context: CanvasRenderingContext2D, state: GameState, dungeon: Dungeon) {
     const { canvas, iconSize } = state.display;
     const { selectedTile } = state;
-    dungeon = dungeon || selectedTile?.dungeonMarker;
     if (!dungeon) {
         return;
     }
-    let rectangle = selectedTile.target;
+    let rectangle = selectedTile?.target || {
+        x: (canvas.width - iconSize) / 2, y: 2 * iconSize, w: iconSize, h: iconSize,
+    };
     const localIconSize = Math.floor(iconSize / 2);
     const text = 'Lv ' + dungeon.level + ' ' + dungeon.name;
     const fontSize = Math.floor(3 * localIconSize / 4);
     context.font = 'bold ' + fontSize + 'px sans-serif';
     const w = context.measureText(text).width + localIconSize / 2;
     const h = localIconSize * 1.5;
-    let x = Math.floor(rectangle.y + (rectangle.w - w) / 2);
+    let x = Math.floor(rectangle.x + (rectangle.w - w) / 2);
 
     if (x < 10) x = 10;
     if (x > canvas.width - w - 10) x = canvas.width - w - 10;
     let y = rectangle.y - h - 5;
     if (y < 10) y = 10;
     const padding = Math.floor(localIconSize / 4);
-    rectangle = {x, y, w: w, h: h};
     context.fillStyle = '#BBB';
     context.fillRect(x, y, w, h);
     context.fillStyle = '#FFF';

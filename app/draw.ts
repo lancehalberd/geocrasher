@@ -20,7 +20,7 @@ interface CreateAnimationOptions {
 
 export function frame(
     x: number, y: number, w: number, h: number,
-    content: Rectangle = null
+    content?: Rectangle
 ): FrameRectangle {
     return {x, y, w, h, content};
 }
@@ -37,7 +37,7 @@ export function framesAnimation(frames: Frame[], duration = 8, props: ExtraAnima
 export function createAnimation(
     source: string | HTMLImageElement | HTMLCanvasElement,
     dimensions: FrameDimensions,
-    {x = 0, y = 0, rows = 1, cols = 1, xSpace = 0, top = 0, left = 0, duration = 8, frameMap = null}: CreateAnimationOptions = {},
+    {x = 0, y = 0, rows = 1, cols = 1, xSpace = 0, top = 0, left = 0, duration = 8, frameMap}: CreateAnimationOptions = {},
     props: ExtraAnimationProperties = {},
 ): FrameAnimation {
     let frames: Frame[] = [];
@@ -154,19 +154,19 @@ const [globalTintCanvas, globalTintContext] = createCanvasAndContext(150, 300);
 globalTintContext.imageSmoothingEnabled = false;
 export function drawTintedImage(context: CanvasRenderingContext2D, {color, amount}: Tint, frame: Frame, target: Rectangle): void {
     context.save();
-    // First make a solid color in the shape of the image to tint.
-    globalTintContext.save();
-    globalTintContext.fillStyle = color;
-    globalTintContext.clearRect(0, 0, frame.w, frame.h);
-    drawFrame(globalTintContext, frame, {...frame, x: 0, y: 0});
-    globalTintContext.globalCompositeOperation = "source-in";
-    globalTintContext.fillRect(0, 0, frame.w, frame.h);
-    globalTintContext.restore();
-    // Next draw the untinted image to the target.
-    drawFrame(context, frame, target);
-    // Finally draw the tint color on y of the target with the desired opacity.
-    context.globalAlpha *= amount; // This needs to be multiplicative since we might be drawing a partially transparent image already.
-    drawFrame(context, {image: globalTintCanvas, x: 0, y: 0, w: frame.w, h: frame.h}, target);
+        // First make a solid color in the shape of the image to tint.
+        globalTintContext.save();
+        globalTintContext.fillStyle = color;
+        globalTintContext.clearRect(0, 0, frame.w, frame.h);
+        drawFrame(globalTintContext, frame, {...frame, x: 0, y: 0});
+        globalTintContext.globalCompositeOperation = "source-in";
+        globalTintContext.fillRect(0, 0, frame.w, frame.h);
+        globalTintContext.restore();
+        // Next draw the untinted image to the target.
+        drawFrame(context, frame, target);
+        // Finally draw the tint color on y of the target with the desired opacity.
+        context.globalAlpha *= amount; // This needs to be multiplicative since we might be drawing a partially transparent image already.
+        drawFrame(context, {image: globalTintCanvas, x: 0, y: 0, w: frame.w, h: frame.h}, target);
     context.restore();
 }
 const [globalCompositeCanvas, globalCompositeContext] = createCanvasAndContext(150, 150);

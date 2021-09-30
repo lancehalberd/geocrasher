@@ -1,5 +1,5 @@
 import { mainCanvas, mainContext } from 'app/dom';
-import { minRadius, minScale } from 'app/gameConstants';
+import { maxScale, minRadius } from 'app/gameConstants';
 import { initializeSaveSlots } from 'app/saveGame';
 
 import { GameState, SavedGameState, Scene } from 'app/types';
@@ -8,11 +8,6 @@ export function getDefaultSavedState(): SavedGameState {
     return {
         coins: 10,
         radius: minRadius,
-        treasureHunt: {
-            hadMap: false,
-            mapCount: 0,
-            currentMap: null,
-        },
         avatar: {
             level: 1,
             experience: 0,
@@ -22,30 +17,41 @@ export function getDefaultSavedState(): SavedGameState {
             defenseBonus: 6,
             skillLevels: {},
         },
+        gems: {
+            recentLocations: []
+        },
+        treasureHunt: {
+            hadMap: false,
+            mapCount: 0,
+        },
         world: {
             dungeonLevelCap: 2,
             gemData: [{history: []}, {history: []}, {history: []}],
             tiles: [],
-        }
-    }
+        },
+    };
 }
 
 export function getDefaultState(): GameState {
     return {
+        currentScene: 'loading',
+        ignoreNextScenePop: false,
+        sceneStack: [],
+        // Start a few seconds into the future so that
+        // other time stamps can be initialized to 0 without
+        // having any effect.
+        time: 10000,
+        saveSlotIndex: -1,
+        saveSlots: [],
+        saved: getDefaultSavedState(),
         display: {
             canvas: mainCanvas,
             dungeonScale: 5, // ??? What value.
             context: mainContext,
             iconSize: 16,
         },
-        dungeon: {
-            dungeonLevelCap: 2
-        },
-        levelSums: [],
-        currentScene: 'loading',
-        ignoreNextScenePop: false,
-        sceneStack: [],
         avatar: {
+            animationTime: 0,
             maxHealth: 0,
             attack: 0,
             defense: 0,
@@ -57,16 +63,48 @@ export function getDefaultState(): GameState {
             },
             usedSkillPoints: 0,
         },
-        time: 0,
-        loot: {
-            collectingLoot: []
+        battle: {
+            damageIndicators: [],
         },
-        world: {
-            displayScale: minScale,
-            tileGrid: [],
+        dungeon: {},
+        gems: {
+            colorCounters: {},
+            gemMarkers: [],
         },
         globalPosition: {
             restartWatchTime: 0,
+            direction: 'up',
+            isFixingGPS: false,
+            endFastModeTime: 0,
+            endFixingGPSTime: 0,
+            isFastMode: false,
+            isStartingFastMode: false,
+        },
+        loot: {
+            activePowerupMarkers: new Set(),
+            collectingLoot: [],
+            collectionBonus: 0,
+            coinsCollected: 0,
+            lootCollectedTime: 0,
+            lootInRadius: [],
+            lootInMonsterRadius: [],
+            hideStatsAt: 0,
+            initialLevel: 0,
+            initialSkillPoints: 0,
+            initialMaxHealth: 0,
+            initialAttack: 0,
+            initialDefense: 0,
+        },
+        treasureHunt: {
+
+        },
+        world: {
+            activeTiles: [],
+            displayScale: maxScale,
+            allTiles: {},
+            activeMonsterMarkers: [],
+            levelSums: [],
+            selectableTiles: new Set(),
         }
     };
 }
@@ -79,6 +117,8 @@ export function getState() {
 
 export function initializeState() {
     state = getDefaultState();
+    // @ts-expect-error
+    window.state = state;
     initializeSaveSlots(state);
 }
 
@@ -88,5 +128,8 @@ export function pushScene(state: GameState, newScene: Scene) {
     state.currentScene = newScene;
 }
 export function popScene(state: GameState) {
-    state.currentScene = state.sceneStack.pop();
+    const newScene = state.sceneStack.pop();
+    if (newScene) {
+        state.currentScene = newScene;
+    }
 }

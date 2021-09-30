@@ -8,7 +8,7 @@ import { saveGame } from 'app/saveGame';
 import { getState } from 'app/state';
 import { getDistance } from 'app/utils/index';
 
-import { GameState, MapTile, Rectangle } from 'app/types';
+import { GameState, MapTile, Rectangle, SavedTreasureHuntMap } from 'app/types';
 
 export function getIconSize() {
     const { canvas } = getState().display;
@@ -18,10 +18,10 @@ export function getIconSize() {
 export function getActualScale(state: GameState): number {
     const { canvas, iconSize } = state.display;
     if (state.currentScene === 'treasureMap') {
-        const { currentMap } = state.saved.treasureHunt;
+        const savedMap = state.saved.treasureHunt.currentMap as SavedTreasureHuntMap;
         return Math.min(
-            (canvas.height - 2 * iconSize) / (currentMap.size * gridLength),
-            (canvas.width - iconSize) / (currentMap.size * gridLength)
+            (canvas.height - 2 * iconSize) / (savedMap.size * gridLength),
+            (canvas.width - iconSize) / (savedMap.size * gridLength)
         );
     }
     if (state.dungeon.currentDungeon) {
@@ -33,16 +33,18 @@ export function getActualScale(state: GameState): number {
 
 export function getOrigin(state: GameState): number[] {
     if (state.currentScene === 'treasureMap') {
-        const { currentMap } = state.saved.treasureHunt;
-        return [gridLength * (currentMap.size) / 2,
-                gridLength * (currentMap.size - 1) / 2];
+        const savedMap = state.saved.treasureHunt.currentMap as SavedTreasureHuntMap;
+        return [gridLength * (savedMap.size) / 2, gridLength * (savedMap.size - 1) / 2];
     }
-    return state.dungeon.currentDungeon ? [gridLength / 2, gridLength / 2] : state.world.origin;
+    return state.dungeon.currentDungeon
+        // The origin is always the middle of the center square.
+        ? [gridLength * 2.5, gridLength * 2.5]
+        : (state.world.origin ?? [0, 0]);
 }
 
 export function getGridRectangle(state: GameState, coords: number[]): Rectangle {
-    const topLeft = project(state, [coords[0] * gridLength, (coords[1] + 1) * gridLength]);
-    const bottomRight = project(state, [(coords[0] + 1) * gridLength, (coords[1]) * gridLength]);
+    const topLeft = project(state, [coords[0] * gridLength, coords[1] * gridLength]);
+    const bottomRight = project(state, [(coords[0] + 1) * gridLength, (coords[1] + 1) * gridLength]);
     return {
         x: Math.ceil(topLeft[0]),
         y: Math.ceil(topLeft[1]),
@@ -55,7 +57,7 @@ export function project(state: GameState, coords: number[]): number[] {
     const origin = getOrigin(state);
     const scaleToUse = getActualScale(state);
     const x = Math.round((coords[0] - origin[0]) * scaleToUse) + Math.round(canvas.width / 2);
-    const y = Math.round(-(coords[1] - origin[1]) * scaleToUse) + Math.round(canvas.height / 2);
+    const y = Math.round((coords[1] - origin[1]) * scaleToUse) + Math.round(canvas.height / 2);
     return [x, y];
 }
 export function unproject(state: GameState, screenCoords: number[]): number[] {
@@ -63,7 +65,7 @@ export function unproject(state: GameState, screenCoords: number[]): number[] {
     const origin = getOrigin(state);
     const scaleToUse = getActualScale(state);
     const longitude = (screenCoords[0] - canvas.width / 2) / scaleToUse + origin[0];
-    const lat = -(screenCoords[1] - canvas.height / 2) / scaleToUse + origin[1];
+    const lat = (screenCoords[1] - canvas.height / 2) / scaleToUse + origin[1];
     return [longitude, lat];
 }
 export function toGridCoords(realCoords: number[]): number[] {
@@ -74,10 +76,12 @@ export function toRealCoords(gridCoords: number[]): number[] {
 }
 
 export function isTileExplored(state: GameState, gridCoords: number[]) {
-    return !!state.world.tileGrid[gridCoords[1]]?.[gridCoords[0]];
+    const key = `${gridCoords[0]}x${gridCoords[1]}`;
+    return !!state.world.allTiles[key];
 }
 export function getTileData(state: GameState, gridCoords: number[], returnDefault: boolean = false): MapTile {
-    const mapTile = state.world.tileGrid[gridCoords[1]]?.[gridCoords[0]];
+    const key = `${gridCoords[0]}x${gridCoords[1]}`;
+    const mapTile = state.world.allTiles[key];
     return mapTile ?? (returnDefault ? {level: 0, x: gridCoords[0], y: gridCoords[1]} : null);
 }
 
@@ -95,7 +99,7 @@ export function setCurrentPosition(state: GameState, realCoords: number[]) {
     if (!state.lastGoalPoint || state.globalPosition.isFixingGPS) {
         state.lastGoalPoint = state.world.currentPosition;
         state.lastGoalTime = state.time;
-    } else if (getDistance(state.world.currentPosition, state.lastGoalPoint) > gridLength / 2) {
+    } else if (state.lastGoalTime && getDistance(state.world.currentPosition, state.lastGoalPoint) > gridLength / 2) {
         state.lastGoalPoint = state.world.currentPosition;
         updateFastMode(state, state.time - state.lastGoalTime);
         state.lastGoalTime = state.time;
@@ -132,6 +136,9 @@ export function setCurrentPosition(state: GameState, realCoords: number[]) {
     refreshActiveTiles(state);
 }
 function exploreSurroundingTiles(state: GameState) {
+    if (!state.world.currentGridCoords) {
+        return;
+    }
     let newTileFound = false;
     for (let dy = -1; dy <=1; dy++) {
         for (let dx = -1; dx <=1; dx++) {
@@ -151,18 +158,22 @@ function exploreSurroundingTiles(state: GameState) {
 }
 
 export function refreshActiveTiles(state: GameState) {
+    if (!state.world.currentGridCoords) {
+        return;
+    }
     if (state.dungeon.currentDungeon) {
         return;
     }
     const oldActiveTiles = state.world.activeTiles;
-    const { currentGridCoords, tileGrid } = state.world;
+    const { currentGridCoords, allTiles } = state.world;
     state.world.activeTiles = [];
     state.world.selectableTiles = new Set();
     state.world.activeMonsterMarkers = [];
     state.loot.activePowerupMarkers = new Set();
     for (let y = currentGridCoords[1] - 4; y <= currentGridCoords[1] + 4; y++) {
         for (let x = currentGridCoords[0] - 4; x <= currentGridCoords[0] + 4; x++) {
-            let mapTile = tileGrid[y]?.[x];
+            const key = `${x}x${y}`;
+            let mapTile = allTiles[key];
             if (!mapTile) {
                 mapTile = getTileData(state, [x, y], true);
                 mapTile.level = -1;
@@ -188,8 +199,8 @@ export function refreshActiveTiles(state: GameState) {
             }
         }
     }
-    if (!state.world.selectableTiles.has(state.selectedTile)) {
-        state.selectedTile = null;
+    if (state.selectedTile && !state.world.selectableTiles.has(state.selectedTile)) {
+        delete state.selectedTile;
     }
     for (const mapTile of oldActiveTiles) {
         if (state.world.activeTiles.indexOf(mapTile) < 0 ) {
@@ -202,29 +213,33 @@ export function initializeWorldMapTile(state: GameState, mapTile: MapTile): MapT
     const realCoords = toRealCoords([mapTile.x, mapTile.y]);
     mapTile.centerX = realCoords[0] + gridLength / 2;
     mapTile.centerY = realCoords[1] + gridLength / 2;
+    delete mapTile.canvas;
     if (!mapTile.lootMarkers) {
         mapTile.lootMarkers = [];
     }
-    if (!mapTile.neighbors) {
-        mapTile.neighbors = [];
-        for (let y = 0; y <= 2; y++) {
-            for (let x = 0; x <= 2; x++) {
-                const i = 3 * y + x;
-                if (x === 0 && y === 0) {
-                    mapTile.neighbors[i] = mapTile;
-                    continue;
-                }
-                const otherTile = state.world.tileGrid[y]?.[x];
-                if (!otherTile) continue;
-                mapTile.neighbors[i] = otherTile;
-                otherTile.neighbors[9 - i] = mapTile;
+    mapTile.neighbors = [];
+    for (let y = -1; y <= 1; y++) {
+        for (let x = -1; x <= 1; x++) {
+            const i = 3 * (y + 1) + (x + 1);
+            if (x === 0 && y === 0) {
+                mapTile.neighbors[i] = mapTile;
+                continue;
+            }
+            const otherTile = state.world.allTiles[`${mapTile.x + x}x${mapTile.y + y}`];
+            if (!otherTile) continue;
+            // The other tile will need to be deleted if it is not explored yet.
+            if (otherTile.level < 0) {
+                delete otherTile.canvas;
+            }
+            mapTile.neighbors[i] = otherTile;
+            if (otherTile.neighbors) {
+                otherTile.neighbors[8 - i] = mapTile;
             }
         }
     }
     for (let i = 0; i <= mapTile.level; i++) {
         state.world.levelSums[i] = (state.world.levelSums[i] ?? 0) + (1 + mapTile.level - i);
     }
-    state.world.tileGrid[mapTile.y] = state.world.tileGrid[mapTile.y] ?? [];
-    state.world.tileGrid[mapTile.y][mapTile.x] = mapTile;
+    state.world.allTiles[`${mapTile.x}x${mapTile.y}`] = mapTile;
     return mapTile;
 }

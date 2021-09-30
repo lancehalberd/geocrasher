@@ -18,7 +18,7 @@ export function advanceGameState(state: GameState) {
     }
     for (const tile of state.world.activeTiles) {
         if (tile.exhaustedDuration) {
-            tile.exhaustCounter++;
+            tile.exhaustCounter = (tile.exhaustCounter || 0) + 1;
             if (tile.exhaustCounter >= tile.exhaustedDuration) {
                 tile.exhaustedDuration = 0;
                 checkToGenerateMonster(state, tile, .5);

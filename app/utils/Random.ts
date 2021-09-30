@@ -15,35 +15,33 @@ const Random = {
      * @param {Collection} collection  The collection of elements to return random element from
      */
     element<T>(collection: Collection<T>): T {
+        if (Array.isArray(collection)) {
+            const array = collection as Array<any>;
+            return array[Math.floor(Math.random() * array.length)];
+        }
         if (collection.constructor == Object) {
             const keys = Object.keys(collection);
             return collection[this.element(keys)];
         }
-        if (collection.constructor == Array) {
-            const array = collection as Array<any>;
-            return array[Math.floor(Math.random() * array.length)];
-        }
-        console.log("Warning @ Random.element: "+ collection + " is neither Array or Object");
-        return null;
+        throw new Error("Warning @ Random.element: "+ collection + " is neither Array or Object");
     },
 
     /**
      * @param {Array} array  The array of elements to return random element from
      */
     removeElement<T>(collection: Collection<T>): T {
+        if (Array.isArray(collection)) {
+            const array = collection as Array<any>;
+            return array.splice(Math.floor(Math.random() * (array.length - 1)), 1)[0];
+        }
         if (collection.constructor == Object) {
             const keys = Object.keys(collection);
             const key = this.element(keys);
             const value = collection[key];
-            collection[key] = null;
+            delete collection[key];
             return value;
         }
-        if (collection.constructor == Array) {
-            const array = collection as Array<any>;
-            return array.splice(Math.floor(Math.random() * (array.length - 1)), 1)[0];
-        }
-        console.log("Warning @ Random.removeElement: "+ collection + " is neither Array or Object");
-        return null;
+        throw new Error("Warning @ Random.element: "+ collection + " is neither Array or Object");
     },
 
     /**

@@ -1,13 +1,13 @@
 
-export function query(className: string): HTMLElement {
+export function query(className: string): HTMLElement | null {
     return document.querySelector(className);
 }
 export function queryAll(className: string): NodeListOf<HTMLElement> {
     return document.querySelectorAll(className);
 }
 
-export const mainCanvas:HTMLCanvasElement = query('.js-mainCanvas') as HTMLCanvasElement;
-export const mainContext = mainCanvas.getContext('2d');
+export const mainCanvas:HTMLCanvasElement = query('canvas') as HTMLCanvasElement;
+export const mainContext = mainCanvas.getContext('2d') as CanvasRenderingContext2D;
 mainContext.imageSmoothingEnabled = false;
 
 export function createCanvas(width: number, height: number, classes = ''): HTMLCanvasElement {
@@ -19,11 +19,11 @@ export function createCanvas(width: number, height: number, classes = ''): HTMLC
 }
 export function createCanvasAndContext(width: number, height: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
     const canvas = createCanvas(width, height);
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext('2d') as CanvasRenderingContext2D;
     context.imageSmoothingEnabled = false;
     return [canvas, context];
 }
-export var debugCanvas = (canvas: HTMLCanvasElement) => {
+export function debugCanvas(canvas: HTMLCanvasElement) {
     document.body.append(canvas);
     canvas.style.position = 'absolute';
     canvas.style.top = '0';
@@ -51,7 +51,4 @@ export function toggleElements(elements: NodeListOf<HTMLElement>, show: boolean)
 }
 export function toggleElement(element: HTMLElement, show: boolean) {
     element.style.display = show ? '' : 'none';
-}
-export function getElementIndex(element: HTMLElement) {
-    return [...element.parentElement.children].indexOf(element);
 }

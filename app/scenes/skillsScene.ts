@@ -13,13 +13,13 @@ import { percentText } from 'app/utils/index';
 
 import { GameState, HudButton, Skill, SkillButton } from 'app/types';
 
-export const skills: Skill[] = [
+export const skills = <const>[
     // Health Skills
     {
         key: 'regeneration',
         affinity: 'health',
-        name: 'Regeneration', description: '% of max health regenerated per tick.',
-        value: 0.01, type: '+',
+        name: 'Regeneration', description: '% increased health regeneration.',
+        value: 0.2, type: '*',
         x: 0, y: -1,
         source: clockSource, secondSource: heartSource,
     },
@@ -82,7 +82,7 @@ export const skills: Skill[] = [
         requires: 'attackPower',
         affinity: 'attack',
         name: 'Vampiric Strike', description: '% of damage is gained as health.',
-        value: 4, type: '+',
+        value: 0.02, type: '+',
         x: -2, y: 1,
         source: swordSource, secondSource: heartSource,
     },
@@ -162,8 +162,12 @@ export const skills: Skill[] = [
 type SkillKey = typeof skills[number]['key'];
 
 const skillsByKey = {} as {[key in SkillKey]: Skill};
-export function getSkill(skillKey: SkillKey): Skill {
-    return skillsByKey[skillKey];
+for (const skill of skills) {
+    skillsByKey[skill.key] = skill;
+}
+
+export function getSkillLevel(state: GameState, key: string): number {
+    return state.saved.avatar.skillLevels[key] ?? 0;
 }
 
 export function getTotalSkillPoints(state: GameState): number {
@@ -174,26 +178,23 @@ function getAvailableSkillPoints(state: GameState) {
 }
 function canLearnSkill(state: GameState, skill: Skill): boolean {
     if (!skill.requires) return true;
-    const { skillLevels } = state.saved.avatar;
     // If this skill requires another skill, we can only learn it if its current level
     // is less than the level of the skill it requres.
-    return skillLevels[skill.key] < skillLevels[skill.requires];
+    return getSkillLevel(state, skill.key) < getSkillLevel(state, skill.requires);
 }
 function canAffordSkill(state: GameState, skill: Skill): boolean {
     return getAvailableSkillPoints(state) >= getSkillCost(state, skill);
 }
 function getSkillCost(state: GameState, skill: Skill): number {
-    const { skillLevels } = state.saved.avatar;
-    return skillLevels[skill.key] + 1;
+    return getSkillLevel(state, skill.key) + 1;
 }
 
 export function getSkillValue(state: GameState, skillKey: SkillKey, level?: number): number {
     const skill = skillsByKey[skillKey];
-    const { skillLevels } = state.saved.avatar;
-    level = level ?? skillLevels[skill.key];
+    level = level ?? getSkillLevel(state, skillKey);
     if (level === 0) return 0;
     if (skill.type === '+') return level * skill.value;
-    if (skill.type === '*') return Math.pow(1 + skill.value, level);
+    if (skill.type === '*') return Math.pow(1 + skill.value, level) - 1;
     if (skill.type === '/') return 1 - Math.pow(1 - skill.value, level);
     throw new Error('Unknown skill type: ' + skill.type);
 }
@@ -239,6 +240,7 @@ function getSkillDisplayValues(state: GameState) {
     };
 }
 
+
 export function drawSkillsScene(context: CanvasRenderingContext2D, state: GameState) {
     const {
         canvas,
@@ -248,15 +250,11 @@ export function drawSkillsScene(context: CanvasRenderingContext2D, state: GameSt
         skillSpacing,
     } = getSkillDisplayValues(state);
     // Draw background
-    context.fillStyle = context.createPattern(darkStoneImage, 'repeat');
+    context.fillStyle = context.createPattern(darkStoneImage, 'repeat') as CanvasPattern;
     context.fillRect(0, 0, canvas.width, canvas.height);
     // Updated + Draw hud buttons
     updateAllSkillButtonTargets(state);
-    renderHudButtons(context, state, [
-        skillButton,
-        upgradeSkillButton,
-        ...skillButtons,
-    ]);
+    renderHudButtons(context, state, getSkillHudButtons(state));
     const { selectedSkill } = state.avatar;
     const selectedSkillType = selectedSkill?.affinity;
     const selectedSkillCost = selectedSkill ? getSkillCost(state, selectedSkill) : 0;
@@ -275,7 +273,7 @@ export function drawSkillsScene(context: CanvasRenderingContext2D, state: GameSt
         bonus += selectedSkillCost / 100;
         color = '#0F0';
     }
-    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus), color, 'white', centerX, centerY + skillSpacing * 3);
+    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus, 0), color, 'white', centerX, centerY + skillSpacing * 3);
 
     bonus = getHealthSkillBonus(state) - 1;
     color = 'green';
@@ -287,7 +285,7 @@ export function drawSkillsScene(context: CanvasRenderingContext2D, state: GameSt
         color = '#0F0';
     }
     drawFrame(context, heartSource, {x: centerX - skillSpacing, y: centerY - skillSpacing * 3 - skillSize / 2, w: skillSize, h: skillSize});
-    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus), color, 'white', centerX, centerY - skillSpacing * 3);
+    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus, 0), color, 'white', centerX, centerY - skillSpacing * 3);
 
     bonus = getAttackSkillBonus(state) - 1;
     color = 'green';
@@ -301,7 +299,7 @@ export function drawSkillsScene(context: CanvasRenderingContext2D, state: GameSt
     drawFrame(context, swordSource, {x: centerX - 3 * skillSpacing - skillSize / 2, y: centerY - skillSpacing, w: skillSize, h: skillSize});
     context.textBaseline = 'top';
     context.textAlign = 'right';
-    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus), color, 'white', centerX - skillSpacing * 3 + skillSize / 2, centerY);
+    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus, 0), color, 'white', centerX - skillSpacing * 3 + skillSize / 2, centerY);
 
     bonus = getDefenseSkillBonus(state) - 1;
     color = 'green';
@@ -314,18 +312,20 @@ export function drawSkillsScene(context: CanvasRenderingContext2D, state: GameSt
     }
     drawFrame(context, shieldSource, {x: centerX + 3 * skillSpacing - skillSize / 2, y: centerY - skillSpacing, w: skillSize, h: skillSize});
     context.textAlign = 'left';
-    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus), color, 'white', centerX + skillSpacing * 3 - skillSize / 2, centerY);
+    drawEmbossedText(context, (bonus >= 0 ? '+' : '') + percentText(bonus, 0), color, 'white', centerX + skillSpacing * 3 - skillSize / 2, centerY);
 
+    color = netPoints >= 0 ? 'green' : 'red';
     context.textBaseline = 'middle';
     context.textAlign = 'center';
     context.font = 'bold ' + Math.floor(skillSize / 2) + 'px sans-serif';
     drawOutlinedText(context, netPoints >= 0 ? `${netPoints}` : '- -', color, 'white', 1, centerX, centerY);
 
     if (selectedSkill) {
-        const skillLevel = state.saved.avatar.skillLevels[selectedSkill.key] ?? 0;
+        const skillKey = selectedSkill.key as SkillKey;
+        const skillLevel = getSkillLevel(state, skillKey);
         const fontSize = Math.floor(skillSize / 3)
-        const currentValue = getSkillValue(state, selectedSkill.key, skillLevel);
-        const newValue = getSkillValue(state, selectedSkill.key, skillLevel + 1);
+        const currentValue = getSkillValue(state, skillKey, skillLevel);
+        const newValue = getSkillValue(state, skillKey, skillLevel + 1);
         let parts, leftDescription, formattedValue, formattedNewValue, rightDescription;
         if (selectedSkill.description.indexOf('%') >= 0) {
             parts = selectedSkill.description.split('%');
@@ -345,7 +345,7 @@ export function drawSkillsScene(context: CanvasRenderingContext2D, state: GameSt
         }
         rightDescription = rightDescription.substring(1);
         context.font = fontSize + 'px sans-serif';
-        const width = Math.max(context.measureText(leftDescription).width, context.measureText(rightDescription).w) + 10;
+        const width = Math.max(context.measureText(leftDescription).width, context.measureText(rightDescription).width) + 10;
         let height = Math.ceil(fontSize * 3.2 + 25);
         if (leftDescription) {
             height += fontSize + 5;
@@ -412,7 +412,7 @@ const skillButton: HudButton = {
         if (state.currentScene === 'skills') {
             // return to the previous scene.
             triggerBackAction();
-            state.avatar.selectedSkill = null;
+            delete state.avatar.selectedSkill;
         } else {
             // store the previous scene to return to it when we close the skill scene.
             pushScene(state, 'skills');
@@ -462,14 +462,18 @@ export function getSkillButton(): HudButton {
 const upgradeSkillButton: HudButton = {
     onClick(state: GameState): void {
         const { selectedSkill } = state.avatar;
+        if (!selectedSkill) {
+            return;
+        }
         state.avatar.usedSkillPoints += getSkillCost(state, selectedSkill);
         state.avatar.affinityBonuses[selectedSkill.affinity] += getSkillCost(state, selectedSkill);
-        state.saved.avatar.skillLevels[selectedSkill.key] = (state.saved.avatar.skillLevels[selectedSkill.key] ?? 0) + 1;
-        state.avatar.selectedSkill = null;
+        state.saved.avatar.skillLevels[selectedSkill.key] = getSkillLevel(state, selectedSkill.key) + 1;
+        delete state.avatar.selectedSkill;
         updatePlayerStats(state);
     },
     isDisabled(state: GameState): boolean {
-         return !canLearnSkill(state, state.avatar.selectedSkill)
+         return !state.avatar.selectedSkill
+             || !canLearnSkill(state, state.avatar.selectedSkill)
              || !canAffordSkill(state, state.avatar.selectedSkill);
     },
     isVisible(state: GameState): boolean {
@@ -478,12 +482,15 @@ const upgradeSkillButton: HudButton = {
     render(context: CanvasRenderingContext2D, state: GameState): void {
         const { iconSize } = state.display;
         const { selectedSkill } = state.avatar;
+        if (!selectedSkill) {
+            return;
+        }
         const isAvailable = canLearnSkill(state, selectedSkill);
         const cost = getSkillCost(state, selectedSkill);
         const remainingPoints = getAvailableSkillPoints(state) - cost;
         const reqiurementsSatisfied = isAvailable && (remainingPoints >= 0);
         const arrowColor = reqiurementsSatisfied ? 'green' : 'red';
-        const textColor = reqiurementsSatisfied ? 'white' : 'red');
+        const textColor = reqiurementsSatisfied ? 'white' : 'red';
         context.save();
             if (!reqiurementsSatisfied) context.globalAlpha = .5;
             context.textBaseline = 'middle';
@@ -498,9 +505,9 @@ const upgradeSkillButton: HudButton = {
         const { canvas, iconSize } = state.display;
         // Upgrade Button is in the bottom center.
         this.target = {
-            w: 3 * iconSize,
+            w: iconSize,
             h: iconSize,
-            x: Math.floor((canvas.width - 3 * iconSize) / 2),
+            x: Math.floor((canvas.width - iconSize) / 2),
             y: canvas.height - 10 - iconSize,
         };
     },
@@ -513,7 +520,7 @@ const skillButtons: SkillButton[] = skills.map(skill => ({
         if (state.avatar.selectedSkill !== this.skill) {
             state.avatar.selectedSkill = this.skill;
         } else {
-            state.avatar.selectedSkill = null;
+            delete state.avatar.selectedSkill;
         }
     },
     render(this: SkillButton, context: CanvasRenderingContext2D, state: GameState): void {
@@ -521,7 +528,7 @@ const skillButtons: SkillButton[] = skills.map(skill => ({
         const skill = this.skill;
         const skillIsAvailable = canLearnSkill(state, skill);
         const skillIsAffordable = canAffordSkill(state, skill);
-        const skillLevel = state.saved.avatar.skillLevels[skill.key];
+        const skillLevel = getSkillLevel(state, skill.key);
         const { selectedSkill } = state.avatar;
         const target = this.target;
         context.save();
@@ -531,7 +538,9 @@ const skillButtons: SkillButton[] = skills.map(skill => ({
             context.fillRect(target.x, target.y, target.w, target.h - 2);
         context.restore();
         context.save();
-            if (!skillLevel && selectedSkill !== skill) context.globalAlpha = .3;
+            if (!skillLevel && selectedSkill !== skill) {
+                context.globalAlpha = .3;
+            }
 
             // Icon is drawn transparent if the ability hasn't been learned yet.
             drawFrame(context, skill.source, target);
@@ -571,7 +580,15 @@ const skillButtons: SkillButton[] = skills.map(skill => ({
         };
     },
 }));
-let lastCanvasSize: {w: number, h: number} = null;
+
+function getSkillHudButtons(state: GameState): HudButton[] {
+    return [
+        skillButton,
+        upgradeSkillButton,
+        ...skillButtons,
+    ];
+}
+let lastCanvasSize: {w: number, h: number};
 // Update the targets for skill buttons for the current display settings.
 // This should be called each frame before checking for user clicks or rendering the buttons.
 function updateAllSkillButtonTargets(state: GameState): void {
@@ -580,20 +597,13 @@ function updateAllSkillButtonTargets(state: GameState): void {
         return;
     }
     lastCanvasSize = {w: canvas.width, h: canvas.height};
-
-    skillButton.updateTarget(state);
-    upgradeSkillButton.updateTarget(state);
-    for (const skillButton of skillButtons) {
+    for (const skillButton of getSkillHudButtons(state)) {
         skillButton.updateTarget(state);
     }
 }
 
 export function handleSkillsClick(state: GameState, x: number, y: number): boolean {
     updateAllSkillButtonTargets(state);
-    return handleHudButtonClick(state, x, y, [
-        skillButton,
-        upgradeSkillButton,
-        ...skillButtons,
-    ]);
+    return handleHudButtonClick(state, x, y, getSkillHudButtons(state));
 }
 
