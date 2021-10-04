@@ -62,10 +62,10 @@ if (!isTestMode) {
             state.globalPosition.lastPosition.coords.longitude += stepSize;
         }
         if (event.which === 38 || event.which === 'W'.charCodeAt(0)) {
-            state.globalPosition.lastPosition.coords.latitude -= stepSize;
+            state.globalPosition.lastPosition.coords.latitude += stepSize;
         }
         if (event.which === 40 || event.which === 'S'.charCodeAt(0)) {
-            state.globalPosition.lastPosition.coords.latitude += stepSize;
+            state.globalPosition.lastPosition.coords.latitude -= stepSize;
         }
     });
 }

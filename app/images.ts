@@ -121,7 +121,7 @@ export const trashSource: Frame = {image: requireImage('gfx/trash.png'), x: 0, y
 export const turtleSource: Frame = {image: requireImage('gfx/monsters/turtle.png'), x: 0, y: 0, w: 128, h: 128};
 
 // Modified version of https://www.toptal.com/designers/subtlepatterns/rocky-wall/
-export const darkStoneImage = requireImage('gfx/darkStone.png');
+export const darkStoneImage = requireImage('gfx/darkstone.png');
 // https://www.toptal.com/designers/subtlepatterns/old-map/
 export const oldMapImage = requireImage('gfx/oldMap.png');
 

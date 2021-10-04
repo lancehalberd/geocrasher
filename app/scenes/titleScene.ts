@@ -1,5 +1,6 @@
 import { getLevelBonus } from 'app/avatar';
-import { drawFrame, drawOutlinedText } from 'app/draw';
+import { drawEmbossedText, drawFrame, drawOutlinedText } from 'app/draw';
+import { version } from 'app/gameConstants';
 import { handleHudButtonClick, renderHudButtons } from 'app/hud';
 import { heartSource, outlinedMoneySource, requireImage, shieldSource, swordSource, trashSource } from 'app/images';
 import { deleteSaveSlot, loadSaveSlot } from 'app/saveGame';
@@ -207,7 +208,7 @@ function drawTitleBackground(context: CanvasRenderingContext2D, state: GameState
 }
 
 export function drawTitleScene(context: CanvasRenderingContext2D, state: GameState) {
-    const { canvas, titleFontSize } = getTitleDisplayValues(state);
+    const { canvas, iconSize, titleFontSize } = getTitleDisplayValues(state);
     drawTitleBackground(context, state);
     context.fillStyle = 'gold';
     context.font = 'bold ' + titleFontSize + 'px sans-serif';
@@ -217,4 +218,8 @@ export function drawTitleScene(context: CanvasRenderingContext2D, state: GameSta
     drawOutlinedText(context, 'Crasher', 'gold', 'white', 3, canvas.width / 2, titleFontSize);
     updateAllTitleButtonTargets(state);
     renderHudButtons(context, state, getTitleButtons());
+    context.font = Math.round(iconSize / 2) + 'px sans-serif';
+    context.textAlign = 'right';
+    context.textBaseline = 'bottom';
+    drawEmbossedText(context, version, 'white', 'black', canvas.width - 5, canvas.height - 5);
 }

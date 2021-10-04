@@ -22,7 +22,7 @@ function mainLoop() {
             // Make target coords always positive.
             const targetPosition = [
                 state.globalPosition.lastPosition.coords.longitude + 360,
-                state.globalPosition.lastPosition.coords.latitude + 360
+                360 - state.globalPosition.lastPosition.coords.latitude
             ];
             if (!state.world.currentPosition || state.globalPosition.isFixingGPS) {
                 setCurrentPosition(state, targetPosition);

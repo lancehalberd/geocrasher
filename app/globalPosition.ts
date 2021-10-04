@@ -21,7 +21,6 @@ const updatePosition: PositionCallback = (position: GeolocationPosition): void =
         }
     }
     state.globalPosition.lastPosition = position;
-    console.log(position);
 }
 
 function setFixingGPS(state: GameState): void {

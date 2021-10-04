@@ -48,8 +48,8 @@ export function getGridRectangle(state: GameState, coords: number[]): Rectangle 
     return {
         x: Math.ceil(topLeft[0]),
         y: Math.ceil(topLeft[1]),
-        w: Math.ceil(bottomRight[0] - topLeft[0]),
-        h: Math.ceil(bottomRight[1] - topLeft[1])
+        w: Math.ceil(bottomRight[0]) - Math.ceil(topLeft[0]),
+        h: Math.ceil(bottomRight[1]) - Math.ceil(topLeft[1]),
     };
 }
 export function project(state: GameState, coords: number[]): number[] {

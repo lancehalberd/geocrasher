@@ -364,16 +364,18 @@ function createOrUpdateTileCanvas(state: GameState, tile: MapTile, scaleToUse: n
     const tileContext = tile.canvas.getContext('2d') as CanvasRenderingContext2D;
     tileContext.imageSmoothingEnabled = false;
     // Draw the current tile's pattern to all four corners
+    const w = rectangle.w, halfW = Math.floor(rectangle.w / 2);
+    const h = rectangle.h, halfH = Math.floor(rectangle.h / 2);
     if (tile.level >= 0) {
         const patternSource = levelColors[tile.level];
         drawFrame(tileContext, patternSource,
-            {x: 0, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
+            {x: 0, y: 0, w: halfW, h: halfH});
         drawFrame(tileContext, patternSource,
-            {x: rectangle.w / 2, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
+            {x: halfW, y: 0, w: w - halfW, h: halfH});
         drawFrame(tileContext, patternSource,
-            {x: 0, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
+            {x: 0, y: halfH, w: halfW, h: h - halfH});
         drawFrame(tileContext, patternSource,
-            {x: rectangle.w / 2, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
+            {x: halfW, y: halfH, w: w - halfW, h: h - halfH});
     }
     for (let i = tile.level + 1; i < levelColors.length; i++) {
         // top left
@@ -403,7 +405,7 @@ function createOrUpdateTileCanvas(state: GameState, tile: MapTile, scaleToUse: n
             console.log(patternSource.x, patternSource.y, cornerSource?.x, cornerSource?.y);
         }*/
         if (cornerSource) {
-            drawFrame(tileContext, cornerSource, {x: 0, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
+            drawFrame(tileContext, cornerSource, {x: 0, y: 0, w: halfW, h: halfH});
         }
 
         // top right
@@ -427,7 +429,7 @@ function createOrUpdateTileCanvas(state: GameState, tile: MapTile, scaleToUse: n
         }
         if (cornerSource) {
             drawFrame(tileContext, cornerSource,
-                {x: rectangle.w / 2, y: 0, w: rectangle.w / 2, h: rectangle.h / 2});
+                {x: halfW, y: 0, w: w - halfW, h: halfH});
         }
 
         // bottom left
@@ -450,7 +452,7 @@ function createOrUpdateTileCanvas(state: GameState, tile: MapTile, scaleToUse: n
         }
         if (cornerSource) {
             drawFrame(tileContext, cornerSource,
-                {x: 0, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
+                {x: 0, y: halfH, w: halfW, h: h - halfH});
         }
 
         // bottom right
@@ -473,7 +475,7 @@ function createOrUpdateTileCanvas(state: GameState, tile: MapTile, scaleToUse: n
         }
         if (cornerSource) {
             drawFrame(tileContext, cornerSource,
-                {x: rectangle.w / 2, y: rectangle.h / 2, w: rectangle.w / 2, h: rectangle.h / 2});
+                {x: halfW, y: halfH, w: w - halfW, h: h - halfH});
         }
     }
 }

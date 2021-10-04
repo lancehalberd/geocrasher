@@ -8,3 +8,5 @@ export const minScale = 1.5e5;
 export const frameLength = 30;
 
 export const maxTileLevel = 7;
+
+export const version = '0.0.1';
