@@ -13,17 +13,17 @@ const historyDuration = 15 * 60 * 1000;
 const exclusionRadius = 6 * gridLength
 const gemData = <const>[
     {
-        color: 'orange', frame: orangeGemSource, scale: .25, spawnRadius: gridLength * 6,
+        color: 'orange', frame: orangeGemSource, scale: 0.4, spawnRadius: gridLength * 6,
         collectRadius: maxRadius * 1.5, ticks: 4, debuff: .95,
         tintAmount: .07, tickDuration: 500,
     },
     {
-        color: 'green', frame: greenGemSource, scale: .25, spawnRadius: gridLength * 10,
+        color: 'green', frame: greenGemSource, scale: 0.4, spawnRadius: gridLength * 10,
         collectRadius: maxRadius * 2, ticks: 8, debuff: .95,
         tintAmount: .04, tickDuration: 300,
     },
     {
-        color: 'blue', frame: blueGemSource, scale: .25, spawnRadius: gridLength * 14,
+        color: 'blue', frame: blueGemSource, scale: 0.4, spawnRadius: gridLength * 14,
         collectRadius: maxRadius * 3, ticks: 16, debuff: .95,
         tintAmount: .03, tickDuration: 200,
     },
@@ -34,10 +34,12 @@ class GemLootClass implements GemLoot {
     color: GemColor;
     gem: typeof gemData[number]
     frame: Frame;
+    scale = 1;
     constructor(color: GemColor) {
         this.color = color;
         this.gem = gemData.find(gem => gem.color === this.color) as typeof gemData[number];
         this.frame = this.gem.frame;
+        this.scale = this.gem.scale;
     }
     onObtain(this: GemLootClass, state: GameState) {
         const [x, y] = state.world.currentPosition as number[];
@@ -202,21 +204,21 @@ export function drawGemIndicators(context: CanvasRenderingContext2D, state: Game
             distanceFactor = Math.min(distanceFactor, (playerScreenCoords[0] - 20) / (-dx * scaleToUse));
         }
         if (currentPosition[1] < gemMarker.y) {
-            distanceFactor = Math.min(distanceFactor, (playerScreenCoords[1] - 20) / (dy * scaleToUse));
+            distanceFactor = Math.min(distanceFactor, (canvas.height - playerScreenCoords[1] - 20) / (dy * scaleToUse));
         }
         if (currentPosition[1] > gemMarker.y) {
-            distanceFactor = Math.min(distanceFactor, (canvas.height - playerScreenCoords[1] - 20) / (-dy * scaleToUse));
+            distanceFactor = Math.min(distanceFactor, (playerScreenCoords[1] - 20) / (-dy * scaleToUse));
         }
 
         //console.log([pixelDistance, distanceFactor]);
         indicatorScreenCoords = [
             distanceFactor * dx * scaleToUse + playerScreenCoords[0],
-            distanceFactor * -dy * scaleToUse + playerScreenCoords[1]
+            distanceFactor * dy * scaleToUse + playerScreenCoords[1]
         ];
         context.lineWidth = 1;
         context.fillStyle = (gemMarker.loot as GemLoot).color;
         context.strokeStyle = 'white';
-        const normal = [dx / distance, -dy / distance];
+        const normal = [dx / distance, dy / distance];
         context.beginPath();
         context.moveTo(indicatorScreenCoords[0], indicatorScreenCoords[1]);
         context.lineTo(indicatorScreenCoords[0] - 8 * normal[0] + 20 * normal[1], indicatorScreenCoords[1] - 8 * normal[1] - 20 * normal[0]);
