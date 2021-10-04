@@ -1,5 +1,5 @@
 import { createCanvasAndContext, debugCanvas } from 'app/dom';
-import { createAnimation, drawOutlinedImage } from 'app/draw';
+import { createAnimation, drawFrame, drawOutlinedImage } from 'app/draw';
 
 import { Frame, Rectangle } from 'app/types';
 
@@ -48,7 +48,10 @@ export function finishedLoadingImages(): boolean {
 
 
 // Think this is FF1 ocean, will need to replace this at some point.
-export const oceanImage = requireImage('gfx/map/landscapeTiles.png');
+export const [oceanTile, oceanTileContext] = createCanvasAndContext(16, 16);
+export const oceanImage = requireImage('gfx/map/landscapeTiles.png', () => {
+    drawFrame(oceanTileContext, oceanSource, {...oceanSource, x: 0, y: 0});
+});
 export const oceanSource: Frame = {image: oceanImage, x: 1, y: 1, w: 16, h: 16};
 
 export const shallowSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 35, x: 18, w: 16, h: 16};

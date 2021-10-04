@@ -11,7 +11,7 @@ import { drawGemIndicators, updateGems } from 'app/gems';
 import { handleHudButtonClick, renderHudButtons } from 'app/hud';
 import {
     heartSource, outlinedMoneySource, upArrows,
-    oceanSource,
+    oceanTile,
     shallowSource,
     sandSource,
     dirtSource,
@@ -502,16 +502,14 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
     };
     context.save();
         context.imageSmoothingEnabled = false;
-        context.translate(
-            Math.round((((state.time / 15)) % 1000 / 1000 - .5) * gridSize),
-            Math.round((((state.time / 20)) % 1000 / 1000 - .5) * gridSize)
-        );
-        const topLeftGridCorner = project(state, [(currentGridCoords[0] - 4) * gridLength, (currentGridCoords[1] - 4) * gridLength]);
-        for (let y = topLeftGridCorner[1]; y <= topLeftGridCorner[1] + 9 * gridSize; y += gridSize) {
-            for (let x = topLeftGridCorner[0]; x <= topLeftGridCorner[0] + 9 * gridSize; x += gridSize) {
-                drawFrame(context, oceanSource, { x, y, w: gridSize, h: gridSize });
-            }
-        }
+        const oceanScale = gridSize / oceanTile.width;
+        context.scale(oceanScale, oceanScale);
+        const oceanX = (((((state.time / 15) / 1000) * gridSize) % gridSize + topLeftCorner[0]) / oceanScale);
+        const oceanY = (((((state.time / 20) / 1000) * gridSize) % gridSize + topLeftCorner[1]) / oceanScale);
+        context.translate(oceanX, oceanY);
+        const oceanPattern = context.createPattern(oceanTile, 'repeat') as CanvasPattern;
+        context.fillStyle = oceanPattern;
+        context.fillRect(-oceanX - 2, -oceanY - 2, canvas.width + 4, canvas.height + 4);
     context.restore();
 
     const visibleTiles = new Set<MapTile>();
