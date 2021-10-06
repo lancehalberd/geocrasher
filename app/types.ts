@@ -297,7 +297,11 @@ export interface GameState {
         dungeonScale: number
     }
     dungeon: DungeonState
-    lastGoalPoint?: number[]
+    // These accumulate various coordinates until the player reached the
+    // "goal" of moving a certain distance, which is determined when
+    // their current location is at least that distance from one of
+    // these coordinates, then the coordinates are reset.
+    goalCoordinates: number[][]
     lastGoalTime?: number
     selectedTile?: MapTile
     currentScene: Scene

@@ -33,7 +33,7 @@ import { getTreasureMapButton } from 'app/scenes/treasureMapScene';
 import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
 import { abbreviateNumber, rectanglesOverlap } from 'app/utils/index';
 import {
-    getActualScale, getGridRectangle, getTileData,
+    getActualScale, getGridRectangle, getOrigin, getTileData,
     project, isTileExplored, toGridCoords, unproject,
 } from 'app/world';
 import { Frame, GameState, HudButton, LootMarker, MapTile } from 'app/types';
@@ -491,6 +491,7 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
         return;
     }
     const gradientLength = 0.3 * scaleToUse * gridLength;
+    const origin = getOrigin(state);
     const topLeftCorner = project(state, [currentPosition[0] - 4 * gridLength, currentPosition[1] - 4 * gridLength]);
     const gridSize = Math.round(gridLength * scaleToUse);
     let x = Math.max(-gradientLength / 2, topLeftCorner[0]);
@@ -504,8 +505,8 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
         context.imageSmoothingEnabled = false;
         const oceanScale = gridSize / oceanTile.width;
         context.scale(oceanScale, oceanScale);
-        const oceanX = (((((state.time / 15) / 1000) * gridSize) % gridSize + topLeftCorner[0]) / oceanScale);
-        const oceanY = (((((state.time / 20) / 1000) * gridSize) % gridSize + topLeftCorner[1]) / oceanScale);
+        const oceanX = (((((state.time / 15) / 1000) * gridSize - origin[0] * scaleToUse) % gridSize) / oceanScale);
+        const oceanY = (((((state.time / 20) / 1000) * gridSize - origin[1] * scaleToUse) % gridSize) / oceanScale);
         context.translate(oceanX, oceanY);
         const oceanPattern = context.createPattern(oceanTile, 'repeat') as CanvasPattern;
         context.fillStyle = oceanPattern;

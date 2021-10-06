@@ -60,7 +60,7 @@ export function loadSaveSlot(state: GameState, saveSlotIndex: number): void {
     updatePlayerStats(state);
     delete state.world.currentGridCoords;
     delete state.selectedTile;
-    delete state.lastGoalPoint;
+    state.goalCoordinates = [];
     state.loot.hideStatsAt = state.time + 2000;
     pushScene(state, 'map');
     clearAllGems(state);

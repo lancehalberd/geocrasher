@@ -96,14 +96,31 @@ export function setCurrentPosition(state: GameState, realCoords: number[]) {
     if (state.currentScene === 'loading' || state.currentScene === 'title') {
         return;
     }
-    if (!state.lastGoalPoint || state.globalPosition.isFixingGPS) {
-        state.lastGoalPoint = state.world.currentPosition;
+    if (!state.goalCoordinates.length || state.globalPosition.isFixingGPS) {
+        state.goalCoordinates = [state.world.currentPosition];
         state.lastGoalTime = state.time;
-    } else if (state.lastGoalTime && getDistance(state.world.currentPosition, state.lastGoalPoint) > gridLength / 2) {
-        state.lastGoalPoint = state.world.currentPosition;
-        updateFastMode(state, state.time - state.lastGoalTime);
-        state.lastGoalTime = state.time;
-        advanceGameState(state);
+    } else if (state.lastGoalTime) {
+        let shouldAddPoint = true;
+        for (const recentPoint of state.goalCoordinates) {
+            const distance = getDistance(state.world.currentPosition, recentPoint);
+            if (distance >= gridLength / 2) {
+                // Reset goal coordinates to only include the current position.
+                state.goalCoordinates = [state.world.currentPosition];
+                // Check if we need to move towards enabling fast mode in case the player
+                // is moving too quickly.
+                updateFastMode(state, state.time - state.lastGoalTime);
+                state.lastGoalTime = state.time;
+                advanceGameState(state);
+            } else if (distance < gridLength / 20) {
+                // We don't want to add too many points to check, so only add this new point if it is
+                // least 1 / 10 of the required goal distance.
+                shouldAddPoint = false;
+                break;
+            }
+        }
+        if (shouldAddPoint) {
+            state.goalCoordinates.push(state.world.currentPosition);
+        }
     }
     if (state.globalPosition.isFastMode && state.time > state.globalPosition.endFastModeTime) {
         state.globalPosition.isFastMode = state.globalPosition.isStartingFastMode = false;

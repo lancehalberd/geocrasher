@@ -22,11 +22,11 @@ export function gainExperience(state: GameState, experienceGained: number): void
 }
 
 export function experienceForNextLevel(state: GameState): number {
-    return Math.round(10 * state.saved.avatar.level * Math.pow(1.25, state.saved.avatar.level - 1));
+    return Math.round(10 * state.saved.avatar.level * (1.25 ** (state.saved.avatar.level - 1)));
 }
 
 export function getLevelBonus(state: GameState, level: number = state.saved.avatar.level): number {
-    return Math.pow(1.1, level - 1);
+    return 1.08 ** (level - 1);
 }
 
 export function updatePlayerStats(state: GameState) {
@@ -51,12 +51,16 @@ export function getAvatarPosition(state: GameState) {
 }
 
 export function gainHealth(state: GameState, amount: number): void {
-    state.saved.avatar.currentHealth = Math.min(state.avatar.maxHealth, state.saved.avatar.currentHealth + amount);
+    amount *= (1 + getSkillValue(state, 'regeneration'));
+    state.saved.avatar.currentHealth = Math.min(
+        state.avatar.maxHealth,
+        Math.ceil(state.saved.avatar.currentHealth + amount)
+    );
 }
 
 // Regenerate health based on the players current regeneration skill.
 export function regenerateHealth(state: GameState): void {
-    const regenerationRate = 0.05 * (1 + getSkillValue(state, 'regeneration'));
+    const regenerationRate = 0.05;
     gainHealth(state, Math.ceil(state.avatar.maxHealth * regenerationRate));
 }
 

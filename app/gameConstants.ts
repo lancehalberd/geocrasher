@@ -9,4 +9,4 @@ export const frameLength = 30;
 
 export const maxTileLevel = 7;
 
-export const version = '0.0.2';
+export const version = '0.0.3';

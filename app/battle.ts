@@ -57,7 +57,10 @@ export function updateBattle(state: GameState) {
                 pushDamageIndicator(state, [marker.tile.centerX, marker.tile.centerY], currentBattlePosition, abbreviateNumber(reflectedDamage), 'orange');
                 monster.currentHealth = Math.max(0, monster.currentHealth - reflectedDamage);
             }
-            monster.attack = Math.max(1, monster.attack - Math.ceil(state.avatar.defense * getSkillValue(state, 'defenseDefense')));
+            // Boss stats cannot be reduced.
+            if (!monster.isBoss) {
+                monster.attack = Math.max(1, monster.attack - Math.ceil(state.avatar.defense * getSkillValue(state, 'defenseDefense')));
+            }
         }
         state.battle.monsterAttackTime += getAttackTime(monster.level);
     }
@@ -65,8 +68,11 @@ export function updateBattle(state: GameState) {
         var damage = calculateDamage(getAttackRoll(state.avatar.attack), getDefenseRoll(monster.defense));
         pushDamageIndicator(state, [marker.tile.centerX, marker.tile.centerY], currentBattlePosition, abbreviateNumber(damage));
         monster.currentHealth = Math.max(0, monster.currentHealth - damage);
-        monster.defense = Math.max(0, monster.defense - Math.ceil(state.avatar.attack * getSkillValue(state, 'attackOffense')));
-        gainHealth(state, Math.ceil(damage * getSkillValue(state, 'attackDefense')));
+        // Boss stats cannot be reduced.
+        if (!monster.isBoss) {
+            monster.defense = Math.max(0, monster.defense - Math.ceil(state.avatar.attack * getSkillValue(state, 'attackOffense')));
+        }
+        gainHealth(state, damage * getSkillValue(state, 'attackDefense'));
 
         state.battle.playerAttackTime += getPlayerAttackTime(state);
     }

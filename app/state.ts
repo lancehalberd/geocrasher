@@ -41,6 +41,7 @@ export function getDefaultState(): GameState {
         // other time stamps can be initialized to 0 without
         // having any effect.
         time: 10000,
+        goalCoordinates: [],
         saveSlotIndex: -1,
         saveSlots: [],
         saved: getDefaultSavedState(),

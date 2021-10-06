@@ -65,7 +65,7 @@ export function initializeTreasureMapStateFromSave(state: GameState) {
     }
 }
 
-function getTreasureLocation(savedMap: SavedTreasureHuntMap): number[] {
+export function getTreasureLocation(savedMap: SavedTreasureHuntMap): number[] {
     const random = SRandom.seed(savedMap.seed);
     return [
         random.range(0, savedMap.size - 1),

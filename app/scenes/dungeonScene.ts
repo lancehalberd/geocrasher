@@ -15,7 +15,7 @@ import {
 import { drawTileMonster, makeBossMonster, makeMonster } from 'app/monsters';
 import { getMoneySkillBonus, getSkillButton } from 'app/scenes/skillsScene';
 import { drawCoinsIndicator, drawLifeIndicator, drawLootMarker } from 'app/scenes/mapScene';
-import { hideTreasureMap } from 'app/scenes/treasureMapScene';
+import { getTreasureLocation, hideTreasureMap } from 'app/scenes/treasureMapScene';
 import { popScene, pushScene } from 'app/state';
 import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
 import Random from 'app/utils/Random';
@@ -98,7 +98,7 @@ function startNewFloor(state: GameState) {
         tileThings.push({type: 'downstairs', frame: portalSource})
     }
     if (allFloors.length === currentDungeon.numberOfFloors) {
-        tileThings.push(makeBossMonster(state, currentDungeon.level));
+        tileThings.push(makeBossMonster(state, floorPower));
     }
     // Add at least one power up to each floor, then there is a 20% chance for additional powerups.
     do {
@@ -480,9 +480,17 @@ export function drawDungeonStats(context: CanvasRenderingContext2D, state: GameS
     if (!dungeon) {
         return;
     }
-    let rectangle = selectedTile?.target || {
-        x: (canvas.width - iconSize) / 2, y: 2 * iconSize, w: iconSize, h: iconSize,
-    };
+    let rectangle = selectedTile?.target;
+    if (state.currentScene === 'treasureMap' && state.saved.treasureHunt.currentMap) {
+        const [tx, ty] = getTreasureLocation(state.saved.treasureHunt.currentMap);
+        rectangle = getGridRectangle(state, [tx, ty]);
+    }
+    // Fallback.
+    if (!rectangle) {
+        rectangle = {
+            x: (canvas.width - iconSize) / 2, y: 2 * iconSize, w: iconSize, h: iconSize,
+        };
+    }
     const localIconSize = Math.floor(iconSize / 2);
     const text = 'Lv ' + dungeon.level + ' ' + dungeon.name;
     const fontSize = Math.floor(3 * localIconSize / 4);
