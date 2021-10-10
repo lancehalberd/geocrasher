@@ -30,7 +30,6 @@ export function requireFrame(imageFile: string, {x, y, w, h}: Rectangle, callbac
     return { image, x, y, w, h };
 }
 export function finishedLoadingImages(): boolean {
-    console.log(numberOfImagesLeftToLoad);
     return numberOfImagesLeftToLoad === 0;
 }
 // Modified from http://maxpixel.freegreatpicture.com/Seamless-Sand-Background-Texture-1657465

@@ -4,7 +4,7 @@ import {
 } from 'app/avatar';
 
 import { drawEmbossedText, drawFrame, drawOutlinedImage } from 'app/draw';
-import { gridLength, maxTileLevel, minRadius } from 'app/gameConstants';
+import { emptyJourneyRadius, gridLength, maxTileLevel, minRadius } from 'app/gameConstants';
 import {
     chestSource, coinImage, heartSource, magicStoneSource,
     outlinedMoneySource, shieldSource, swordSource, treasureMapSource,
@@ -127,12 +127,18 @@ const coinLoot = [
 
 export function checkToGenerateLootForTile(state: GameState, tile: MapTile): void {
     if (tile.level < 0) return;
+    // Tiles around the start of journey/voyage mode do not generate loot.
+    if (state.currentScene === 'journey' || state.currentScene === 'voyage') {
+        if (tile.journeyDistance < emptyJourneyRadius) {
+            return;
+        }
+    }
     // Only generate coins if there are fewer than 2 loot markers currently.
     if (tile.lootMarkers.length < 2) {
         const coins = Math.ceil((.5 + Math.random()) * getTilePower(state, tile) * getMoneySkillBonus(state) * Math.pow(4, tile.level) / 3);
         const coinDrops = generateLootCoins(coins, 1);
         for (const coinDrop of coinDrops) {
-            addLootToTile(tile, coinDrop);
+            addLootToTile(state, tile, coinDrop);
         }
     }
     checkToGeneratePowerUp(state, tile);
@@ -142,18 +148,27 @@ function checkToGeneratePowerUp(state: GameState, tile: MapTile) {
     if (state.globalPosition.isFastMode || state.globalPosition.isFixingGPS) return;
     // Only one powerup per tile, and no powerups spawn on shallow water.
     if (tile.powerupMarker || tile.level < 1) return;
-    var chanceToSpawn = .1 * ((4 - state.loot.activePowerupMarkers.size) / 4) * ((maxTileLevel + 1 - tile.level) / (maxTileLevel));
-    if (Math.random() > chanceToSpawn) return;
-    var value = (.4 + Math.random() * .2) * getTilePower(state, tile) * Math.pow(1.3, tile.level - 1);
+    const isJourneyMode = state.currentScene === 'journey' || state.currentScene === 'voyage';
+    let chanceToSpawn = isJourneyMode
+        // In journey mode chance to spawn powerup is a flat chance based on distance from the starting location
+        // that maxes out at 10%
+        ? Math.min(0.1, 0.01 * tile.journeyDistance / gridLength)
+        // In the regular map scene chance to spawn powerups is 10% max and decreases the better the tile is
+        // as well as with the current number of active powerups.
+        : 0.1 * ((4 - state.loot.activePowerupMarkers.size) / 4) * ((maxTileLevel + 1 - tile.level) / (maxTileLevel));
+    if (Math.random() > chanceToSpawn) {
+        return;
+    }
+    const value = (.4 + Math.random() * .2) * getTilePower(state, tile) * Math.pow(1.3, tile.level - 1);
     // On the world map only there is a small chance to find a treasure map.
     // I guess this could also be added to dungeons, but then you might miss a large
     // powerup for a map which doesn't seem great.
-    const lootMarker = addLootToTile(tile, getWeightedPowerup(state, value, [makeTreasureMapLoot]));
+    const lootMarker = addLootToTile(state, tile, getWeightedPowerup(state, value, [makeTreasureMapLoot]));
     tile.powerupMarker = lootMarker;
     state.loot.activePowerupMarkers.add(lootMarker);
 }
-export function addLootToTile(tile: MapTile, loot: Loot) {
-    const realCoords = toRealCoords([tile.x, tile.y]);
+export function addLootToTile(state: GameState, tile: MapTile, loot: Loot) {
+    const realCoords = toRealCoords(state, [tile.x, tile.y]);
     const lootMarker: LootMarker = {
         loot, tile,
         x: realCoords[0] + gridLength / 2,
@@ -361,7 +376,7 @@ export function generateLootCoins(amount: number, limit: number): CoinLootClass[
 
 const collectButton: HudButton = {
     onClick(state: GameState): void {
-        if (state.currentScene === 'map') {
+        if (state.currentScene === 'map' || state.currentScene === 'journey') {
             collectLoot(state);
         } else if (state.currentScene === 'dungeon') {
             resetLootTotals(state);
@@ -373,7 +388,7 @@ const collectButton: HudButton = {
         }
     },
     isDisabled(state: GameState) {
-        if (state.currentScene === 'map') {
+        if (state.currentScene === 'map' || state.currentScene === 'journey') {
             return !state.loot.lootInRadius || state.loot.collectingLoot.length > 0;
         }
         if (state.currentScene === 'dungeon') {
@@ -385,7 +400,8 @@ const collectButton: HudButton = {
         if (state.currentScene === 'dungeon') {
             return !!state.selectedTile?.lootMarkers?.length;
         }
-        if (state.currentScene === 'map') {
+        // Loot is automatically collected in voyage mode.
+        if (state.currentScene === 'map' || state.currentScene === 'journey') {
             return !state.selectedTile;
         }
         return false;

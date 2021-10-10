@@ -128,7 +128,7 @@ export function handleTreasureMapClick(state: GameState, x: number, y: number) {
         return
     }
     const clickedCoords = unproject(state, [x, y]);
-    const clickedGridCoords = toGridCoords(clickedCoords);
+    const clickedGridCoords = toGridCoords(state, clickedCoords);
     revealTreasureMapTile(state, clickedGridCoords[0], clickedGridCoords[1]);
 }
 
@@ -229,7 +229,18 @@ const treasureMapButton: HudButton = {
         return !!state.battle.engagedMonster && state.loot.collectingLoot.length > 0;
     },
     isVisible(state: GameState) {
-        return state.saved.treasureHunt.hadMap || state.saved.treasureHunt.mapCount > 0;
+        if (state.currentScene === 'treasureMap') {
+            return true;
+        }
+        if (state.currentScene === 'map') {
+            // The journey/voyage mode button is displayed in this spot when a tile is selected.
+            if (state.selectedTile) {
+                return false;
+            }
+            return state.saved.treasureHunt.hadMap || state.saved.treasureHunt.mapCount > 0;
+        }
+        // This button is not rendered in other scenes.
+        return false;
     },
     render(context: CanvasRenderingContext2D, state: GameState): void {
         const { iconSize } = state.display;

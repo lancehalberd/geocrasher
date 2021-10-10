@@ -1,6 +1,6 @@
 import { getAttackWithoutHealthBonuses, getDefenseWithoutHealthBonuses } from 'app/avatar';
 import { drawBar, drawFrame, drawOutlinedImage, getTintedImage, prepareTintedImage } from 'app/draw';
-import { gridLength, maxTileLevel } from 'app/gameConstants';
+import { emptyJourneyRadius, gridLength, maxTileLevel } from 'app/gameConstants';
 import { bugSource, crabSource, fungusSource, snailSource, turtleSource, waspSource } from 'app/images';
 import { getTilePower } from 'app/scenes/mapScene';
 import { getSkillValue } from 'app/scenes/skillsScene';
@@ -13,6 +13,11 @@ const minMonsterRadius = gridLength * 2 / 3;
 const maxMonsterRadius = gridLength * 4 / 3;
 
 function getMonsterPowerForTile(state: GameState, tile: MapTile): number {
+    // This formula is designed to make the monsters in journey mode have scaling
+    // similar to the tile selected for journey mode.
+    if (state.currentScene === 'journey') {
+        return state.world.journeyModeTileLevel / 2 + 2 * (getTilePower(state, tile) - 1);
+    }
     return tile.level / 2 + 2 * (getTilePower(state, tile) - 1);
 }
 export function makeBossMonster(state: GameState, monsterPower: number): Monster {
@@ -30,8 +35,8 @@ export function makeMonster(state: GameState, monsterPower: number): Monster {
     // Monsters gain 30% more power each level, and gain up to an additional 20% more power before leveling again.
     const powerFactor = Math.pow(1.3, monsterLevel - 1) * (1 + Math.max(0, monsterPower - monsterLevel) / 5);
     //const powerFactor = Math.pow(3, tile.level - 1) * getTilePower(tile);
-    const rollA = Random.range(-2, 2);
-    const rollB = Random.range(-2, 2);
+    const rollA = Random.integerRange(-2, 2);
+    const rollB = Random.integerRange(-2, 2);
     const rollC = -rollA - rollB;
     // Average roll is 1, min is 0.2 max is 1.8.
     const rolls = [1 + .2 * rollA, 1 + .2 * rollB, 1 + .2 * rollC];
@@ -85,8 +90,18 @@ export function checkToGenerateMonster(state: GameState, tile: MapTile, baseChan
             return;
         }
     }
+    const isJourneyMode = state.currentScene === 'journey' || state.currentScene === 'voyage';
+    // Don't generate monsters inside the empty radius in journey mode.
+    if (isJourneyMode && tile.journeyDistance < emptyJourneyRadius) {
+        return;
+    }
     // Chance to spawn a monster decreases with # of active monsters and the level of the tile.
-    const chanceToSpawn = baseChance * ((8 - state.world.activeMonsterMarkers.length) / 8) * ((maxTileLevel + 1 - tile.level) / (maxTileLevel));
+    const chanceToSpawn = isJourneyMode
+        // In Journey mode the base chance is the exact chance for a monster to spawn.
+        ? baseChance
+        // In the normal map scene, monsters are less likely to spawn the more active monsters are
+        // present and the more powerful the tile they are spawning on is.
+        : baseChance * ((8 - state.world.activeMonsterMarkers.length) / 8) * ((maxTileLevel + 1 - tile.level) / (maxTileLevel));
     if (Math.random() > chanceToSpawn) {
         return;
     }

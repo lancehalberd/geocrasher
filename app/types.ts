@@ -127,6 +127,11 @@ export interface MapTile extends SavedMapTile {
     dungeonContentsRevealable?: boolean
     canvas?: HTMLCanvasElement
     isVisible?: boolean
+    // The distance this tile is from the start of the current journey
+    journeyDistance: number
+    // The computed power level of this tile in journey mode, which
+    // determines the tile level, rather than the reverse.
+    journeyPowerLevel: number
 }
 
 export interface Dungeon {
@@ -188,6 +193,7 @@ export interface SavedWorldState {
     tiles: SavedMapTile[]
     gemData: {history: number[]}[]
 }
+// Used for the `mapScene`, `journeyMode`, `voyageMode` and `fastMode`.
 export interface WorldState {
     activeTiles: MapTile[]
     activeMonsterMarkers: MonsterMarker[]
@@ -196,8 +202,21 @@ export interface WorldState {
     currentPosition?: number[]
     currentGridCoords?: number[]
     levelSums: number[]
+    // Tiles that are being used for the current map scene.
+    // This will get reset when the player changes to journey/voyage/fast modes.
     allTiles: Record<string, MapTile>
+    // Tiles that will be saved and restored when returning to the primary map scene.
+    savedTiles: Record<string, MapTile>
     selectableTiles: Set<MapTile>
+
+    // The location of the player when they started journey mode/voyage mode
+    journeyModeOrigin: number[]
+    // The power of the tile the player selected for journey mode
+    journeyModePower: number
+    // The level of the tile the player selected for journey mode.
+    // The tiles in the journey will be relative to this selected tile.
+    journeyModeTileLevel: number
+    journeyModeRewardBonus: number
 }
 export interface SavedAvatarState {
     level: number
@@ -283,7 +302,14 @@ export interface SavedGameState {
     world: SavedWorldState
 }
 
-export type Scene = 'dungeon' | 'loading' | 'map' | 'skills' | 'title' | 'treasureMap';
+export type Scene = 'dungeon'
+    | 'journey'
+    | 'loading'
+    | 'map'
+    | 'skills'
+    | 'title'
+    | 'treasureMap'
+    | 'voyage';
 
 
 export interface GameState {

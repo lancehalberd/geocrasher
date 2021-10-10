@@ -88,7 +88,7 @@ function startNewFloor(state: GameState) {
     currentDungeon.currentFloor = currentFloor;
     allFloors.push(currentFloor);
     const tileThings: DungeonTileContent[] = [{type: 'upstairs', frame: exitSource}];
-    const numberOfMonsters = Random.range(6, 8);
+    const numberOfMonsters = Random.integerRange(6, 8);
     const minPower = currentDungeon.level * .9, maxPower = currentDungeon.level * 1.1;
     const floorPower = minPower + (maxPower - minPower) * allFloors.length / currentDungeon.numberOfFloors;
     for (let i = 0; i < numberOfMonsters; i++) {
@@ -122,7 +122,7 @@ function startNewFloor(state: GameState) {
     for (let tileY = 0; tileY < 5; tileY++) {
         currentFloor.tiles[tileY] = [];
         for (let tileX = 0; tileX < 5; tileX++) {
-            const realCoords = toRealCoords([tileX, tileY]);
+            const realCoords = toRealCoords(state, [tileX, tileY]);
             const newTile: MapTile = {
                 x: tileX, y: tileY,
                 level: 0,
@@ -132,6 +132,8 @@ function startNewFloor(state: GameState) {
                 lootMarkers: [],
                 dungeonContentsRevealed: false,
                 guards: 0,
+                journeyDistance: 0,
+                journeyPowerLevel: 0,
                 target: {x: 0, y: 0, w: 0, h: 0},
             };
             const { dungeonContents } = newTile;
@@ -262,7 +264,7 @@ export function handleDungeonClick(state: GameState, x: number, y: number): bool
     }
     // Tile interactions
     const clickedCoords = unproject(state, [x, y]);
-    const clickedGridCoords = toGridCoords(clickedCoords);
+    const clickedGridCoords = toGridCoords(state, clickedCoords);
     const tile = state.dungeon.currentDungeon.currentFloor.tiles[clickedGridCoords[1]]?.[clickedGridCoords[0]];
     if (!tile) {
         return false;

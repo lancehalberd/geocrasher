@@ -16,18 +16,22 @@ export function advanceGameState(state: GameState) {
     if (state.saved.avatar.currentHealth < state.avatar.maxHealth && !state.battle.engagedMonster) {
         regenerateHealth(state);
     }
-    for (const tile of state.world.activeTiles) {
-        if (tile.exhaustedDuration) {
-            tile.exhaustCounter = (tile.exhaustCounter || 0) + 1;
-            if (tile.exhaustCounter >= tile.exhaustedDuration) {
-                tile.exhaustedDuration = 0;
-                checkToGenerateMonster(state, tile, .5);
+    const isJourneyMode = state.currentScene === 'journey' || state.currentScene === 'voyage';
+    // Gems do not spawn and tiles do not refresh during journey mode.
+    if (!isJourneyMode) {
+        for (const tile of state.world.activeTiles) {
+            if (tile.exhaustedDuration) {
+                tile.exhaustCounter = (tile.exhaustCounter || 0) + 1;
+                if (tile.exhaustCounter >= tile.exhaustedDuration) {
+                    tile.exhaustedDuration = 0;
+                    checkToGenerateMonster(state, tile, .5);
+                }
+            }
+            if (!tile.exhaustedDuration) {
+                checkToGenerateLootForTile(state, tile);
+                checkToGenerateMonster(state, tile, .05);
             }
         }
-        if (!tile.exhaustedDuration) {
-            checkToGenerateLootForTile(state, tile);
-            checkToGenerateMonster(state, tile, .05);
-        }
+        checkToSpawnGems(state);
     }
-    checkToSpawnGems(state);
 }

@@ -103,9 +103,14 @@ export function getDefaultState(): GameState {
             activeTiles: [],
             displayScale: maxScale,
             allTiles: {},
+            savedTiles: {},
             activeMonsterMarkers: [],
             levelSums: [],
             selectableTiles: new Set(),
+            journeyModeOrigin: [],
+            journeyModePower: 0,
+            journeyModeTileLevel: 0,
+            journeyModeRewardBonus: 0,
         }
     };
 }

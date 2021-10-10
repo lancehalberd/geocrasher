@@ -9,4 +9,6 @@ export const frameLength = 30;
 
 export const maxTileLevel = 7;
 
-export const version = '0.0.3';
+export const emptyJourneyRadius = 1.5 * gridLength;
+
+export const version = '0.0.4';

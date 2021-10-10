@@ -64,7 +64,11 @@ function mainLoop() {
                 state.world.origin = currentPosition;
             }
             let target = state.world.origin;
-            if (state.globalPosition.isFastMode || state.globalPosition.isFixingGPS) {
+            if (state.globalPosition.isFastMode
+                || state.globalPosition.isFixingGPS
+                || state.currentScene === 'journey'
+                || state.currentScene === 'voyage'
+            ) {
                 target = currentPosition;
             } else if (state.currentScene === 'map' && state.selectedTile) {
                 target = [state.selectedTile.centerX, state.selectedTile.centerY];
@@ -102,6 +106,8 @@ function mainLoop() {
                     state.currentScene = 'title';
                 }
                 break;
+            case 'journey':
+            case 'voyage':
             case 'map':
                 updateMap(state);
                 break;

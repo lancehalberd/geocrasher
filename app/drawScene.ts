@@ -16,6 +16,8 @@ export function drawScene(context: CanvasRenderingContext2D, state: GameState): 
         case 'title':
             drawTitleScene(context, state);
             break;
+        case 'journey':
+        case 'voyage':
         case 'map':
             drawMapScene(context, state);
             break;

@@ -21,6 +21,7 @@ import {
     mountainSource,
     iceSource,
 } from 'app/images';
+import { getJourneyButton } from 'app/journeyMode';
 import {
     checkToGenerateLootForTile, drawLootTotals, getCollectButton,
     getCollectionRadius, updateLootCollection, updateTileLoot,
@@ -54,6 +55,12 @@ if (levelColors.length !== maxTileLevel + 1) {
 }
 
 export function getTilePower(state: GameState, tile: MapTile): number {
+    // In journey/voyage modes, each tile is just assigned a specific power on creation.
+    if (state.currentScene === 'journey' || state.currentScene === 'voyage') {
+        return tile.journeyPowerLevel;
+    }
+    // In the normal map scene, the power of tiles depends on how many tiles have been upgraded
+    // as well as the level of the tile and its neighbors.
     if (!tile.neighbors) {
         console.error(tile);
         throw new Error('Expected tile.neighbors to be defined');
@@ -89,6 +96,7 @@ function getMapHudButtons(): HudButton[] {
         getCollectButton(),
         getEnterExitButton(),
         getTreasureMapButton(),
+        getJourneyButton(),
         upgradeTileButton,
     ];
 }
@@ -115,13 +123,17 @@ export function handleMapClick(state: GameState, x: number, y: number): void {
         return;
     }
     const clickedCoords = unproject(state, [x, y]);
-    const clickedGridCoords = toGridCoords(clickedCoords);
+    const clickedGridCoords = toGridCoords(state, clickedCoords);
     if (isTileExplored(state, clickedGridCoords) && !state.battle.engagedMonster) {
         const clickedTile = getTileData(state, clickedGridCoords);
         if (state.selectedTile === clickedTile) {
             delete state.selectedTile;
         } else if (state.world.selectableTiles.has(clickedTile)) {
-            state.selectedTile = clickedTile;
+            if (state.currentScene === 'map') {
+                state.selectedTile = clickedTile;
+            } else if (state.currentScene === 'journey' && (clickedTile.monsterMarker || clickedTile.dungeonMarker)) {
+                state.selectedTile = clickedTile;
+            }
         }
     }
 }
@@ -501,17 +513,20 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
         w: Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - x,
         h: Math.min(canvas.height + gradientLength / 2, topLeftCorner[1] + 8 * gridSize) - y,
     };
-    context.save();
-        context.imageSmoothingEnabled = false;
-        const oceanScale = gridSize / oceanTile.width;
-        context.scale(oceanScale, oceanScale);
-        const oceanX = (((((state.time / 15) / 1000) * gridSize - origin[0] * scaleToUse) % gridSize) / oceanScale);
-        const oceanY = (((((state.time / 20) / 1000) * gridSize - origin[1] * scaleToUse) % gridSize) / oceanScale);
-        context.translate(oceanX, oceanY);
-        const oceanPattern = context.createPattern(oceanTile, 'repeat') as CanvasPattern;
-        context.fillStyle = oceanPattern;
-        context.fillRect(-oceanX - 2, -oceanY - 2, canvas.width + 4, canvas.height + 4);
-    context.restore();
+    // The ocean background is not used in journey mode.
+    if (state.currentScene !== 'journey') {
+        context.save();
+            context.imageSmoothingEnabled = false;
+            const oceanScale = gridSize / oceanTile.width;
+            context.scale(oceanScale, oceanScale);
+            const oceanX = (((((state.time / 15) / 1000) * gridSize - origin[0] * scaleToUse) % gridSize) / oceanScale);
+            const oceanY = (((((state.time / 20) / 1000) * gridSize - origin[1] * scaleToUse) % gridSize) / oceanScale);
+            context.translate(oceanX, oceanY);
+            const oceanPattern = context.createPattern(oceanTile, 'repeat') as CanvasPattern;
+            context.fillStyle = oceanPattern;
+            context.fillRect(-oceanX - 2, -oceanY - 2, canvas.width + 4, canvas.height + 4);
+        context.restore();
+    }
 
     const visibleTiles = new Set<MapTile>();
     let draws = 0;
@@ -531,7 +546,9 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
         }
         context.drawImage(mapTile.canvas, 0, 0, mapTile.canvas.width, mapTile.canvas.height,
             rectangle.x, rectangle.y, rectangle.w, rectangle.h);
-        if (mapTile.exhaustedDuration && mapTile.exhaustCounter !== undefined) {
+        if (mapTile.exhaustedDuration && mapTile.exhaustCounter !== undefined
+            && state.currentScene !== 'journey' && state.currentScene !== 'voyage'
+        ) {
             const exhaustRadius = Math.min(rectangle.w / 2, rectangle.h / 2) - (1 + mapTile.level) * Math.round(rectangle.w / 30);
             context.save();
             const percent = (mapTile.exhaustedDuration - mapTile.exhaustCounter) / mapTile.exhaustedDuration;

@@ -88,12 +88,12 @@ export function updateBattle(state: GameState) {
         // Primarily you are supposed to access dungeons through treasure maps now, but there
         // is still a 1/50 chance a monster will drop a dungeon entrance.
         if (Math.random() < 0.02 && !state.dungeon.currentDungeon) {
-            var dungeonLevel = Math.max(1, Random.range(monster.level - 1, monster.level + 1));
+            var dungeonLevel = Math.max(1, Random.integerRange(monster.level - 1, monster.level + 1));
             addDungeonToTile(state, marker.tile, dungeonLevel);
         } else if (Math.random() < .1 && !state.dungeon.currentDungeon) {
             // 2 at level 1 up to 7 at level 98
             var value = Math.max(2, Math.floor(Math.sqrt(monster.level / 2)));
-            addLootToTile(marker.tile, makeTreasureMapLoot(state, value));
+            addLootToTile(state, marker.tile, makeTreasureMapLoot(state, value));
         }
         const monsterTile = marker.tile;
         state.world.activeMonsterMarkers.splice(state.world.activeMonsterMarkers.indexOf(marker), 1);
@@ -126,7 +126,7 @@ export function updateBattle(state: GameState) {
                     const coinValue = Math.ceil(baseValue * roll * getMoneySkillBonus(state));
                     loot = makeTreasureChestLoot(coinValue);
                 }
-                const realCoords = toRealCoords([monsterTile.x, monsterTile.y]);
+                const realCoords = toRealCoords(state, [monsterTile.x, monsterTile.y]);
                 const x = realCoords[0] + gridLength / 2;
                 const y = realCoords[1] + gridLength / 2;
                 monsterTile.lootMarkers = [{

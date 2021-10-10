@@ -1,14 +1,25 @@
 type Collection<T> = {[key:string]: T} | Array<T>;
 
 const Random = {
+
+    /**
+     * @param {number} min  The smallest returned value
+     * @param {number} max  The largest returned value
+     */
+    integerRange(A:number, B:number): number {
+        const min = Math.min(A, B);
+        const max = Math.max(A, B);
+        return Math.floor(Math.random() * (max + 1 - min)) + min;
+    },
+
     /**
      * @param {number} min  The smallest returned value
      * @param {number} max  The largest returned value
      */
     range(A:number, B:number): number {
-        var min = Math.min(A, B);
-        var max = Math.max(A, B);
-        return Math.floor(Math.random() * (max + 1 - min)) + min;
+        const min = Math.min(A, B);
+        const max = Math.max(A, B);
+        return Math.random() * (max - min) + min;
     },
 
     /**

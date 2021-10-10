@@ -40,9 +40,12 @@ export function loadSaveSlot(state: GameState, saveSlotIndex: number): void {
             centerY: 0,
             target: {x: 0, y: 0, w: 0, h: 0},
             guards: 0,
+            journeyDistance: 0,
+            journeyPowerLevel: 0,
             lootMarkers: [],
         });
     }
+    state.world.savedTiles = state.world.allTiles;
     state.avatar.usedSkillPoints = 0;
     state.avatar.affinityBonuses = {
         health: 0,
@@ -78,9 +81,9 @@ export function saveGame(state: GameState) {
 
 function prepareSavedData(state: GameState): void {
     state.saved.world.tiles = [];
-    for (let key in state.world.allTiles) {
-        const tileData = state.world.allTiles[key];
-        if (!tileData) {
+    for (let key in state.world.savedTiles) {
+        const tileData = state.world.savedTiles[key];
+        if (!tileData || tileData.level < 0) {
             continue;
         }
         state.saved.world.tiles.push({

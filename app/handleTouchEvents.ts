@@ -7,6 +7,8 @@ import { handleTreasureMapClick } from 'app/scenes/treasureMapScene';
 import { getState } from 'app/state';
 import { getActualScale } from 'app/world';
 
+import { GameState } from 'app/types';
+
 const mouseMoveThreshold = 5;
 const touchMoveThreshold = 5;
 
@@ -72,28 +74,34 @@ function handleTouchEnd(event: TouchEvent) {
         //if (isDebugMode) alert([$(this).offset().left , $(this).offset().top]);
         const x = lastTouchEvent.touches[0].pageX;
         const y = lastTouchEvent.touches[0].pageY;
+        handleClick(state, x, y);
         //if (isDebugMode) alert([x, y]);
-        switch (state.currentScene) {
-            case 'title':
-                handleTitleClick(state, x, y);
-                break;
-            case 'map':
-                handleMapClick(state, x, y);
-                break;
-            case 'dungeon':
-                handleDungeonClick(state, x, y);
-                break;
-            case 'treasureMap':
-                handleTreasureMapClick(state, x, y);
-                break;
-            case 'skills':
-                handleSkillsClick(state, x, y);
-                break;
-        }
     }
     lastTouchEvent = null;
     firstTouchEvent = null;
     touchMoved = false;
+}
+
+function handleClick(state: GameState, x: number, y: number): void {
+    switch (state.currentScene) {
+        case 'title':
+            handleTitleClick(state, x, y);
+            break;
+        case 'journey':
+        case 'map':
+        case 'voyage':
+            handleMapClick(state, x, y);
+            break;
+        case 'dungeon':
+            handleDungeonClick(state, x, y);
+            break;
+        case 'treasureMap':
+            handleTreasureMapClick(state, x, y);
+            break;
+        case 'skills':
+            handleSkillsClick(state, x, y);
+            break;
+    }
 }
 
 function handleMouseDown(event: MouseEvent) {
@@ -127,23 +135,7 @@ function handleMouseUp(event: MouseEvent) {
     if (!mouseMoved) {
         const x = event.pageX;
         const y = event.pageY;
-        switch (state.currentScene) {
-            case 'title':
-                handleTitleClick(state, x, y);
-                break;
-            case 'map':
-                handleMapClick(state, x, y);
-                break;
-            case 'dungeon':
-                handleDungeonClick(state, x, y);
-                break;
-            case 'treasureMap':
-                handleTreasureMapClick(state, x, y);
-                break;
-            case 'skills':
-                handleSkillsClick(state, x, y);
-                break;
-        }
+        handleClick(state, x, y);
     }
     lastMouseEvent = null;
     mouseMoved = false;

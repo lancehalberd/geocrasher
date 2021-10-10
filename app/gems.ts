@@ -74,6 +74,7 @@ export function checkToSpawnGems(state: GameState): void {
     if (state.globalPosition.isFastMode
         || state.globalPosition.isFixingGPS
         || !state.world.currentPosition
+        || state.currentScene !== 'map'
     ) {
         return;
     }
@@ -94,7 +95,7 @@ export function checkToSpawnGems(state: GameState): void {
                 state.world.currentPosition[0] + Math.cos(theta + dt) * gem.spawnRadius,
                 state.world.currentPosition[1] + Math.sin(theta + dt) * gem.spawnRadius,
             ];
-            const gridCoords = toGridCoords(coords);
+            const gridCoords = toGridCoords(state, coords);
             const tile = getTileData(state, gridCoords);
             if (!tile || areCoordsInGemHistory(state, coords)) {
                 continue;
@@ -104,7 +105,7 @@ export function checkToSpawnGems(state: GameState): void {
             }
         }
         if (bestTile) {
-            bestTile.gemMarker = addLootToTile(bestTile, new GemLootClass(gem.color));
+            bestTile.gemMarker = addLootToTile(state, bestTile, new GemLootClass(gem.color));
             gemMarkers.push(bestTile.gemMarker);
         }
     }
@@ -187,6 +188,11 @@ export function drawGemIndicators(context: CanvasRenderingContext2D, state: Game
                 context.fill();
             context.restore();
         }
+    }
+    // Gems are only collectible in the map scene, so don't draw indicators for them
+    // in other scenes (journey/voyage mode specifically).
+    if (state.currentScene !== 'map') {
+        return;
     }
     for (const gemMarker of state.gems.gemMarkers) {
         if (state.loot.collectingLoot.indexOf(gemMarker) >= 0) continue;
