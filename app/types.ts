@@ -126,6 +126,7 @@ export interface MapTile extends SavedMapTile {
     dungeonContentsRevealed?: boolean
     dungeonContentsRevealable?: boolean
     canvas?: HTMLCanvasElement
+    isExplored?: boolean
     isVisible?: boolean
     // The distance this tile is from the start of the current journey
     journeyDistance: number
@@ -190,6 +191,7 @@ export interface MonsterMarker {
 
 export interface SavedWorldState {
     dungeonLevelCap: number
+    journeySkillPoints: number
     tiles: SavedMapTile[]
     gemData: {history: number[]}[]
 }
@@ -217,6 +219,7 @@ export interface WorldState {
     // The tiles in the journey will be relative to this selected tile.
     journeyModeTileLevel: number
     journeyModeRewardBonus: number
+    journeyModeNextBossLevel: number
 }
 export interface SavedAvatarState {
     level: number

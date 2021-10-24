@@ -1,6 +1,6 @@
 import { advanceGameState } from 'app/advanceGameState';
 import { updateFastMode } from 'app/fastMode';
-import { emptyJourneyRadius, gridLength, maxTileLevel } from 'app/gameConstants';
+import { emptyJourneyRadius, gridLength, maxScale, maxTileLevel } from 'app/gameConstants';
 import { checkToSpawnGems } from 'app/gems';
 import { checkToGenerateLootForTile } from 'app/loot';
 import { checkToGenerateMonster } from 'app/monsters';
@@ -18,6 +18,9 @@ export function getIconSize() {
 
 export function getActualScale(state: GameState): number {
     const { canvas, iconSize } = state.display;
+    if (state.currentScene === 'journey' || state.currentScene === 'voyage') {
+        return maxScale;
+    }
     if (state.currentScene === 'treasureMap') {
         const savedMap = state.saved.treasureHunt.currentMap as SavedTreasureHuntMap;
         return Math.min(
@@ -181,11 +184,13 @@ function exploreSurroundingTiles(state: GameState) {
             if (mapTile.level < 0) {
                 mapTile.level = 0;
                 initializeWorldMapTile(state, mapTile);
-                checkToGenerateLootForTile(state, mapTile);
-                if (state.currentScene === 'journey' || state.currentScene === 'voyage') {
+                newTileFound = true;
+            }
+            if (!mapTile.isExplored) {
+                mapTile.isExplored = true;
+                if (state.currentScene === 'journey') {
                     checkToGenerateMonster(state, mapTile, 1 / 6);
                 }
-                newTileFound = true;
             }
         }
     }
@@ -208,14 +213,12 @@ export function refreshActiveTiles(state: GameState) {
     state.world.selectableTiles = new Set();
     state.world.activeMonsterMarkers = [];
     state.loot.activePowerupMarkers = new Set();
+    const isJourneyMode = state.currentScene === 'journey' || state.currentScene === 'voyage';
     for (let y = currentGridCoords[1] - 4; y <= currentGridCoords[1] + 4; y++) {
         for (let x = currentGridCoords[0] - 4; x <= currentGridCoords[0] + 4; x++) {
             const key = `${x}x${y}`;
             let mapTile = allTiles[key];
             if (!mapTile) {
-                if (state.currentScene === 'journey' || state.currentScene === 'voyage') {
-                    continue;
-                }
                 mapTile = getTileData(state, [x, y], true);
                 mapTile.level = -1;
                 initializeWorldMapTile(state, mapTile);
@@ -237,7 +240,13 @@ export function refreshActiveTiles(state: GameState) {
             // If a tile becomes active with no loot and isn't exhausted, make it spawn loot.
             if (!mapTile.exhaustedDuration && !mapTile.lootMarkers.length) {
                 checkToGenerateLootForTile(state, mapTile);
-                checkToGenerateMonster(state, mapTile, 0.25);
+                if (!isJourneyMode) {
+                    checkToGenerateMonster(state, mapTile, 0.25);
+                }
+            }
+            if (isJourneyMode) {
+                // For simplicity, all journey tiles are considered exhausted to avoid generating new loot/monsters.
+                mapTile.exhaustedDuration = 100;
             }
         }
     }
@@ -272,18 +281,18 @@ export function initializeWorldMapTile(state: GameState, mapTile: MapTile): MapT
         if (mapTile.journeyDistance < emptyJourneyRadius) {
             mapTile.level = state.world.journeyModeTileLevel;
         } else {
-            const desiredVariance = Math.min(4, Math.ceil(gridDistance / 8));
+            // Variance of 3 gives 4 distinct tile offsets: 0,1,2,3
+            const desiredVariance = Math.min(3, Math.ceil(gridDistance / 8));
             // The chance for a tile with level below the base tile only exists at the start of each journey.
-            const lowerTileOffset = gridDistance >= 10 ? 0 : 1;
+            //const lowerTileOffset = gridDistance >= 10 ? 0 : 1;
+            const lowerTileOffset = Math.max(0, 1 - gridDistance / 10);
             const maxLevel = Math.min(maxTileLevel, state.world.journeyModeTileLevel - lowerTileOffset + desiredVariance);
             const minLevel = Math.max(0, state.world.journeyModeTileLevel - 1, maxLevel - desiredVariance);
             const powerPercent = (mapTile.journeyPowerLevel - minPowerLevel) / (maxPowerLevel - minPowerLevel);
-            mapTile.level = minLevel + Math.round((maxLevel - minLevel) * powerPercent);
+            mapTile.level = Math.round(minLevel + (maxLevel - minLevel) * powerPercent);
             //console.log([minPowerLevel, maxPowerLevel], desiredVariance, [minLevel, maxLevel], powerPercent, mapTile.level);
             //console.log(mapTile);
         }
-        // For simplicity, all journey tiles are considered exhausted to avoid generating new loot/monsters.
-        mapTile.exhaustedDuration = 100;
     } else {
         // Level sums are only calculated for map mode tiles.
         for (let i = 0; i <= mapTile.level; i++) {
@@ -304,10 +313,11 @@ export function initializeWorldMapTile(state: GameState, mapTile: MapTile): MapT
             }
             const otherTile = state.world.allTiles[`${mapTile.x + x}x${mapTile.y + y}`];
             if (!otherTile) continue;
-            // The other tile will need to be deleted if it is not explored yet.
-            if (otherTile.level < 0) {
-                delete otherTile.canvas;
-            }
+            // Delete the other tile canvas in case it needs to be updated.
+            // In the normal scene this only really applies to ocean tiles since all newly
+            // explored tiles are shallow water, but in journey mode this can apply to
+            // anything.
+            delete otherTile.canvas;
             mapTile.neighbors[i] = otherTile;
             if (otherTile.neighbors) {
                 otherTile.neighbors[8 - i] = mapTile;

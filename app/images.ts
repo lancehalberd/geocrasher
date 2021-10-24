@@ -60,7 +60,8 @@ export const grassSource: Frame = {image: requireImage('gfx/map/landscapeTiles.p
 export const forestSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 239, x: 18, w: 16, h: 16};
 export const hillSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 290, x: 18, w: 16, h: 16};
 export const mountainSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 341, x: 18, w: 16, h: 16};
-export const iceSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 392, x: 18, w: 64, h: 64};
+// This should be y=392 and h=16, but the first row is slightly transparent for some reason.
+export const iceSource: Frame = {image: requireImage('gfx/map/landscapeTiles.png'), y: 393, x: 18, w: 16, h: 15};
 
 
 // Might use this for a new round of tiles: http://alucus.deviantart.com/art/Pallet-town-tiles-157214973

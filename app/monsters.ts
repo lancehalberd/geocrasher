@@ -12,6 +12,7 @@ import { GameState, MapTile, Monster } from 'app/types';
 const minMonsterRadius = gridLength * 2 / 3;
 const maxMonsterRadius = gridLength * 4 / 3;
 
+
 function getMonsterPowerForTile(state: GameState, tile: MapTile): number {
     // This formula is designed to make the monsters in journey mode have scaling
     // similar to the tile selected for journey mode.
@@ -105,11 +106,20 @@ export function checkToGenerateMonster(state: GameState, tile: MapTile, baseChan
     if (Math.random() > chanceToSpawn) {
         return;
     }
+    const monsterPower = getMonsterPowerForTile(state, tile);
+    const monster = (isJourneyMode && monsterPower >= state.world.journeyModeNextBossLevel + 1)
+        ? makeBossMonster(state, state.world.journeyModeNextBossLevel)
+        : makeMonster(state, getMonsterPowerForTile(state, tile));
+    if (monster.isBoss) {
+        state.world.journeyModeNextBossLevel += 2;
+    }
+
+    state.world.journeyModeNextBossLevel
     tile.monsterMarker = {
         type: 'monster',
         x: tile.x + gridLength / 2,
         y: tile.y + gridLength / 2,
-        monster: makeMonster(state, getMonsterPowerForTile(state, tile)),
+        monster,
         tile,
     };
     tile.monsterMarker.monster.marker = tile.monsterMarker;

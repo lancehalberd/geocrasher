@@ -26,6 +26,7 @@ export function getDefaultSavedState(): SavedGameState {
         },
         world: {
             dungeonLevelCap: 2,
+            journeySkillPoints: 0,
             gemData: [{history: []}, {history: []}, {history: []}],
             tiles: [],
         },
@@ -111,6 +112,7 @@ export function getDefaultState(): GameState {
             journeyModePower: 0,
             journeyModeTileLevel: 0,
             journeyModeRewardBonus: 0,
+            journeyModeNextBossLevel: 0,
         }
     };
 }

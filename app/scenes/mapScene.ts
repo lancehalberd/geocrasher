@@ -513,6 +513,7 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
         w: Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - x,
         h: Math.min(canvas.height + gradientLength / 2, topLeftCorner[1] + 8 * gridSize) - y,
     };
+    const isJourneyMode = state.currentScene === 'journey' || state.currentScene === 'voyage';
     // The ocean background is not used in journey mode.
     if (state.currentScene !== 'journey') {
         context.save();
@@ -534,6 +535,10 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
         const rectangle = getGridRectangle(state, [mapTile.x, mapTile.y]);
         mapTile.target = rectangle;
         if (!rectanglesOverlap(rectangle, canvasRectangle)) {
+            continue;
+        }
+        // Don't draw unexplored tiles.
+        if (isJourneyMode && !mapTile.isExplored) {
             continue;
         }
         visibleTiles.add(mapTile);

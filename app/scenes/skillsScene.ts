@@ -171,7 +171,9 @@ export function getSkillLevel(state: GameState, key: string): number {
 }
 
 export function getTotalSkillPoints(state: GameState): number {
-    return (state.saved.avatar.level - 1) + (state.saved.world.dungeonLevelCap / 2 - 1);
+    return (state.saved.avatar.level - 1)
+        + state.saved.world.journeySkillPoints
+        + (state.saved.world.dungeonLevelCap / 2 - 1);
 }
 function getAvailableSkillPoints(state: GameState) {
     return getTotalSkillPoints(state) - state.avatar.usedSkillPoints;

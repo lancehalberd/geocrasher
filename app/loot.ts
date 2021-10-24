@@ -94,7 +94,11 @@ class MagicStoneLootClass implements SimpleLoot {
     value: number;
     frame: Frame = magicStoneSource;
     onObtain(this: SimpleLoot, state: GameState) {
-        state.saved.world.dungeonLevelCap += 2;
+        if (state.currentScene === 'journey') {
+            state.saved.world.journeySkillPoints++;
+        } else if (state.currentScene === 'dungeon') {
+            state.saved.world.dungeonLevelCap += 2;
+        }
         // Display loot indication a bit longer for skill point bonus.
         state.loot.lootCollectedTime = state.time + 2000;
     }

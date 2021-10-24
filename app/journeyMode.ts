@@ -88,6 +88,8 @@ function startJourneyMode(state: GameState, tile: MapTile): void {
     ];
     state.world.journeyModePower = getTilePower(state, tile);
     state.world.journeyModeTileLevel = tile.level;
+    const maxInitialMonsterPower = getMonsterPowerForJourneyMode(state, state.world.journeyModePower + 0.5);
+    state.world.journeyModeNextBossLevel = Math.floor(maxInitialMonsterPower);
     state.world.savedTiles = state.world.allTiles;
     state.world.allTiles = {};
     state.saved.radius = minRadius;
@@ -100,4 +102,8 @@ function endJourneyMode(state: GameState): void {
     popScene(state);
     state.world.allTiles = state.world.savedTiles;
     state.saved.radius = minRadius;
+}
+
+export function getMonsterPowerForJourneyMode(state: GameState, tilePower: number): number {
+    return state.world.journeyModeTileLevel / 2 + 2 * (tilePower - 1);
 }

@@ -17,7 +17,7 @@ import { abbreviateNumber } from 'app/utils/index';
 import Random from 'app/utils/Random';
 import { exhaustTile, project, toRealCoords } from 'app/world';
 
-import { GameState, HudButton, Loot } from 'app/types';
+import { GameState, HudButton, Loot, Monster } from 'app/types';
 
 function getAttackTime(level: number): number {
     return 600 - Math.min(200, (level - 1) * 50);
@@ -109,6 +109,18 @@ export function updateBattle(state: GameState) {
                     state.loot.collectingLoot.push(loot);
                 }
             }
+            if (defeatedMonster.isBoss && state.currentScene === 'journey') {
+                const loot = (defeatedMonster.level >= (1 + state.saved.world.journeySkillPoints) * 3)
+                    ? makeMagicStoneLoot() : makeTreasureChestLoot(getCoinRoll(state, defeatedMonster));
+                const x = monsterTile.centerX;
+                const y = monsterTile.centerY;
+                monsterTile.lootMarkers = [{
+                    loot,
+                    x, y, tx: x, ty: y,
+                    tile: monsterTile,
+                }];
+                state.loot.collectingLoot.push(monsterTile.lootMarkers[0]);
+            }
         } else {
             for (const neighbor of getAllNeighbors(state, monsterTile)) {
                 neighbor.guards--;
@@ -121,10 +133,7 @@ export function updateBattle(state: GameState) {
                 if (state.dungeon.currentDungeon.isQuestDungeon) {
                     loot = makeMagicStoneLoot();
                 } else {
-                    const baseValue = Math.pow(1.1, defeatedMonster.level) * defeatedMonster.level * 100;
-                    const roll = .9 + Math.random() * .2;
-                    const coinValue = Math.ceil(baseValue * roll * getMoneySkillBonus(state));
-                    loot = makeTreasureChestLoot(coinValue);
+                    loot = makeTreasureChestLoot(getCoinRoll(state, defeatedMonster));
                 }
                 const realCoords = toRealCoords(state, [monsterTile.x, monsterTile.y]);
                 const x = realCoords[0] + gridLength / 2;
@@ -142,6 +151,11 @@ export function updateBattle(state: GameState) {
         delete state.battle.engagedMonster;
         delete state.selectedTile;
     }
+}
+function getCoinRoll(state: GameState, monster: Monster): number {
+    const baseValue = Math.pow(1.1, monster.level) * monster.level * 100;
+    const roll = .9 + Math.random() * .2;
+    return Math.ceil(baseValue * roll * getMoneySkillBonus(state));
 }
 
 function getAttackRoll(attack: number): number {
