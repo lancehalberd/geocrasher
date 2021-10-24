@@ -1,0 +1,33 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <style>
+    body {
+        background-color: black;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-size: 16px;
+        -moz-user-select: none;
+        -khtml-user-select: none;
+        -webkit-user-select: none;
+        -o-user-user-select: none;
+        cursor: default;
+    }
+    /* https://stackoverflow.com/questions/7615009/disable-interpolation-when-scaling-a-canvas */
+    canvas {
+        image-rendering: optimizeSpeed;             /* Older versions of FF          */
+        image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+        image-rendering: -webkit-optimize-contrast; /* Safari                        */
+        image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+        image-rendering: pixelated;                 /* Awesome future-browsers       */
+        -ms-interpolation-mode: nearest-neighbor;
+        touch-action: none;
+    }
+    </style>
+</head>
+<body>
+    <canvas width="800" height="600"></canvas>
+</body>
+<script src="client.js?v=0.0.5"></script>
+</html>

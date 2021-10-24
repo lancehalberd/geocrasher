@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
+    "module": "esnext",
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "outDir": "./tsc/",
+    "strictNullChecks": true,
+    "target": "ES2019"
+  }
+}
