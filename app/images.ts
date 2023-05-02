@@ -79,7 +79,7 @@ export const moneySource: Frame = {image: coinImage, x: 64, y: 64, w: 24, h: 24}
 // Original images by Hillary created for Geo Crasher
 export const personSource: Frame = requireFrame('gfx/person.png', {x: 0, y: 0, w: 144, h: 192}, () => {
     drawOutlinedImage(outlinedPersonContext, 'white', 1, personSource, {x: 0, y: 0, w: 144, h: 192});
-    debugCanvas(outlinedPersonImage);
+    debugCanvas;//(outlinedPersonImage);
 });
 // The person image has enough room between cells for the outline, except at the bottom of the image.
 export const [outlinedPersonImage, outlinedPersonContext] = createCanvasAndContext(144, 194);

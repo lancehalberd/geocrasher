@@ -108,7 +108,7 @@ function revealTreasureMapTile(state: GameState, x: number, y: number) {
     }
     savedMap.revealedCoordinates.push([x, y]);
     currentMap.tiles[y][x].isRevealed = true;
-    state.saved.treasureHunt.mapCount++;
+    state.saved.treasureHunt.mapCount--;
     const [tx, ty] = getTreasureLocation(savedMap);
     if (tx === x && ty === y) {
         savedMap.dungeonLevel = getDungeonLevel(state, state.saved.avatar.level);
