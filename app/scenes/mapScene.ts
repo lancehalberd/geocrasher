@@ -1,16 +1,16 @@
 import { drawAvatar } from 'app/avatar';
-import { drawDamageIndicators, getFightOrFleeButton, updateBattle } from 'app/battle';
+import {drawDamageIndicators, getFightOrFleeButton} from 'app/battle';
 import { isDebugMode } from 'app/context';
 import { createCanvas } from 'app/dom';
 import {
-    drawBar, drawEmbossedText, drawFrame, drawOutlinedImage,
-    drawRectangleFrame, drawSolidTintedImage, drawTintedImage, pad,
+    drawEmbossedText, drawFrame, drawOutlinedImage,
+    drawRectangleFrame, drawSolidTintedImage, pad,
 } from 'app/draw';
 import { gridLength, maxTileLevel } from 'app/gameConstants';
-import { drawGemIndicators, updateGems } from 'app/gems';
+import { drawGemIndicators} from 'app/gems';
 import { handleHudButtonClick, renderHudButtons } from 'app/hud';
 import {
-    heartSource, outlinedMoneySource, upArrows,
+    upArrows,
     oceanTile,
     shallowSource,
     sandSource,
@@ -24,20 +24,22 @@ import {
 import { getJourneyButton } from 'app/journeyMode';
 import {
     checkToGenerateLootForTile, drawLootTotals, getCollectButton,
-    getCollectionRadius, updateLootCollection, updateTileLoot,
+    getCollectionRadius, updateMapLoot,
 } from 'app/loot';
 import { checkToGenerateMonster, drawTileMonster } from 'app/monsters';
 import { saveGame } from 'app/saveGame';
 import { drawDungeonStats, getEnterExitButton } from 'app/scenes/dungeonScene';
-import { getSkillValue, getSkillButton } from 'app/scenes/skillsScene';
+import {getSkillButton} from 'app/scenes/skillsScene';
 import { getTreasureMapButton } from 'app/scenes/treasureMapScene';
 import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
+import {drawCoinsIndicator, drawLifeIndicator, drawLootMarker} from 'app/utils/hud';
 import { abbreviateNumber, rectanglesOverlap } from 'app/utils/index';
+import {getSkillValue} from 'app/utils/skills';
+import {updateGems} from 'app/utils/updateGems';
 import {
     getActualScale, getGridRectangle, getOrigin, getTileData,
     project, isTileExplored, toGridCoords, unproject,
-} from 'app/world';
-import { Frame, GameState, HudButton, LootMarker, MapTile } from 'app/types';
+} from 'app/utils/world';
 
 export const levelColors = [
     shallowSource,
@@ -54,38 +56,8 @@ if (levelColors.length !== maxTileLevel + 1) {
     console.error(`Incorrect number of tiles found, expected ${maxTileLevel + 1} found ${levelColors.length}`, levelColors.length);
 }
 
-export function getTilePower(state: GameState, tile: MapTile): number {
-    // In journey/voyage modes, each tile is just assigned a specific power on creation.
-    if (state.currentScene === 'journey' || state.currentScene === 'voyage') {
-        return tile.journeyPowerLevel;
-    }
-    // In the normal map scene, the power of tiles depends on how many tiles have been upgraded
-    // as well as the level of the tile and its neighbors.
-    if (!tile.neighbors) {
-        console.error(tile);
-        throw new Error('Expected tile.neighbors to be defined');
-    }
-    // Base power is 1 + 5% of total tiles leveled + 25% of current tile level.
-    let power = 1 + (state.world.levelSums[1] ?? 0) / 20 + tile.level / 4;
-    // Tile gains 10% of each of its neighbors level.
-    for (const sideKey of [1, 3, 5, 7]) {
-        power += (tile.neighbors[sideKey]?.level ?? 0) / 10;
-    }
-    // Tile gains 5% of each of its corner neighbors level.
-    for (const cornerKey of [0, 2, 6, 8]) {
-        power += (tile.neighbors[cornerKey]?.level ?? 0) / 20;
-    }
-    return power;
-}
-
 export function updateMap(state: GameState) {
-    state.loot.lootInRadius = [];
-    state.loot.lootInMonsterRadius = [];
-    updateLootCollection(state);
-    for (const mapTile of state.world.activeTiles) {
-        updateTileLoot(state, mapTile);
-    }
-    updateBattle(state);
+    updateMapLoot(state);
     updateGems(state);
 }
 
@@ -186,7 +158,6 @@ export function drawMapScene(context: CanvasRenderingContext2D, state: GameState
     if (selectedTile?.dungeonMarker) {
         drawDungeonStats(context, state, selectedTile.dungeonMarker.dungeon);
     }
-    // collect coins button is replaced by 'Fight!' button when a monster is selected.
     if (state.globalPosition.isFixingGPS) {
         const fontSize = Math.floor(3 * iconSize / 4);
         context.font = fontSize + 'px sans-serif';
@@ -216,37 +187,7 @@ export function drawMapScene(context: CanvasRenderingContext2D, state: GameState
     drawLootTotals(context, state);
 }
 
-export function drawCoinsIndicator(context: CanvasRenderingContext2D, state: GameState) {
-    const { canvas, iconSize } = state.display;
-    const localIconSize = Math.floor(iconSize / 2);
-    const coinsText = abbreviateNumber(state.saved.coins);
-    const fontSize = Math.floor( localIconSize * .9);
-    context.font = fontSize + 'px sans-serif';
-    context.textAlign = 'left'
-    context.textBaseline = 'middle';
-    const metrics = context.measureText(coinsText);
-    const margin = 10;
-    const x = canvas.width - metrics.width - localIconSize - 3 * margin;
-    const y = margin;
-    drawFrame(context, outlinedMoneySource, {x, y, w: localIconSize, h: localIconSize});
-    drawEmbossedText(context, coinsText, 'gold', 'white', x + localIconSize, y + Math.round(localIconSize / 2));
-}
 
-export function drawLifeIndicator(context: CanvasRenderingContext2D, state: GameState) {
-    const { iconSize } = state.display;
-    const localIconSize = Math.floor(iconSize / 2);
-    const fontSize = Math.floor(3 * localIconSize / 4);
-    context.font = fontSize + 'px sans-serif';
-    context.textAlign = 'left';
-    context.textBaseline = 'top';
-
-    drawFrame(context, heartSource, {x: 10, y: 10, w: localIconSize, h: localIconSize});
-    const { currentHealth } = state.saved.avatar;
-    const { maxHealth } = state.avatar;
-    const healthText = abbreviateNumber(currentHealth) + ' / ' + abbreviateNumber(maxHealth);
-    drawEmbossedText(context, healthText, 'red', 'white', 10 + localIconSize + 5, 10);
-    drawBar(context, {x: 10, y: 10 + localIconSize + 5, w: localIconSize * 4, h: 6}, 'white', 'red', currentHealth / maxHealth);
-}
 
 const upgradeTileButton: HudButton = {
     onClick(state: GameState): void {
@@ -652,22 +593,5 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
         context.textAlign = 'center';
         context.textBaseline = 'top';
         drawEmbossedText(context, `${draws}`, 'white', 'black', canvas.width / 2, 5);
-    }
-}
-export function drawLootMarker(context: CanvasRenderingContext2D, state: GameState, lootMarker: LootMarker, scaleToUse: number) {
-    const center = project(state, [lootMarker.x, lootMarker.y]);
-    const lootScale = gridLength * scaleToUse / 64;
-    const w = lootMarker.loot.frame.w * (lootMarker.loot.scale ?? 1) * lootScale;
-    const h = lootMarker.loot.frame.h * (lootMarker.loot.scale ?? 1) * lootScale;
-    const target = {
-        x: Math.round(center[0] - w / 2),
-        y: Math.round(center[1] - h / 2),
-        w, h,
-    };
-    if (lootMarker.isInMonsterRadius || lootMarker.isInAvatarRadius) {
-        const tintColor = lootMarker.isInMonsterRadius ? 'red' : 'gold';
-        drawTintedImage(context, {color: tintColor, amount: .4 + Math.cos(state.time / 150) * .3}, lootMarker.loot.frame, target);
-    } else {
-        drawFrame(context, lootMarker.loot.frame, target);
     }
 }

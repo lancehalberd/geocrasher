@@ -1,0 +1,14 @@
+
+Reduce monster bonus from 40% per level to 20% level, increase monster level from tiles.
+
+Exploration Mode:
+    Implement bonus that increments up to 50% more rewards after 50 ticks
+    Either allow scaling/dragging map or override scale while in journey mode (don't actually change scale value)
+    ? Allow selecting character in journey mode to see stats?
+
+
+Gems are added to inventory like maps and can be consumed at will, but new ones won't spawn until they are used.
+
+Void Beacons can be placed to prevent anything from being spawned in an area. Can be reclaimed and redeployed at a cost.
+
+A way point is created at your initial location. Additional way points can be added at certain distances from your starting way point.

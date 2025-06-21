@@ -1,4 +1,5 @@
 const path = require('path');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 module.exports = {
   entry: './app/client.ts',
@@ -9,9 +10,19 @@ module.exports = {
         test: /\.(ts|js)$/,
         use: 'ts-loader',
         exclude: /node_modules/,
+        include: /app/,
       },
     ],
   },
+  plugins: [
+    new CircularDependencyPlugin({
+      exclude: /tsc|node_modules/,
+      include: /app/,
+      failOnError: false,
+      // set the current working directory for displaying module paths
+      cwd: process.cwd(),
+    })
+  ],
   resolve: {
     extensions: [ '.ts', '.js' ],
     alias: {

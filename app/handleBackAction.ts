@@ -1,9 +1,22 @@
-import { saveGame } from 'app/saveGame';
-import { exitDungeon } from 'app/scenes/dungeonScene';
-import { hideTreasureMap } from 'app/scenes/treasureMapScene';
-import { getState } from 'app/state';
+import {saveGame} from 'app/saveGame';
+import {refreshActiveTiles} from 'app/utils/refreshActiveTiles';
+import {getState, popScene} from 'app/state';
 
-import { Scene } from 'app/types';
+export function hideTreasureMap(state: GameState) {
+    delete state.selectedTile;
+    state.world.origin = state.world.currentPosition;
+    popScene(state);
+    refreshActiveTiles(state);
+}
+
+export function exitDungeon(state: GameState) {
+    state.world.origin = state.world.currentPosition;
+    delete state.battle.engagedMonster;
+    delete state.selectedTile;
+    delete state.dungeon.currentDungeon;
+    popScene(state);
+    refreshActiveTiles(state);
+}
 
 function handlePopState(event: PopStateEvent): void {
     const state = getState();

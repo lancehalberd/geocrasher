@@ -1,17 +1,14 @@
-import { advanceGameState } from 'app/advanceGameState';
-import { gridLength, maxRadius } from 'app/gameConstants';
-import { blueGemSource, greenGemSource, orangeGemSource } from 'app/images';
-import { addLootToTile } from 'app/loot';
-import { getDistance } from 'app/utils/index';
-import { getActualScale, getTileData, project, toGridCoords } from 'app/world';
-
-import { Frame, GameState, GemColor, GemLoot, MapTile } from 'app/types';
+import {gridLength, maxRadius} from 'app/gameConstants';
+import {blueGemSource, greenGemSource, orangeGemSource} from 'app/images';
+import {addLootToTile} from 'app/loot';
+import {getDistance} from 'app/utils/index';
+import {getActualScale, getTileData, project, toGridCoords} from 'app/utils/world';
 
 // How long recent gem pickup locations are excluded from possible gem spawn locations.
 const historyDuration = 15 * 60 * 1000;
 // The radius around which gems cannot spawn.
 const exclusionRadius = 6 * gridLength
-const gemData = <const>[
+export const gemData = <const>[
     {
         color: 'orange', frame: orangeGemSource, scale: 0.4, spawnRadius: gridLength * 6,
         collectRadius: maxRadius * 1.5, ticks: 4, debuff: .95,
@@ -130,35 +127,6 @@ function areCoordsInGemHistory(state: GameState, coords: number[]) {
         }
     }
     return false;
-}
-
-export function updateGems(state: GameState): void {
-    for (const gem of gemData) {
-        const currentTick = state.gems.colorCounters[gem.color] || 0;
-        if (!currentTick) {
-            continue;
-        }
-        if (state.loot.collectingLoot.length) {
-            state.gems.nextTickTime = state.time + gem.tickDuration;
-        }
-        if (state.gems.nextTickTime && state.time >= state.gems.nextTickTime) {
-            state.gems.colorCounters[gem.color] = currentTick - 1;
-            advanceGameState(state);
-            state.gems.nextTickTime = state.time + gem.tickDuration;
-            for (const monsterMarker of state.world.activeMonsterMarkers) {
-                if (monsterMarker.monster.tint?.color !== gem.color) {
-                    monsterMarker.monster.tint = {
-                        color: gem.color,
-                        amount: 0,
-                    };
-                }
-                monsterMarker.monster.tint.amount += gem.tintAmount;
-                monsterMarker.monster.currentHealth = Math.max(1, Math.floor(monsterMarker.monster.currentHealth * gem.debuff));
-                monsterMarker.monster.attack = Math.max(1, Math.floor(monsterMarker.monster.attack * gem.debuff));
-                monsterMarker.monster.defense = Math.max(1, Math.floor(monsterMarker.monster.defense * gem.debuff));
-            }
-        }
-    }
 }
 
 export function drawGemIndicators(context: CanvasRenderingContext2D, state: GameState) {

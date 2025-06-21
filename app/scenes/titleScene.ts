@@ -3,9 +3,9 @@ import { drawEmbossedText, drawFrame, drawOutlinedText } from 'app/draw';
 import { version } from 'app/gameConstants';
 import { handleHudButtonClick, renderHudButtons } from 'app/hud';
 import { heartSource, outlinedMoneySource, requireImage, shieldSource, swordSource, trashSource } from 'app/images';
-import { deleteSaveSlot, loadSaveSlot } from 'app/saveGame';
+import {loadSaveSlot} from 'app/utils/loadSaveSlot';
+import {deleteSaveSlot} from 'app/saveGame';
 import { abbreviateNumber } from 'app/utils/index';
-import { GameState, HudButton, Rectangle } from 'app/types';
 
 const titleBackground = requireImage('gfx/beach.jpg');
 const saveColors = ['red', 'green', 'blue'];
@@ -139,10 +139,10 @@ class DeleteSaveSlotButton implements HudButton {
     constructor(index: number) {
         this.index = index;
     }
-    onClick(this: DeleteSaveSlotButton, state: GameState) {
+    onClick(state: GameState) {
         deleteSaveSlot(state, this.index);
     }
-    render(this: DeleteSaveSlotButton, context: CanvasRenderingContext2D, state: GameState) {
+    render(context: CanvasRenderingContext2D, state: GameState) {
         const { border, buttonHeight } = getTitleDisplayValues(state);
         context.fillStyle = 'black';
         context.fillRect(this.target.x, this.target.y, this.target.w, this.target.h);
@@ -152,7 +152,7 @@ class DeleteSaveSlotButton implements HudButton {
         const trashTarget = {x: this.target.x - Math.round(border / 2), y: this.target.y + (buttonHeight - trashSize) / 2, w: trashSize, h: trashSize};
         drawFrame(context, trashSource, trashTarget);
     }
-    updateTarget(this: DeleteSaveSlotButton, state: GameState): void {
+    updateTarget(state: GameState): void {
         const { buttonHeight, deleteButtonWidth, loadButtonWidth, narrow, padding, totalButtonWidth, x, y } = getTitleDisplayValues(state);
         if (narrow) {
             this.target = {
@@ -171,7 +171,7 @@ class DeleteSaveSlotButton implements HudButton {
         }
     }
 }
-const titleButtons = [
+const titleButtons: HudButton[] = [
     new LoadSaveSlotButton(0), new LoadSaveSlotButton(1), new LoadSaveSlotButton(2),
     new DeleteSaveSlotButton(0), new DeleteSaveSlotButton(1), new DeleteSaveSlotButton(2),
 ];

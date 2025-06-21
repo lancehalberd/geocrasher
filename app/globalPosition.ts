@@ -4,8 +4,6 @@ import { clearAllGems } from 'app/gems';
 import { getState } from 'app/state';
 import { getDistance } from 'app/utils/index';
 
-import { GameState } from 'app/types';
-
 const updatePosition: PositionCallback = (position: GeolocationPosition): void => {
     const state = getState();
     // After receiving a position update, we will attempt to restart the position listener

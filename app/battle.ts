@@ -1,23 +1,20 @@
 import { advanceGameState } from 'app/advanceGameState';
-import { gainExperience, gainHealth, getAvatarPosition } from 'app/avatar';
+import {gainExperience, gainHealth, getAvatarPosition, resetLootTotals} from 'app/avatar';
 import { drawEmbossedText, drawFrame } from 'app/draw';
 import { gridLength } from 'app/gameConstants';
 import { shoeSource, swordSource } from 'app/images';
-import { addDungeonToTile, getAllNeighbors } from 'app/scenes/dungeonScene';
-import { updateMap } from 'app/scenes/mapScene';
-import { getMoneySkillBonus, getSkillValue } from 'app/scenes/skillsScene';
 import {
     addLootToTile,
     makeMagicStoneLoot,
     makeTreasureChestLoot,
     makeTreasureMapLoot,
-    resetLootTotals,
+    updateMapLoot,
 } from 'app/loot'
-import { abbreviateNumber } from 'app/utils/index';
+import {addDungeonToTile, getAllNeighbors} from 'app/utils/dungeon';
+import {abbreviateNumber} from 'app/utils/index';
 import Random from 'app/utils/Random';
-import { exhaustTile, project, toRealCoords } from 'app/world';
-
-import { GameState, HudButton, Loot, Monster } from 'app/types';
+import {getMoneySkillBonus, getSkillValue} from 'app/utils/skills';
+import {exhaustTile, project, toRealCoords} from 'app/utils/world';
 
 function getAttackTime(level: number): number {
     return 600 - Math.min(200, (level - 1) * 50);
@@ -102,7 +99,7 @@ export function updateBattle(state: GameState) {
         delete state.selectedTile;
         // Outside of dungeons, you get nearby treasure for fighting monsters.
         if (!state.dungeon.currentDungeon) {
-            updateMap(state);
+            updateMapLoot(state);
             resetLootTotals(state);
             for (const loot of currentLootInMonsterRadius) {
                 if (state.loot.lootInMonsterRadius.indexOf(loot) < 0) {

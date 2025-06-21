@@ -1,11 +1,8 @@
 import { drawFrame, getFrame } from 'app/draw';
 import { gridLength } from 'app/gameConstants';
 import { avatarAnimations } from 'app/images';
-import { getAttackSkillBonus, getDefenseSkillBonus, getHealthSkillBonus, getSkillValue } from 'app/scenes/skillsScene';
-import { resetLootTotals } from 'app/loot';
-import { getActualScale, project } from 'app/world';
-
-import { GameState } from 'app/types';
+import {getAttackSkillBonus, getDefenseSkillBonus, getHealthSkillBonus, getSkillValue, getTotalSkillPoints} from 'app/utils/skills';
+import {getActualScale, project} from 'app/utils/world';
 
 export function gainExperience(state: GameState, experienceGained: number): void {
     state.saved.avatar.experience += experienceGained * (1 + getSkillValue(state, 'experiencePower'));
@@ -19,6 +16,17 @@ export function gainExperience(state: GameState, experienceGained: number): void
         updatePlayerStats(state);
         state.saved.avatar.currentHealth = state.avatar.maxHealth;
     }
+}
+
+export function resetLootTotals(state: GameState) {
+    state.loot.collectionBonus = .9;
+    state.loot.coinsCollected = 0;
+    updatePlayerStats(state);
+    state.loot.initialLevel = state.saved.avatar.level;
+    state.loot.initialSkillPoints = getTotalSkillPoints(state);
+    state.loot.initialMaxHealth = state.avatar.maxHealth;
+    state.loot.initialAttack = getAttackWithoutHealthBonuses(state);
+    state.loot.initialDefense = getDefenseWithoutHealthBonuses(state);
 }
 
 export function experienceForNextLevel(state: GameState): number {

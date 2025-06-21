@@ -4,8 +4,6 @@ import { drawSkillsScene } from 'app/scenes/skillsScene';
 import { drawTitleScene } from 'app/scenes/titleScene';
 import { drawTreasureMapScene } from 'app/scenes/treasureMapScene';
 
-import { GameState } from 'app/types';
-
 export function drawScene(context: CanvasRenderingContext2D, state: GameState): void {
     const { canvas } = state.display;
     context.clearRect(0,0, canvas.width, canvas.height);

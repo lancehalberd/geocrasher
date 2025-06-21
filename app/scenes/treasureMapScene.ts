@@ -1,5 +1,6 @@
 import { drawEmbossedText, drawFrame, drawOutlinedImage, drawRectangle, fillRectangle, pad } from 'app/draw';
 import { frameLength, gridLength } from 'app/gameConstants';
+import {hideTreasureMap} from 'app/handleBackAction';
 import { handleHudButtonClick, renderHudButtons } from 'app/hud';
 import {
     darkStoneImage,
@@ -12,12 +13,12 @@ import {
 } from 'app/images';
 import { drawLootTotals } from 'app/loot';
 import { saveGame } from 'app/saveGame';
-import { createDungeon, drawDungeonStats, getDungeonLevel, getEnterExitButton } from 'app/scenes/dungeonScene';
-import { drawCoinsIndicator, drawLifeIndicator } from 'app/scenes/mapScene';
-import { popScene, pushScene } from 'app/state';
-import SRandom from 'app/utils/SRandom';
-import { getActualScale, getGridRectangle, refreshActiveTiles, toGridCoords, unproject } from 'app/world'
-import { GameState, HudButton, SavedTreasureHuntMap, TreasureHuntMap } from 'app/types';
+import {drawDungeonStats, getEnterExitButton} from 'app/scenes/dungeonScene';
+import {drawCoinsIndicator, drawLifeIndicator} from 'app/utils/hud';
+import {pushScene} from 'app/state';
+import {createDungeon, getDungeonLevel} from 'app/utils/dungeon';
+import {getActualScale, getGridRectangle, toGridCoords, unproject} from 'app/utils/world'
+import {getTreasureLocation, initializeTreasureMapStateFromSave} from 'app/utils/treasureMap';
 
 function startNewTreasureMap(state: GameState): void {
     const size = 3 + Math.ceil(Math.sqrt(state.saved.avatar.level));
@@ -28,50 +29,7 @@ function startNewTreasureMap(state: GameState): void {
     };
     initializeTreasureMapStateFromSave(state);
 }
-function makeMap(size: number): TreasureHuntMap {
-    const map: TreasureHuntMap = {
-        tiles: [],
-        revealAnimationTime: 0,
-    };
-    for (let y = 0; y < size; y++) {
-        map.tiles[y] = [];
-        for (let x = 0; x < size; x++) {
-            map.tiles[y][x] = {};
-        }
-    }
-    return map;
-}
-export function initializeTreasureMapStateFromSave(state: GameState) {
-    const savedMap = state.saved.treasureHunt.currentMap;
-    if (!savedMap) {
-        delete state.treasureHunt.currentMap;
-        return;
-    }
-    const [tx, ty] = getTreasureLocation(savedMap);
-    const currentMap = makeMap(savedMap.size);
-    if (savedMap.revealedCoordinates.length) {
-        for (const [x, y] of savedMap.revealedCoordinates) {
-            currentMap.tiles[y][x].isRevealed = true;
-            // In case something changes in our generator and the dungeon is newly uncovered on load
-            // make sure to set the dungeonLevel, which indicates the dungeon has been found.
-            if (x === tx && y === ty && !savedMap.dungeonLevel) {
-                savedMap.dungeonLevel = getDungeonLevel(state, state.saved.avatar.level);
-            }
-        }
-    }
-    state.treasureHunt.currentMap = currentMap;
-    if (savedMap.dungeonLevel) {
-        currentMap.dungeon = createDungeon(state, savedMap.dungeonLevel);
-    }
-}
 
-export function getTreasureLocation(savedMap: SavedTreasureHuntMap): number[] {
-    const random = SRandom.seed(savedMap.seed);
-    return [
-        random.range(0, savedMap.size - 1),
-        random.nextSeed().range(0, savedMap.size - 1),
-    ];
-}
 function showTreasureMapScene(state: GameState) {
     delete state.selectedTile;
     delete state.battle.engagedMonster;
@@ -79,12 +37,6 @@ function showTreasureMapScene(state: GameState) {
         startNewTreasureMap(state);
     }
     pushScene(state, 'treasureMap');
-}
-export function hideTreasureMap(state: GameState) {
-    delete state.selectedTile;
-    state.world.origin = state.world.currentPosition;
-    popScene(state);
-    refreshActiveTiles(state);
 }
 export function updateTreasureMap(state: GameState): void {
     const savedMap = state.saved.treasureHunt.currentMap;

@@ -5,9 +5,7 @@ import { handleSkillsClick } from 'app/scenes/skillsScene';
 import { handleTitleClick } from 'app/scenes/titleScene';
 import { handleTreasureMapClick } from 'app/scenes/treasureMapScene';
 import { getState } from 'app/state';
-import { getActualScale } from 'app/world';
-
-import { GameState } from 'app/types';
+import {getActualScale} from 'app/utils/world';
 
 const mouseMoveThreshold = 5;
 const touchMoveThreshold = 5;

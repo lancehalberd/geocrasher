@@ -1,4 +1,5 @@
 import { updatePlayerStats } from 'app/avatar';
+import {updateBattle} from 'app/battle';
 import { isDebugMode } from 'app/context';
 import { frameLength, gridLength } from 'app/gameConstants';
 import { checkToWatchPosition } from 'app/globalPosition';
@@ -7,7 +8,8 @@ import { updateDungeon } from 'app/scenes/dungeonScene';
 import { updateMap } from 'app/scenes/mapScene';
 import { updateTreasureMap } from 'app/scenes/treasureMapScene';
 import { getState } from 'app/state';
-import { getActualScale, project, setCurrentPosition } from 'app/world';
+import {getActualScale, project} from 'app/utils/world';
+import {setCurrentPosition} from 'app/world';
 
 let mainLoopId: NodeJS.Timer;
 export function startMainLoop() {
@@ -118,8 +120,9 @@ function mainLoop() {
                 updateTreasureMap(state);
                 break;
         }
+        updateBattle(state);
         state.time += frameLength;
-    } catch (error) {
+    } catch (error: any) {
         clearTimeout(mainLoopId);
         console.log(error.message);
         if (isDebugMode) alert(error.message);

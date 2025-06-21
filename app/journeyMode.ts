@@ -1,13 +1,8 @@
 import { drawFrame } from 'app/draw';
 import { gridLength, minRadius } from 'app/gameConstants';
-import {
-    exitSource,
-    shoeSource,
-} from 'app/images';
-
-import { getTilePower } from 'app/scenes/mapScene';
-import { popScene, pushScene } from 'app/state';
-import { GameState, HudButton, MapTile } from 'app/types';
+import {exitSource, shoeSource} from 'app/images';
+import {getTilePower} from 'app/utils/world';
+import {popScene, pushScene} from 'app/state';
 
 const journeyButton: HudButton = {
     onClick(state: GameState): void {

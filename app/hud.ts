@@ -1,7 +1,5 @@
 import { isPointInRectangle } from 'app/utils/index';
 
-import { GameState, HudButton } from 'app/types';
-
 export function renderHudButtons(context: CanvasRenderingContext2D, state: GameState, buttons: HudButton[]): void {
     for (const button of buttons) {
         if (button.isVisible?.(state) === false) {

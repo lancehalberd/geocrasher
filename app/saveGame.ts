@@ -1,11 +1,33 @@
-import { updatePlayerStats } from 'app/avatar';
-import { checkToSpawnGems, clearAllGems } from 'app/gems';
-import { getSkillLevel, skills } from 'app/scenes/skillsScene';
-import { initializeTreasureMapStateFromSave } from 'app/scenes/treasureMapScene';
-import { getDefaultSavedState, pushScene } from 'app/state';
-import { initializeWorldMapTile } from 'app/world';
+import {minRadius} from 'app/gameConstants';
 
-import { GameState, SavedGameState } from 'app/types';
+export function getDefaultSavedState(): SavedGameState {
+    return {
+        coins: 10,
+        radius: minRadius,
+        avatar: {
+            level: 1,
+            experience: 0,
+            currentHealth: 100,
+            healthBonus: 100,
+            attackBonus: 8,
+            defenseBonus: 6,
+            skillLevels: {},
+        },
+        gems: {
+            recentLocations: []
+        },
+        treasureHunt: {
+            hadMap: false,
+            mapCount: 0,
+        },
+        world: {
+            dungeonLevelCap: 2,
+            journeySkillPoints: 0,
+            gemData: [{history: []}, {history: []}, {history: []}],
+            tiles: [],
+        },
+    };
+}
 
 export function initializeSaveSlots(state: GameState): void {
     const importedSaveDataString = window.localStorage.getItem('geocrasher2Saves');
@@ -27,48 +49,6 @@ export function deleteSaveSlot(this: void, state: GameState, saveSlotIndex: numb
     }
 }
 
-export function loadSaveSlot(state: GameState, saveSlotIndex: number): void {
-    state.saveSlotIndex = saveSlotIndex;
-    state.saved = fixSavedData(state.saveSlots[saveSlotIndex]);
-    state.world.levelSums = [];
-    state.world.allTiles = {};
-    for (const tile of state.saved.world.tiles) {
-        const key = `${tile.x}x${tile.y}`;
-        state.world.allTiles[key] = initializeWorldMapTile(state, {
-            ...tile,
-            centerX: 0,
-            centerY: 0,
-            target: {x: 0, y: 0, w: 0, h: 0},
-            guards: 0,
-            journeyDistance: 0,
-            journeyPowerLevel: 0,
-            lootMarkers: [],
-        });
-    }
-    state.world.savedTiles = state.world.allTiles;
-    state.avatar.usedSkillPoints = 0;
-    state.avatar.affinityBonuses = {
-        health: 0,
-        attack: 0,
-        defense: 0,
-        money: 0,
-    };
-    for (const skill of skills) {
-        const level = getSkillLevel(state, skill.key);
-        const pointsUsed = (level * (level + 1)) / 2;
-        state.avatar.usedSkillPoints += pointsUsed;
-        state.avatar.affinityBonuses[skill.affinity] += pointsUsed;
-    }
-    initializeTreasureMapStateFromSave(state);
-    updatePlayerStats(state);
-    delete state.world.currentGridCoords;
-    delete state.selectedTile;
-    state.goalCoordinates = [];
-    state.loot.hideStatsAt = state.time + 2000;
-    pushScene(state, 'map');
-    clearAllGems(state);
-    checkToSpawnGems(state);
-}
 
 export function saveGame(state: GameState) {
     if (state.saveSlotIndex < 0 || state.saveSlotIndex > 2) {
@@ -101,7 +81,7 @@ function prepareSavedData(state: GameState): void {
  * in a save file is no longer valid. This method is applied to each save slot
  * on load to correct any issues with the save data found vs what is expected.
  */
-function fixSavedData(savedState: Partial<SavedGameState>): SavedGameState {
+export function fixSavedData(savedState: Partial<SavedGameState>): SavedGameState {
     const defaultSavedState = getDefaultSavedState();
     return {
         ...defaultSavedState,

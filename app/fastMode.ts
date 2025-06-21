@@ -1,8 +1,7 @@
-import { isTestMode } from 'app/context';
-import { maxRadius } from 'app/gameConstants';
-import { clearAllGems } from 'app/gems';
-import { resetLootTotals } from 'app/loot';
-import { GameState } from 'app/types';
+import {resetLootTotals} from 'app/avatar';
+import {isTestMode} from 'app/context';
+import {maxRadius} from 'app/gameConstants';
+import {clearAllGems} from 'app/gems';
 
 const maxThreshold = 500;
 export function updateFastMode(state: GameState, millisecondsBetweenUpdates: number) {

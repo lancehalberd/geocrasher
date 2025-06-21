@@ -4,8 +4,6 @@ import { checkToSpawnGems } from 'app/gems';
 import { checkToGenerateLootForTile } from 'app/loot';
 import { checkToGenerateMonster } from 'app/monsters';
 
-import { GameState } from 'app/types';
-
 // Function that is called to advance time in the world.
 // Increments exhaust counter on exhausted tiles
 // Avatar restores % of max health

@@ -1,13 +1,11 @@
-import { getAttackWithoutHealthBonuses, getDefenseWithoutHealthBonuses } from 'app/avatar';
-import { drawBar, drawFrame, drawOutlinedImage, getTintedImage, prepareTintedImage } from 'app/draw';
-import { emptyJourneyRadius, gridLength, maxTileLevel } from 'app/gameConstants';
-import { bugSource, crabSource, fungusSource, snailSource, turtleSource, waspSource } from 'app/images';
-import { getTilePower } from 'app/scenes/mapScene';
-import { getSkillValue } from 'app/scenes/skillsScene';
-import { getDistance } from 'app/utils/index';
+import {getAttackWithoutHealthBonuses, getDefenseWithoutHealthBonuses} from 'app/avatar';
+import {drawBar, drawFrame, drawOutlinedImage, getTintedImage, prepareTintedImage} from 'app/draw';
+import {emptyJourneyRadius, gridLength, maxTileLevel} from 'app/gameConstants';
+import {bugSource, crabSource, fungusSource, snailSource, turtleSource, waspSource} from 'app/images';
+import {getTilePower} from 'app/utils/world';
+import {getSkillValue} from 'app/utils/skills';
+import {getDistance} from 'app/utils/index';
 import Random from 'app/utils/Random';
-
-import { GameState, MapTile, Monster } from 'app/types';
 
 const minMonsterRadius = gridLength * 2 / 3;
 const maxMonsterRadius = gridLength * 4 / 3;

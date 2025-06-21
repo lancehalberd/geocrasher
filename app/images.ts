@@ -1,7 +1,6 @@
-import { createCanvasAndContext, debugCanvas } from 'app/dom';
-import { createAnimation, drawFrame, drawOutlinedImage } from 'app/draw';
-
-import { Frame, Rectangle } from 'app/types';
+import {createCanvasAndContext, debugCanvas} from 'app/dom';
+import {drawFrame, drawOutlinedImage} from 'app/draw';
+import {frameLength} from 'app/gameConstants';
 
 const assetVersion = '1';
 const images: {[key: string]: HTMLImageElement} = {};
@@ -11,6 +10,48 @@ function loadImage(source: string, callback: () => void): HTMLImageElement {
     images[source].src = source + '?v=' + assetVersion;
     return images[source];
 }
+
+interface CreateAnimationOptions {
+    x?: number
+    y?: number
+    xSpace?: number
+    rows?: number
+    cols?: number
+    top?: number
+    left?: number
+    duration?: number
+    frameMap?: number[]
+}
+export function createAnimation(
+    source: string | HTMLImageElement | HTMLCanvasElement,
+    dimensions: FrameDimensions,
+    {x = 0, y = 0, rows = 1, cols = 1, xSpace = 0, top = 0, left = 0, duration = 8, frameMap}: CreateAnimationOptions = {},
+    props: ExtraAnimationProperties = {},
+): FrameAnimation {
+    let frames: Frame[] = [];
+    let image: FrameImage;
+    if (typeof source === 'string') {
+        image = requireImage(source);
+    } else {
+        image = source;
+    }
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            frames[row * cols + col] = {
+                ...dimensions,
+                x: left + (dimensions.w + xSpace) * (x + col),
+                y: top + dimensions.h * (y + row),
+                image
+            };
+        }
+    }
+    // Say an animation has 3 frames, but you want to order them 0, 1, 2, 1, then pass frameMap = [0, 1, 2, 1],
+    // to remap the order of the frames accordingly.
+    if (frameMap) {
+       frames = frameMap.map(originalIndex => frames[originalIndex]);
+    }
+    return {frames, frameDuration: duration, ...props, duration: frameLength * frames.length * duration};
+};
 
 let numberOfImagesLeftToLoad = 0;
 export function requireImage(imageFile: string, callback?: (image: HTMLImageElement) => void): HTMLImageElement {

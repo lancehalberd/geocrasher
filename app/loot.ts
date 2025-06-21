@@ -1,60 +1,42 @@
 import {
     gainHealth, getAttackWithoutHealthBonuses, getAvatarPosition, getDefenseWithoutHealthBonuses,
-    getLevelBonus, updatePlayerStats
+    getLevelBonus, resetLootTotals, updatePlayerStats
 } from 'app/avatar';
-
 import { drawEmbossedText, drawFrame, drawOutlinedImage } from 'app/draw';
 import { emptyJourneyRadius, gridLength, maxTileLevel, minRadius } from 'app/gameConstants';
 import {
     chestSource, coinImage, heartSource, magicStoneSource,
     outlinedMoneySource, shieldSource, swordSource, treasureMapSource,
 } from 'app/images';
-import { getTilePower } from 'app/scenes/mapScene';
-import { saveGame } from 'app/saveGame';
-import { getMoneySkillBonus, getSkillValue, getTotalSkillPoints } from 'app/scenes/skillsScene';
-import { abbreviateNumber, getDistance } from 'app/utils/index';
+import {saveGame} from 'app/saveGame';
+import {abbreviateNumber, getDistance} from 'app/utils/index';
 import Random from 'app/utils/Random';
-import { exhaustTile, toRealCoords } from 'app/world';
-
-import {
-    Frame, GameState, HudButton, Loot, LootGenerator, LootMarker,
-    MapTile, ScalarLoot, SimpleLoot,
-} from 'app/types';
+import {getMoneySkillBonus, getSkillValue, getTotalSkillPoints} from 'app/utils/skills';
+import {exhaustTile, getTilePower, toRealCoords} from 'app/utils/world';
 
 class CoinLootClass implements ScalarLoot {
     type = <const>'coins';
-    value: number;
-    frame: Frame;
-    constructor(frame: Frame, value: number) {
-        this.value = value;
-        this.frame = frame;
-    }
-    onObtain(this: ScalarLoot, state: GameState) {
+    constructor(public frame: Frame, public value: number) {}
+    onObtain(state: GameState) {
         state.saved.coins += this.value;
         state.loot.coinsCollected = (state.loot.coinsCollected ?? 0 ) + this.value;
     }
 }
 class TreasureChestClass implements ScalarLoot {
     type = <const>'treasureChest';
-    value: number;
     frame: Frame = chestSource;
-    constructor(value: number) {
-        this.value = value;
-    }
-    onObtain(this: ScalarLoot, state: GameState) {
+    constructor(public value: number) {}
+    onObtain(state: GameState) {
         state.saved.coins += this.value;
         state.loot.coinsCollected = (state.loot.coinsCollected ?? 0 ) + this.value;
     }
 }
 class HealthLootClass implements ScalarLoot {
     type = <const>'health';
-    value: number;
     frame: Frame = heartSource;
     scale = 0.5;
-    constructor(value: number) {
-        this.value = value;
-    }
-    onObtain(this: ScalarLoot, state: GameState) {
+    constructor(public value: number) {}
+    onObtain(state: GameState) {
         state.saved.avatar.healthBonus += this.value;
         updatePlayerStats(state);
         gainHealth(state, Math.round(2 * this.value * getLevelBonus(state)));
@@ -63,13 +45,10 @@ class HealthLootClass implements ScalarLoot {
 }
 class AttackLootClass implements ScalarLoot {
     type = <const>'attack';
-    value: number;
     frame: Frame = swordSource;
     scale = 0.75;
-    constructor(value: number) {
-        this.value = value;
-    }
-    onObtain(this: ScalarLoot, state: GameState) {
+    constructor(public value: number) {}
+    onObtain(state: GameState) {
         state.saved.avatar.attackBonus += this.value;
         updatePlayerStats(state);
         showStats(state);
@@ -77,13 +56,10 @@ class AttackLootClass implements ScalarLoot {
 }
 class DefenseLootClass implements ScalarLoot {
     type = <const>'defense';
-    value: number;
     frame: Frame = shieldSource;
     scale = 0.75;
-    constructor(value: number) {
-        this.value = value;
-    }
-    onObtain(this: ScalarLoot, state: GameState) {
+    constructor(public value: number) {}
+    onObtain(state: GameState) {
         state.saved.avatar.defenseBonus += this.value;
         updatePlayerStats(state);
         showStats(state);
@@ -91,7 +67,6 @@ class DefenseLootClass implements ScalarLoot {
 }
 class MagicStoneLootClass implements SimpleLoot {
     type = <const>'magicStone';
-    value: number;
     frame: Frame = magicStoneSource;
     onObtain(this: SimpleLoot, state: GameState) {
         if (state.currentScene === 'journey') {
@@ -105,13 +80,10 @@ class MagicStoneLootClass implements SimpleLoot {
 }
 class TreasureMapLootClass implements ScalarLoot {
     type = <const>'treasureMap';
-    value: number;
     frame: Frame = treasureMapSource;
     scale = 0.5;
-    constructor(value: number) {
-        this.value = value;
-    }
-    onObtain(this: ScalarLoot, state: GameState) {
+    constructor(public value: number) {}
+    onObtain(state: GameState) {
         state.saved.treasureHunt.mapCount += this.value;
         state.saved.treasureHunt.hadMap = true;
     }
@@ -128,6 +100,15 @@ const coinLoot = [
     new CoinLootClass({image: coinImage, x: 64, y: 32, w: 20, h: 20}, 50000),
     new CoinLootClass({image: coinImage, x: 64, y: 64, w: 24, h: 24}, 200000),
 ];
+
+export function updateMapLoot(state: GameState) {
+    state.loot.lootInRadius = [];
+    state.loot.lootInMonsterRadius = [];
+    updateLootCollection(state);
+    for (const mapTile of state.world.activeTiles) {
+        updateTileLoot(state, mapTile);
+    }
+}
 
 export function checkToGenerateLootForTile(state: GameState, tile: MapTile): void {
     if (tile.level < 0) return;
@@ -212,17 +193,6 @@ export function makeTreasureChestLoot(value: number) {
 }
 export function makeTreasureMapLoot(state: GameState, value: number) {
     return new TreasureMapLootClass(Math.ceil(value));
-}
-
-export function resetLootTotals(state: GameState) {
-    state.loot.collectionBonus = .9;
-    state.loot.coinsCollected = 0;
-    updatePlayerStats(state);
-    state.loot.initialLevel = state.saved.avatar.level;
-    state.loot.initialSkillPoints = getTotalSkillPoints(state);
-    state.loot.initialMaxHealth = state.avatar.maxHealth;
-    state.loot.initialAttack = getAttackWithoutHealthBonuses(state);
-    state.loot.initialDefense = getDefenseWithoutHealthBonuses(state);
 }
 
 export function updateTileLoot(state: GameState, tile: MapTile): void {

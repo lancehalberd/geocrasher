@@ -3,8 +3,6 @@ import { drawBar, drawFrame } from 'app/draw';
 import { heartSource, shieldSource, swordSource } from 'app/images';
 import { abbreviateNumber } from 'app/utils/index';
 
-import { GameState } from 'app/types';
-
 function getStatsBoxSize(state: GameState): {w: number, h: number} {
     const { iconSize } = state.display;
     const localIconSize = Math.floor(iconSize / 2);

@@ -1,22 +1,5 @@
-import { createCanvasAndContext } from 'app/dom';
-import { frameLength } from 'app/gameConstants';
-import { requireImage } from 'app/images';
-import {
-    ExtraAnimationProperties, Frame, FrameAnimation, FrameDimensions, FrameImage, FrameRectangle,
-    Rectangle, Tint,
-} from 'app/types';
-
-interface CreateAnimationOptions {
-    x?: number
-    y?: number
-    xSpace?: number
-    rows?: number
-    cols?: number
-    top?: number
-    left?: number
-    duration?: number
-    frameMap?: number[]
-}
+import {createCanvasAndContext} from 'app/dom';
+import {frameLength} from 'app/gameConstants';
 
 export function frame(
     x: number, y: number, w: number, h: number,
@@ -33,37 +16,6 @@ export function frameAnimation(frame: Frame): FrameAnimation {
 export function framesAnimation(frames: Frame[], duration = 8, props: ExtraAnimationProperties = {}): FrameAnimation {
     return {frames, frameDuration: duration, ...props, duration: frameLength * frames.length * duration};
 }
-
-export function createAnimation(
-    source: string | HTMLImageElement | HTMLCanvasElement,
-    dimensions: FrameDimensions,
-    {x = 0, y = 0, rows = 1, cols = 1, xSpace = 0, top = 0, left = 0, duration = 8, frameMap}: CreateAnimationOptions = {},
-    props: ExtraAnimationProperties = {},
-): FrameAnimation {
-    let frames: Frame[] = [];
-    let image: FrameImage;
-    if (typeof source === 'string') {
-        image = requireImage(source);
-    } else {
-        image = source;
-    }
-    for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-            frames[row * cols + col] = {
-                ...dimensions,
-                x: left + (dimensions.w + xSpace) * (x + col),
-                y: top + dimensions.h * (y + row),
-                image
-            };
-        }
-    }
-    // Say an animation has 3 frames, but you want to order them 0, 1, 2, 1, then pass frameMap = [0, 1, 2, 1],
-    // to remap the order of the frames accordingly.
-    if (frameMap) {
-       frames = frameMap.map(originalIndex => frames[originalIndex]);
-    }
-    return {frames, frameDuration: duration, ...props, duration: frameLength * frames.length * duration};
-};
 
 export function getFrame(animation: FrameAnimation, animationTime: number): Frame {
     animationTime = Math.max(animationTime, 0);

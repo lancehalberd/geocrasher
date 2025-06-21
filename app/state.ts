@@ -1,37 +1,7 @@
-import { mainCanvas, mainContext } from 'app/dom';
-import { maxScale, minRadius } from 'app/gameConstants';
-import { initializeSaveSlots } from 'app/saveGame';
+import {mainCanvas, mainContext} from 'app/dom';
+import {maxScale} from 'app/gameConstants';
+import {getDefaultSavedState, initializeSaveSlots} from 'app/saveGame';
 
-import { GameState, SavedGameState, Scene } from 'app/types';
-
-export function getDefaultSavedState(): SavedGameState {
-    return {
-        coins: 10,
-        radius: minRadius,
-        avatar: {
-            level: 1,
-            experience: 0,
-            currentHealth: 100,
-            healthBonus: 100,
-            attackBonus: 8,
-            defenseBonus: 6,
-            skillLevels: {},
-        },
-        gems: {
-            recentLocations: []
-        },
-        treasureHunt: {
-            hadMap: false,
-            mapCount: 0,
-        },
-        world: {
-            dungeonLevelCap: 2,
-            journeySkillPoints: 0,
-            gemData: [{history: []}, {history: []}, {history: []}],
-            tiles: [],
-        },
-    };
-}
 
 export function getDefaultState(): GameState {
     return {
@@ -125,7 +95,6 @@ export function getState() {
 
 export function initializeState() {
     state = getDefaultState();
-    // @ts-expect-error
     window.state = state;
     initializeSaveSlots(state);
 }

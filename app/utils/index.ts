@@ -1,6 +1,3 @@
-import { Rectangle } from 'app/types';
-
-
 export function getDistance(A: number[], B: number[]): number {
     return Math.sqrt((A[0] - B[0]) * (A[0] - B[0]) + (A[1] - B[1]) * (A[1] - B[1]));
 }

@@ -1,79 +1,35 @@
-import { drawAvatar, regenerateHealth } from 'app/avatar';
-import { drawDamageIndicators, getFightOrFleeButton, updateBattle } from 'app/battle';
+import {drawAvatar, regenerateHealth, resetLootTotals} from 'app/avatar';
+import { drawDamageIndicators, getFightOrFleeButton} from 'app/battle';
 import { drawEmbossedText, drawFrame, drawOutlinedImage, fillRectangle, pad } from 'app/draw';
 import { gridLength } from 'app/gameConstants';
 import { handleHudButtonClick, renderHudButtons } from 'app/hud';
-import { darkStoneImage, exitSource, portalSource, shellSource } from 'app/images';
+import { darkStoneImage, exitSource, portalSource } from 'app/images';
 import {
     drawLootTotals,
     generateLootCoins,
     getCollectButton,
     getWeightedPowerup,
-    resetLootTotals,
     updateLootCollection,
 } from 'app/loot';
 import { drawTileMonster, makeBossMonster, makeMonster } from 'app/monsters';
-import { getMoneySkillBonus, getSkillButton } from 'app/scenes/skillsScene';
-import { drawCoinsIndicator, drawLifeIndicator, drawLootMarker } from 'app/scenes/mapScene';
-import { getTreasureLocation, hideTreasureMap } from 'app/scenes/treasureMapScene';
-import { popScene, pushScene } from 'app/state';
+import {getSkillButton} from 'app/scenes/skillsScene';
+import {drawCoinsIndicator, drawLifeIndicator, drawLootMarker} from 'app/utils/hud';
+import {exitDungeon, hideTreasureMap} from 'app/handleBackAction';
+import {getTreasureLocation} from 'app/utils/treasureMap';
+import {pushScene } from 'app/state';
 import { drawAvatarStats, drawMonsterStats } from 'app/statsBox';
+import {getAllNeighbors} from 'app/utils/dungeon';
 import Random from 'app/utils/Random';
-import { getActualScale, getGridRectangle, refreshActiveTiles, toGridCoords, toRealCoords, unproject } from 'app/world';
-import { Dungeon, DungeonFloor, DungeonMarker, DungeonTileContent, Frame, GameState, HudButton, MapTile } from 'app/types';
+import {getMoneySkillBonus} from 'app/utils/skills';
+import {getActualScale, getGridRectangle, toGridCoords, toRealCoords, unproject} from 'app/utils/world';
 
 
-export function getDungeonLevel(state: GameState, rawLevel: number): number {
-    return Math.min(state.saved.world.dungeonLevelCap, rawLevel);
-}
-export function getDungeonFrame(state: GameState, dungeonLevel: number): Frame {
-    const isQuestDungeon = dungeonLevel >= state.saved.world.dungeonLevelCap;
-    return isQuestDungeon ? portalSource : shellSource;
-}
 
-export function createDungeon(state: GameState, rawLevel: number): Dungeon {
-    const level = getDungeonLevel(state, rawLevel);
-    const isQuestDungeon = level >= state.saved.world.dungeonLevelCap;
-    const dungeon: Dungeon = {
-        level,
-        isQuestDungeon,
-        name: isQuestDungeon ? 'Portal' : 'Hollow Shell',
-        numberOfFloors: Math.max(1, Math.floor(Math.sqrt(level) / 2)),
-        frame: getDungeonFrame(state, level),
-        currentFloor: {
-            tiles: [],
-        },
-        dungeonPosition: [0, 0],
-        allFloors: []
-    }
-    if (isQuestDungeon) {
-        dungeon.numberOfFloors++;
-    }
-    return dungeon;
-}
-
-export function addDungeonToTile(state: GameState, tile: MapTile, rawLevel: number): void {
-    const dungeonMarker: DungeonMarker = {
-        dungeon: createDungeon(state, rawLevel),
-        tile,
-        x: tile.x,
-        y: tile.y
-    }
-    tile.dungeonMarker = dungeonMarker;
-}
 
 export function startDungeon(state: GameState, dungeon: Dungeon) {
     state.dungeon.currentDungeon = dungeon;
     pushScene(state, 'dungeon');
     startNewFloor(state);
-}
-export function exitDungeon(state: GameState) {
-    state.world.origin = state.world.currentPosition;
-    delete state.battle.engagedMonster;
-    delete state.selectedTile;
-    delete state.dungeon.currentDungeon;
-    popScene(state);
-    refreshActiveTiles(state);
 }
 function startNewFloor(state: GameState) {
     delete state.battle.engagedMonster;
@@ -170,7 +126,6 @@ function startNewFloor(state: GameState) {
 }
 
 export function updateDungeon(state: GameState): void {
-    updateBattle(state);
     updateLootCollection(state);
 }
 
@@ -196,22 +151,6 @@ function revealTile(state: GameState, tile: MapTile): void {
     }
 }
 
-export function getAllNeighbors(state: GameState, tile: MapTile): MapTile[] {
-    const neighbors: MapTile[] = [];
-    if (!state.dungeon.currentDungeon) {
-        throw new Error('Current dungeon is not defined');
-    }
-    for (let y = -1; y <= 1; y++) {
-        for (let x = -1; x <= 1; x++) {
-            if (x === 0 && y === 0) continue;
-            const neighbor = state.dungeon.currentDungeon.currentFloor.tiles[tile.y + y]?.[tile.x + x];
-            if (neighbor) {
-                neighbors.push(neighbor);
-            }
-        }
-    }
-    return neighbors;
-}
 function getSideNeighbors(state: GameState, tile: MapTile): MapTile[] {
     const sideNeighbors: MapTile[] = [];
     if (!state.dungeon.currentDungeon) {
