@@ -1,4 +1,3 @@
-
 Reduce monster bonus from 40% per level to 20% level, increase monster level from tiles.
 
 Exploration Mode:

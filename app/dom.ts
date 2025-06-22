@@ -7,7 +7,7 @@ export function queryAll(className: string): NodeListOf<HTMLElement> {
 }
 
 export const mainCanvas:HTMLCanvasElement = query('canvas') as HTMLCanvasElement;
-export const mainContext = mainCanvas.getContext('2d') as CanvasRenderingContext2D;
+export const mainContext = mainCanvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
 mainContext.imageSmoothingEnabled = false;
 
 export function createCanvas(width: number, height: number, classes = ''): HTMLCanvasElement {

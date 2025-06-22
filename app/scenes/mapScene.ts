@@ -445,10 +445,12 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
     }
     const gradientLength = 0.3 * scaleToUse * gridLength;
     const origin = getOrigin(state);
+    // Top left corner of what will be displayed on the screen in canvas coordinates.
     const topLeftCorner = project(state, [currentPosition[0] - 4 * gridLength, currentPosition[1] - 4 * gridLength]);
     const gridSize = Math.round(gridLength * scaleToUse);
     let x = Math.max(-gradientLength / 2, topLeftCorner[0]);
     let y = Math.max(-gradientLength / 2, topLeftCorner[1]);
+    // The portion of the canvas that will be visible and drawn to.
     const visibleRectangle = {
         x, y,
         w: Math.min(canvas.width + gradientLength / 2, topLeftCorner[0] + 8 * gridSize) - x,
@@ -461,8 +463,10 @@ function drawGrid(context: CanvasRenderingContext2D, state: GameState): void {
             context.imageSmoothingEnabled = false;
             const oceanScale = gridSize / oceanTile.width;
             context.scale(oceanScale, oceanScale);
-            const oceanX = (((((state.time / 15) / 1000) * gridSize - origin[0] * scaleToUse) % gridSize) / oceanScale);
-            const oceanY = (((((state.time / 20) / 1000) * gridSize - origin[1] * scaleToUse) % gridSize) / oceanScale);
+            const dx = (state.time / 15) / 1000;
+            const dy = (state.time / 20) / 1000;
+            const oceanX = (((dx * gridLength + canvas.width / 2 / scaleToUse - origin[0]) % gridLength) / oceanScale * scaleToUse);
+            const oceanY = (((dy * gridLength + canvas.height / 2 / scaleToUse - origin[1]) % gridLength) / oceanScale * scaleToUse);
             context.translate(oceanX, oceanY);
             const oceanPattern = context.createPattern(oceanTile, 'repeat') as CanvasPattern;
             context.fillStyle = oceanPattern;

@@ -1,4 +1,3 @@
-
 import {
     drawBar, drawEmbossedText, drawFrame, drawTintedImage,
 } from 'app/draw';

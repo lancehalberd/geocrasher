@@ -11,4 +11,4 @@ export const maxTileLevel = 7;
 
 export const emptyJourneyRadius = 1.5 * gridLength;
 
-export const version = '0.0.6';
+export const version = '0.0.7';
